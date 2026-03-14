@@ -37,27 +37,7 @@ class MainViewController: UIViewController{
     let buttonColor = UIColor(red: 0.937, green: 0.937, blue: 0.937, alpha: 1.0)
     let selectedButtonColor = UIColor(red: 0.77, green: 0.77, blue: 0.85, alpha: 1.0)
 
-    let ahapFiles = [
-        "AHAP/Hit",
-        "AHAP/Hit",
-        "AHAP/Hit",
-        "AHAP/Hit",
-        "AHAP/Triple",
-        "AHAP/Rumble",
-        "AHAP/Recharge",
-        "AHAP/Heartbeats"
-    ]
-    
-    let ahapLocalities = [
-        GCHapticsLocality.default,
-        GCHapticsLocality.all,
-        GCHapticsLocality.leftHandle,
-        GCHapticsLocality.rightHandle,
-        GCHapticsLocality.default,
-        GCHapticsLocality.default,
-        GCHapticsLocality.default,
-        GCHapticsLocality.default
-    ]
+    let ahapPatterns = AHAPCatalog.mainButtonPatterns
 
     var controller: GCController? {
         didSet {
@@ -115,8 +95,10 @@ class MainViewController: UIViewController{
             if isPressed {
                 let highlightedToggleCellColor = UIColor(red: 0.65, green: 0.65, blue: 0.75, alpha: 1.0)
                 self.highlightedButton?.backgroundColor = highlightedToggleCellColor
-                if let index = self.highlightedButton?.tag {
-                    self.manager.playHapticsFile(named: self.ahapFiles[index], locality: self.ahapLocalities[index])
+                if let index = self.highlightedButton?.tag,
+                   self.ahapPatterns.indices.contains(index) {
+                    let pattern = self.ahapPatterns[index]
+                    self.manager.playHapticsFile(named: pattern.resourceName, locality: pattern.locality)
                 }
             } else {
                 self.highlightedButton?.backgroundColor = self.selectedButtonColor
@@ -179,8 +161,10 @@ class MainViewController: UIViewController{
         }
 
         let index = sender.tag
-        let filename = self.ahapFiles[index]
-        let locality = self.ahapLocalities[index]
+        guard ahapPatterns.indices.contains(index) else { return }
+        let pattern = ahapPatterns[index]
+        let filename = pattern.resourceName
+        let locality = pattern.locality
         
         if sender.tag == 5 {
             switch manager.playbackState {
