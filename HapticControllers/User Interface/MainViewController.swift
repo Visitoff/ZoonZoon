@@ -252,8 +252,8 @@ class MainViewController: UIViewController{
         view.addSubview(playbackStatusView)
         
         NSLayoutConstraint.activate([
-            playbackStatusView.leadingAnchor.constraint(equalTo: controllerLabel.leadingAnchor),
-            playbackStatusView.topAnchor.constraint(equalTo: controllerLabel.bottomAnchor, constant: 12),
+            playbackStatusView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            playbackStatusView.topAnchor.constraint(equalTo: controllerLabel.bottomAnchor, constant: 8),
             
             playbackStatusStackView.leadingAnchor.constraint(equalTo: playbackStatusView.leadingAnchor, constant: 12),
             playbackStatusStackView.trailingAnchor.constraint(equalTo: playbackStatusView.trailingAnchor, constant: -12),
