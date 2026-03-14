@@ -1,0 +1,9 @@
+--swiftversion 5.0
+--indent 4
+--linebreaks lf
+--wraparguments preserve
+--wrapcollections preserve
+--commas always
+--stripunusedargs closure-only
+--disable wrapMultilineStatementBraces
+--exclude .git,.deriveddata,.clang-cache,.swift-cache

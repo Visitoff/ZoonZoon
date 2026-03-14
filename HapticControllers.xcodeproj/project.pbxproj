@@ -196,6 +196,7 @@
 			buildConfigurationList = C4886159248A04BD0066977B /* Build configuration list for PBXNativeTarget "HapticControllers" */;
 			buildPhases = (
 				C4886141248A04BC0066977B /* Sources */,
+				7A6B5C4D3E2F1A0B00000008 /* SwiftLint */,
 				C4886142248A04BC0066977B /* Frameworks */,
 				C4886143248A04BC0066977B /* Resources */,
 			);
@@ -255,6 +256,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		7A6B5C4D3E2F1A0B00000008 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.swiftlint.yml",
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if command -v swiftlint >/dev/null 2>&1; then\n  swiftlint lint --no-cache --config \"${SRCROOT}/.swiftlint.yml\"\nelif [ -x /opt/homebrew/bin/swiftlint ]; then\n  /opt/homebrew/bin/swiftlint lint --no-cache --config \"${SRCROOT}/.swiftlint.yml\"\nelse\n  echo \"warning: SwiftLint is not installed\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C4886141248A04BC0066977B /* Sources */ = {

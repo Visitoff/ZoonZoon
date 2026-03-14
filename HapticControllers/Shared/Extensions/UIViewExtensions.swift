@@ -1,35 +1,34 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+ See LICENSE folder for this sample’s licensing information.
 
-Abstract:
-Swift extensions on UIView.
-*/
+ Abstract:
+ Swift extensions on UIView.
+ */
 
 import UIKit
 
-// Extend Interface Builder to expose view border parameters.
+/// Extend Interface Builder to expose view border parameters.
 @IBDesignable extension UIView {
-    
     @IBInspectable var borderColor: UIColor? {
-        set { layer.borderColor = newValue?.cgColor }
         get {
             guard let color = layer.borderColor else {
                 return nil
             }
             return UIColor(cgColor: color)
         }
+        set { layer.borderColor = newValue?.cgColor }
     }
-    
+
     @IBInspectable var borderWidth: CGFloat {
-        set { layer.borderWidth = newValue }
         get { layer.borderWidth }
+        set { layer.borderWidth = newValue }
     }
-    
+
     @IBInspectable var cornerRadius: CGFloat {
+        get { layer.cornerRadius }
         set {
             layer.cornerRadius = newValue
             clipsToBounds = newValue > 0
         }
-        get { layer.cornerRadius}
     }
 }

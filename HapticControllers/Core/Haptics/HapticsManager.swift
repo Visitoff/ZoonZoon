@@ -1,6 +1,6 @@
+import CoreHaptics
 import Foundation
 import GameController
-import CoreHaptics
 
 enum HapticsPlaybackState: Equatable {
     case idle
@@ -235,7 +235,7 @@ class HapticsManager {
         let identifier = playbackIdentifier(for: filename, locality: locality)
         return loopingStateQueue.sync {
             (playbackState == .starting || playbackState == .playing) &&
-            loopingPatternIdentifier == identifier
+                loopingPatternIdentifier == identifier
         }
     }
 
@@ -397,8 +397,8 @@ class HapticsManager {
     private func shouldKeepLooping(identifier: String, locality: GCHapticsLocality) -> Bool {
         loopingStateQueue.sync {
             loopingPatternIdentifier == identifier &&
-            loopingLocality == locality &&
-            (playbackState == .starting || playbackState == .playing)
+                loopingLocality == locality &&
+                (playbackState == .starting || playbackState == .playing)
         }
     }
 

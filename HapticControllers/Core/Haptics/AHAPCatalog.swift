@@ -1,7 +1,7 @@
 import Foundation
 import GameController
 
-struct AHAPCatalog {
+enum AHAPCatalog {
     struct Timing {
         let duration: TimeInterval
         let repeatDelay: TimeInterval
@@ -41,7 +41,7 @@ struct AHAPCatalog {
                                     locality: .default,
                                     timing: nil)
 
-    // Change this one line to switch the main endless pattern.
+    /// Change this one line to switch the main endless pattern.
     static let defaultLoopPattern = rumble
 
     static let mainButtonPatterns = [
@@ -52,7 +52,7 @@ struct AHAPCatalog {
         triple,
         defaultLoopPattern,
         recharge,
-        heartbeats
+        heartbeats,
     ]
 
     static func timing(for resourceName: String) -> Timing? {

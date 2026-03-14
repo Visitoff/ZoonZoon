@@ -1,0 +1,35 @@
+included:
+  - HapticControllers/App
+  - HapticControllers/Core
+  - HapticControllers/Features
+  - HapticControllers/Shared
+
+excluded:
+  - HapticControllers/Resources
+  - .deriveddata
+  - .clang-cache
+  - .swift-cache
+
+disabled_rules:
+  - line_length
+  - type_body_length
+  - file_length
+  - function_body_length
+  - cyclomatic_complexity
+  - identifier_name
+  - force_cast
+  - nesting
+  - trailing_comma
+  - function_parameter_count
+  - large_tuple
+
+opt_in_rules:
+  - empty_count
+  - redundant_nil_coalescing
+  - implicit_optional_initialization
+  - sorted_imports
+  - vertical_whitespace_closing_braces
+
+reporter: xcode
+
+analyzer_rules: []
