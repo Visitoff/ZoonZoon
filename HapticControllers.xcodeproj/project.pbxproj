@@ -9,9 +9,6 @@
 /* Begin PBXBuildFile section */
 		5547C23C27209F7600F4ABA6 /* GameController.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5547C23B27209F7600F4ABA6 /* GameController.framework */; };
 		55B15CE5273CA575002889A6 /* Group 3nigg.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CE4273CA575002889A6 /* Group 3nigg.png */; };
-		55B15CE7273CA744002889A6 /* Group 4nugga.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CE6273CA744002889A6 /* Group 4nugga.png */; };
-		55B15CE9273CA885002889A6 /* Group 5.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CE8273CA885002889A6 /* Group 5.png */; };
-		55B15D00273EFBD6002889A6 /* Group 3zoon.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CFF273EFBD4002889A6 /* Group 3zoon.png */; };
 		C40B5724248A061D00BE4EE7 /* AHAP in Resources */ = {isa = PBXBuildFile; fileRef = C40B5723248A061D00BE4EE7 /* AHAP */; };
 		C40B5726248A067400BE4EE7 /* UIViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40B5725248A067400BE4EE7 /* UIViewExtensions.swift */; };
 		C41B6AF6248A19C1000A8C44 /* HapticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41B6AF5248A19C1000A8C44 /* HapticsManager.swift */; };
@@ -27,8 +24,6 @@
 		030ADBEE118EED778A542409 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		5547C23B27209F7600F4ABA6 /* GameController.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameController.framework; path = System/Library/Frameworks/GameController.framework; sourceTree = SDKROOT; };
 		55B15CE4273CA575002889A6 /* Group 3nigg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Group 3nigg.png"; path = "images/Group 3nigg.png"; sourceTree = SOURCE_ROOT; };
-		55B15CE6273CA744002889A6 /* Group 4nugga.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Group 4nugga.png"; path = "../../Group 4nugga.png"; sourceTree = "<group>"; };
-		55B15CE8273CA885002889A6 /* Group 5.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Group 5.png"; path = "../../Group 5.png"; sourceTree = "<group>"; };
 		55B15CEB273DC245002889A6 /* Gilroy-Thin.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Thin.ttf"; path = "../../font/Gilroy-Thin.ttf"; sourceTree = "<group>"; };
 		55B15CEC273DC245002889A6 /* Gilroy-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Medium.ttf"; path = "../../font/Gilroy-Medium.ttf"; sourceTree = "<group>"; };
 		55B15CED273DC245002889A6 /* Gilroy-LightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-LightItalic.ttf"; path = "../../font/Gilroy-LightItalic.ttf"; sourceTree = "<group>"; };
@@ -49,7 +44,6 @@
 		55B15CFC273DC246002889A6 /* Gilroy-UltraLightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-UltraLightItalic.ttf"; path = "../../font/Gilroy-UltraLightItalic.ttf"; sourceTree = "<group>"; };
 		55B15CFD273DC246002889A6 /* Gilroy-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Bold.ttf"; path = "../../font/Gilroy-Bold.ttf"; sourceTree = "<group>"; };
 		55B15CFE273DC246002889A6 /* Gilroy-SemiboldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-SemiboldItalic.ttf"; path = "../../font/Gilroy-SemiboldItalic.ttf"; sourceTree = "<group>"; };
-		55B15CFF273EFBD4002889A6 /* Group 3zoon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Group 3zoon.png"; path = "../../Group 3zoon.png"; sourceTree = "<group>"; };
 		7044C93EC0DF26B98254470C /* LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		AB448547DEF5921FD9D9B092 /* SampleCode.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = SampleCode.xcconfig; path = Configuration/SampleCode.xcconfig; sourceTree = "<group>"; };
 		C40B5723248A061D00BE4EE7 /* AHAP */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AHAP; sourceTree = "<group>"; };
@@ -88,10 +82,7 @@
 		55B15CE3273CA531002889A6 /* images */ = {
 			isa = PBXGroup;
 			children = (
-				55B15CFF273EFBD4002889A6 /* Group 3zoon.png */,
-				55B15CE6273CA744002889A6 /* Group 4nugga.png */,
 				55B15CE4273CA575002889A6 /* Group 3nigg.png */,
-				55B15CE8273CA885002889A6 /* Group 5.png */,
 			);
 			path = images;
 			sourceTree = "<group>";
@@ -260,14 +251,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				55B15D00273EFBD6002889A6 /* Group 3zoon.png in Resources */,
 				C4886152248A04BD0066977B /* Assets.xcassets in Resources */,
 				C4992596248AF0FB00907E52 /* LaunchScreen.storyboard in Resources */,
-				55B15CE7273CA744002889A6 /* Group 4nugga.png in Resources */,
 				C40B5724248A061D00BE4EE7 /* AHAP in Resources */,
 				55B15CE5273CA575002889A6 /* Group 3nigg.png in Resources */,
 				C4886150248A04BC0066977B /* Main.storyboard in Resources */,
-				55B15CE9273CA885002889A6 /* Group 5.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -440,7 +428,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.afafas.afaf;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ZoonZoon;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -462,7 +450,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.afafas.afaf;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ZoonZoon;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
