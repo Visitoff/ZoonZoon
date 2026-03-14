@@ -22,8 +22,13 @@ class HapticsManager {
         static let fallbackRepeatDelay: TimeInterval = 2.5
         static let minimumRepeatDelay: TimeInterval = 0.25
         static let reasonableEventTimeUpperBound: TimeInterval = 5.0
-        static let stoppingIndicatorMinimumDuration: TimeInterval = 0.6
+        static let stopSettleBuffer: TimeInterval = 0.08
         static let stoppedIndicatorDuration: TimeInterval = 1.0
+    }
+    
+    private struct PatternTiming {
+        let duration: TimeInterval
+        let repeatDelay: TimeInterval
     }
     
     private var isSetup = false
@@ -34,6 +39,7 @@ class HapticsManager {
     private var loopingReplayWorkItem: DispatchWorkItem?
     private var loopingPatternIdentifier: String?
     private var loopingLocality: GCHapticsLocality?
+    private var activeIterationEndUptime: TimeInterval?
     private var stoppedTransitionWorkItem: DispatchWorkItem?
     private var idleTransitionWorkItem: DispatchWorkItem?
     
@@ -170,11 +176,12 @@ class HapticsManager {
         cancelPlaybackTransitionWorkItems()
         
         let identifier = playbackIdentifier(for: filename, locality: locality)
-        let repeatDelay = repeatDelay(for: url)
+        let patternTiming = patternTiming(for: url)
         
         loopingStateQueue.sync {
             loopingPatternIdentifier = identifier
             loopingLocality = locality
+            activeIterationEndUptime = nil
         }
         
         playbackState = .starting
@@ -186,7 +193,8 @@ class HapticsManager {
                               engine: engine,
                               identifier: identifier,
                               locality: locality,
-                              repeatDelay: repeatDelay)
+                              patternDuration: patternTiming.duration,
+                              repeatDelay: patternTiming.repeatDelay)
         } catch {
             clearLoopingState()
             engineMap.removeValue(forKey: locality)
@@ -200,32 +208,21 @@ class HapticsManager {
         
         playbackState = .stopping
         
-        let activeLoop = loopingStateQueue.sync { () -> (DispatchWorkItem?, GCHapticsLocality?) in
+        let activeLoop = loopingStateQueue.sync { () -> (DispatchWorkItem?, GCHapticsLocality?, TimeInterval) in
             let activeReplayWorkItem = loopingReplayWorkItem
             let activeLoopingLocality = loopingLocality
+            let now = ProcessInfo.processInfo.systemUptime
+            let remainingTailDuration = max(0, (activeIterationEndUptime ?? now) - now)
             loopingReplayWorkItem = nil
             loopingPatternIdentifier = nil
             loopingLocality = nil
-            return (activeReplayWorkItem, activeLoopingLocality)
+            activeIterationEndUptime = nil
+            return (activeReplayWorkItem, activeLoopingLocality, remainingTailDuration)
         }
         
         activeLoop.0?.cancel()
-        
-        if let loopingLocality = activeLoop.1,
-           let engine = engineMap[loopingLocality] {
-            engine.stop { [weak self] error in
-                guard let self else { return }
-                DispatchQueue.main.async {
-                    if let error {
-                        print("Failed to stop haptics: \(error).")
-                    }
-                    self.engineMap.removeValue(forKey: loopingLocality)
-                    self.scheduleStoppedStateTransition()
-                }
-            }
-        } else {
-            scheduleStoppedStateTransition()
-        }
+        scheduleStoppedStateTransition(after: activeLoop.2 + LoopingConstants.stopSettleBuffer,
+                                       locality: activeLoop.1)
     }
     
     func isLoopingHapticsFile(named filename: String, locality: GCHapticsLocality = .default) -> Bool {
@@ -241,6 +238,7 @@ class HapticsManager {
                                    engine: CHHapticEngine,
                                    identifier: String,
                                    locality: GCHapticsLocality,
+                                   patternDuration: TimeInterval,
                                    repeatDelay: TimeInterval) {
         guard shouldKeepLooping(identifier: identifier, locality: locality) else {
             return
@@ -249,6 +247,7 @@ class HapticsManager {
         do {
             try engine.start()
             try engine.playPattern(from: url)
+            let expectedEndUptime = ProcessInfo.processInfo.systemUptime + patternDuration
             if playbackState == .starting {
                 playbackState = .playing
             }
@@ -259,12 +258,14 @@ class HapticsManager {
                                         engine: engine,
                                         identifier: identifier,
                                         locality: locality,
+                                        patternDuration: patternDuration,
                                         repeatDelay: repeatDelay)
             }
             
             loopingStateQueue.sync {
                 guard loopingPatternIdentifier == identifier,
                       loopingLocality == locality else { return }
+                activeIterationEndUptime = expectedEndUptime
                 loopingReplayWorkItem = replayWorkItem
             }
             
@@ -284,6 +285,7 @@ class HapticsManager {
             loopingReplayWorkItem = nil
             loopingPatternIdentifier = nil
             loopingLocality = nil
+            activeIterationEndUptime = nil
             return workItem
         }
         activeWorkItem?.cancel()
@@ -296,16 +298,18 @@ class HapticsManager {
         idleTransitionWorkItem = nil
     }
     
-    private func scheduleStoppedStateTransition() {
+    private func scheduleStoppedStateTransition(after delay: TimeInterval,
+                                                locality: GCHapticsLocality?) {
         cancelPlaybackTransitionWorkItems()
         
         let stoppedWorkItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
+            self.stopEngine(for: locality)
             self.playbackState = .stopped
             self.scheduleIdleStateTransition()
         }
         stoppedTransitionWorkItem = stoppedWorkItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + LoopingConstants.stoppingIndicatorMinimumDuration,
+        DispatchQueue.main.asyncAfter(deadline: .now() + max(0, delay),
                                       execute: stoppedWorkItem)
     }
     
@@ -321,13 +325,14 @@ class HapticsManager {
                                       execute: idleWorkItem)
     }
     
-    private func repeatDelay(for url: URL) -> TimeInterval {
+    private func patternTiming(for url: URL) -> PatternTiming {
         do {
             let data = try Data(contentsOf: url)
             let object = try JSONSerialization.jsonObject(with: data)
             guard let dictionary = object as? [String: Any],
                   let patternItems = dictionary["Pattern"] as? [[String: Any]] else {
-                return LoopingConstants.fallbackRepeatDelay
+                return PatternTiming(duration: LoopingConstants.fallbackRepeatDelay,
+                                     repeatDelay: LoopingConstants.fallbackRepeatDelay)
             }
             
             let duration = patternItems.reduce(0.0) { currentMax, item in
@@ -344,15 +349,25 @@ class HapticsManager {
             }
             
             guard duration > 0 else {
-                return LoopingConstants.fallbackRepeatDelay
+                return PatternTiming(duration: LoopingConstants.fallbackRepeatDelay,
+                                     repeatDelay: LoopingConstants.fallbackRepeatDelay)
             }
             
-            return max(duration * LoopingConstants.overlapFactor,
-                       LoopingConstants.minimumRepeatDelay)
+            return PatternTiming(duration: duration,
+                                 repeatDelay: max(duration * LoopingConstants.overlapFactor,
+                                                  LoopingConstants.minimumRepeatDelay))
         } catch {
             print("Failed to calculate repeat delay for \(url.lastPathComponent): \(error)")
-            return LoopingConstants.fallbackRepeatDelay
+            return PatternTiming(duration: LoopingConstants.fallbackRepeatDelay,
+                                 repeatDelay: LoopingConstants.fallbackRepeatDelay)
         }
+    }
+    
+    private func stopEngine(for locality: GCHapticsLocality?) {
+        guard let locality,
+              let engine = engineMap[locality] else { return }
+        engine.stop(completionHandler: nil)
+        engineMap.removeValue(forKey: locality)
     }
     
     private func engine(for locality: GCHapticsLocality) -> CHHapticEngine? {
