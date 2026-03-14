@@ -119,6 +119,7 @@
                     <connections>
                         <outlet property="controllerActionButton" destination="6Pi-6R-rnS" id="4Pf-9q-R6N"/>
                         <outlet property="controllerLabel" destination="FrN-Fg-Yhz" id="NR2-WT-Okn"/>
+                        <outlet property="mainHapticButton" destination="JKp-EF-7UF" id="7Pr-0w-m6I"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

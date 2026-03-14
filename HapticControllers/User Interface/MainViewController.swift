@@ -5,6 +5,12 @@ import CoreHaptics
 import GameController
 
 class MainViewController: UIViewController{
+    private struct PlaybackIndicatorAppearance {
+        let title: String
+        let dotColor: UIColor
+        let backgroundColor: UIColor
+        let textColor: UIColor
+    }
     
     let manager: HapticsManager
     
@@ -20,11 +26,13 @@ class MainViewController: UIViewController{
     
     private let discoveryOverlayView = UIView()
     private let discoveryDialogView = UIView()
-    private let discoverySpinner = UIActivityIndicatorView(style: .large)
     private let discoveryTitleLabel = UILabel()
     private let discoveryMessageLabel = UILabel()
     private let discoveryOpenSettingsButton = UIButton(type: .system)
     private let discoveryCancelButton = UIButton(type: .system)
+    private let playbackStatusView = UIView()
+    private let playbackStatusDotView = UIView()
+    private let playbackStatusLabel = UILabel()
     
     let buttonColor = UIColor(red: 0.937, green: 0.937, blue: 0.937, alpha: 1.0)
     let selectedButtonColor = UIColor(red: 0.77, green: 0.77, blue: 0.85, alpha: 1.0)
@@ -69,6 +77,7 @@ class MainViewController: UIViewController{
         super.viewDidLoad()
 
         setupDiscoveryOverlay()
+        setupPlaybackStatusIndicator()
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(appDidBecomeActive),
                                                name: UIApplication.didBecomeActiveNotification,
@@ -121,15 +130,19 @@ class MainViewController: UIViewController{
             self.controllerLabel.text = self.controller?.productCategory
             self.controllerLabel.textColor = .black
             setControllerActionButton(title: "Connected", isEnabled: false)
+            updatePlaybackStatusIndicator()
         } else if let discoveryStatusText {
             self.controllerLabel.text = discoveryStatusText
             self.controllerLabel.textColor = .lightGray
             setControllerActionButton(title: "Connect Controller", isEnabled: true)
+            playbackStatusView.isHidden = true
         } else {
-            self.controllerLabel.text = "Tap Connect Controller to connect DualSense"
+            self.controllerLabel.text = "Tap Connect Controller to connect a controller"
             self.controllerLabel.textColor = .lightGray
             setControllerActionButton(title: "Connect Controller", isEnabled: true)
+            playbackStatusView.isHidden = true
         }
+        updateMainHapticButtonState()
     }
     
     func highlightButton(atRow row: Int, column: Int) {
@@ -146,6 +159,7 @@ class MainViewController: UIViewController{
 
     @IBOutlet weak var controllerActionButton: UIButton!
     @IBOutlet weak var controllerLabel: UILabel!
+    @IBOutlet weak var mainHapticButton: UIButton!
     
   
     @IBAction func buttonBackgroundRegular(_ sender: UIButton) {
@@ -165,7 +179,110 @@ class MainViewController: UIViewController{
         }
 
         let index = sender.tag
-        manager.playHapticsFile(named: self.ahapFiles[index], locality: self.ahapLocalities[index])
+        let filename = self.ahapFiles[index]
+        let locality = self.ahapLocalities[index]
+        
+        if sender.tag == 5 {
+            switch manager.playbackState {
+            case .idle:
+                manager.startLoopingHapticsFile(named: filename, locality: locality)
+            case .playing:
+                manager.stopHaptics()
+            case .starting, .stopping, .stopped:
+                break
+            }
+            updateControllerLabel()
+            return
+        }
+        
+        manager.playHapticsFile(named: filename, locality: locality)
+    }
+
+    private func playbackIndicatorAppearance() -> PlaybackIndicatorAppearance? {
+        switch manager.playbackState {
+        case .idle:
+            return nil
+        case .starting:
+            return PlaybackIndicatorAppearance(title: "Starting",
+                                               dotColor: UIColor(red: 0.97, green: 0.65, blue: 0.24, alpha: 1.0),
+                                               backgroundColor: UIColor(red: 1.0, green: 0.95, blue: 0.86, alpha: 1.0),
+                                               textColor: UIColor(red: 0.61, green: 0.38, blue: 0.04, alpha: 1.0))
+        case .playing:
+            return PlaybackIndicatorAppearance(title: "On",
+                                               dotColor: UIColor(red: 0.21, green: 0.71, blue: 0.45, alpha: 1.0),
+                                               backgroundColor: UIColor(red: 0.88, green: 0.97, blue: 0.92, alpha: 1.0),
+                                               textColor: UIColor(red: 0.10, green: 0.46, blue: 0.27, alpha: 1.0))
+        case .stopping:
+            return PlaybackIndicatorAppearance(title: "Stopping",
+                                               dotColor: UIColor(red: 0.96, green: 0.53, blue: 0.19, alpha: 1.0),
+                                               backgroundColor: UIColor(red: 1.0, green: 0.93, blue: 0.88, alpha: 1.0),
+                                               textColor: UIColor(red: 0.63, green: 0.29, blue: 0.08, alpha: 1.0))
+        case .stopped:
+            return PlaybackIndicatorAppearance(title: "Stopped",
+                                               dotColor: UIColor(red: 0.86, green: 0.20, blue: 0.19, alpha: 1.0),
+                                               backgroundColor: UIColor(red: 0.99, green: 0.90, blue: 0.90, alpha: 1.0),
+                                               textColor: UIColor(red: 0.62, green: 0.12, blue: 0.13, alpha: 1.0))
+        }
+    }
+    
+    private func setupPlaybackStatusIndicator() {
+        playbackStatusView.translatesAutoresizingMaskIntoConstraints = false
+        playbackStatusView.layer.cornerRadius = 13
+        playbackStatusView.layer.cornerCurve = .continuous
+        playbackStatusView.isHidden = true
+        
+        playbackStatusDotView.translatesAutoresizingMaskIntoConstraints = false
+        playbackStatusDotView.layer.cornerRadius = 4
+        playbackStatusDotView.layer.cornerCurve = .continuous
+        
+        playbackStatusLabel.translatesAutoresizingMaskIntoConstraints = false
+        playbackStatusLabel.font = .systemFont(ofSize: 13, weight: .semibold)
+        playbackStatusLabel.textAlignment = .left
+        
+        let playbackStatusStackView = UIStackView(arrangedSubviews: [
+            playbackStatusDotView,
+            playbackStatusLabel
+        ])
+        playbackStatusStackView.translatesAutoresizingMaskIntoConstraints = false
+        playbackStatusStackView.axis = .horizontal
+        playbackStatusStackView.alignment = .center
+        playbackStatusStackView.spacing = 8
+        
+        playbackStatusView.addSubview(playbackStatusStackView)
+        view.addSubview(playbackStatusView)
+        
+        NSLayoutConstraint.activate([
+            playbackStatusView.leadingAnchor.constraint(equalTo: controllerLabel.leadingAnchor),
+            playbackStatusView.topAnchor.constraint(equalTo: controllerLabel.bottomAnchor, constant: 12),
+            
+            playbackStatusStackView.leadingAnchor.constraint(equalTo: playbackStatusView.leadingAnchor, constant: 12),
+            playbackStatusStackView.trailingAnchor.constraint(equalTo: playbackStatusView.trailingAnchor, constant: -12),
+            playbackStatusStackView.topAnchor.constraint(equalTo: playbackStatusView.topAnchor, constant: 8),
+            playbackStatusStackView.bottomAnchor.constraint(equalTo: playbackStatusView.bottomAnchor, constant: -8),
+            
+            playbackStatusDotView.widthAnchor.constraint(equalToConstant: 8),
+            playbackStatusDotView.heightAnchor.constraint(equalToConstant: 8)
+        ])
+    }
+    
+    private func updatePlaybackStatusIndicator() {
+        guard let appearance = playbackIndicatorAppearance() else {
+            playbackStatusView.isHidden = true
+            return
+        }
+        playbackStatusView.isHidden = false
+        playbackStatusView.backgroundColor = appearance.backgroundColor
+        playbackStatusDotView.backgroundColor = appearance.dotColor
+        playbackStatusLabel.textColor = appearance.textColor
+        playbackStatusLabel.text = appearance.title
+    }
+    
+    private func updateMainHapticButtonState() {
+        let isTransitioning = manager.playbackState == .starting ||
+            manager.playbackState == .stopping ||
+            manager.playbackState == .stopped
+        mainHapticButton?.isEnabled = !isTransitioning
+        mainHapticButton?.alpha = isTransitioning ? 0.75 : 1.0
     }
     
     private func setupDiscoveryOverlay() {
@@ -179,13 +296,9 @@ class MainViewController: UIViewController{
         discoveryDialogView.layer.cornerRadius = 20
         discoveryDialogView.layer.cornerCurve = .continuous
         
-        discoverySpinner.translatesAutoresizingMaskIntoConstraints = false
-        discoverySpinner.stopAnimating()
-        discoverySpinner.isHidden = true
-        
         discoveryTitleLabel.translatesAutoresizingMaskIntoConstraints = false
         discoveryTitleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
-        discoveryTitleLabel.text = "Connect DualSense"
+        discoveryTitleLabel.text = "Connect Controller"
         discoveryTitleLabel.textAlignment = .center
         discoveryTitleLabel.numberOfLines = 0
         
@@ -207,7 +320,6 @@ class MainViewController: UIViewController{
         discoveryCancelButton.addTarget(self, action: #selector(cancelControllerDiscovery), for: .touchUpInside)
         
         let contentStackView = UIStackView(arrangedSubviews: [
-            discoverySpinner,
             discoveryTitleLabel,
             discoveryMessageLabel
         ])
@@ -278,10 +390,7 @@ class MainViewController: UIViewController{
             horizontalSeparator.heightAnchor.constraint(equalToConstant: 1),
             verticalSeparator.widthAnchor.constraint(equalToConstant: 1),
             actionsStackView.heightAnchor.constraint(equalToConstant: 52),
-            discoveryCancelButton.widthAnchor.constraint(equalTo: discoveryOpenSettingsButton.widthAnchor),
-            
-            discoverySpinner.widthAnchor.constraint(equalToConstant: 36),
-            discoverySpinner.heightAnchor.constraint(equalToConstant: 36)
+            discoveryCancelButton.widthAnchor.constraint(equalTo: discoveryOpenSettingsButton.widthAnchor)
         ])
     }
     
@@ -332,7 +441,7 @@ class MainViewController: UIViewController{
     @objc private func appDidBecomeActive() {
         refreshConnectedController(reason: "appDidBecomeActive")
         if controller == nil, !discoveryOverlayView.isHidden {
-            discoveryStatusText = "Still not connected. Pair DualSense in Settings > Bluetooth and try again."
+            discoveryStatusText = "Still not connected. Pair your controller in Settings > Bluetooth and try again."
             updateControllerLabel()
         }
     }
@@ -349,7 +458,7 @@ class MainViewController: UIViewController{
     }
     
     private func presentPairingInstructions() {
-        discoveryStatusText = "Open Settings, pair DualSense, then return here."
+        discoveryStatusText = "Open Settings, pair your controller, then return here."
         logDebug("pairing instructions opened controllers=\(GCController.controllers().count)")
         showDiscoveryOverlay()
         updateControllerLabel()
@@ -372,6 +481,10 @@ extension MainViewController: HapticsManagerDelegate {
         self.controller = nil
         discoveryStatusText = "Controller disconnected"
         logDebug("didDisconnect controllers=\(GCController.controllers().count)")
+        updateControllerLabel()
+    }
+    
+    func didUpdatePlaybackState(_ state: HapticsPlaybackState) {
         updateControllerLabel()
     }
 }

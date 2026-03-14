@@ -8,6 +8,11 @@
 # Xcode - User files
 xcuserdata/
 
+# Local build/cache artifacts
+.deriveddata/
+.clang-cache/
+.swift-cache/
+
 **/*.xcodeproj/project.xcworkspace/*
 !**/*.xcodeproj/project.xcworkspace/xcshareddata
 
