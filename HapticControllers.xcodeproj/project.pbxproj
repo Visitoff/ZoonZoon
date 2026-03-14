@@ -8,7 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		5547C23C27209F7600F4ABA6 /* GameController.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5547C23B27209F7600F4ABA6 /* GameController.framework */; };
-		55B15CE5273CA575002889A6 /* Group 3nigg.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CE4273CA575002889A6 /* Group 3nigg.png */; };
+		55B15CE5273CA575002889A6 /* MainButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CE4273CA575002889A6 /* MainButton.png */; };
+		7A6B5C4D3E2F1A0B00000001 /* AHAPCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A6B5C4D3E2F1A0B00000002 /* AHAPCatalog.swift */; };
 		C40B5724248A061D00BE4EE7 /* AHAP in Resources */ = {isa = PBXBuildFile; fileRef = C40B5723248A061D00BE4EE7 /* AHAP */; };
 		C40B5726248A067400BE4EE7 /* UIViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40B5725248A067400BE4EE7 /* UIViewExtensions.swift */; };
 		C41B6AF6248A19C1000A8C44 /* HapticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41B6AF5248A19C1000A8C44 /* HapticsManager.swift */; };
@@ -23,28 +24,9 @@
 /* Begin PBXFileReference section */
 		030ADBEE118EED778A542409 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		5547C23B27209F7600F4ABA6 /* GameController.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameController.framework; path = System/Library/Frameworks/GameController.framework; sourceTree = SDKROOT; };
-		55B15CE4273CA575002889A6 /* Group 3nigg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Group 3nigg.png"; path = "images/Group 3nigg.png"; sourceTree = SOURCE_ROOT; };
-		55B15CEB273DC245002889A6 /* Gilroy-Thin.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Thin.ttf"; path = "../../font/Gilroy-Thin.ttf"; sourceTree = "<group>"; };
-		55B15CEC273DC245002889A6 /* Gilroy-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Medium.ttf"; path = "../../font/Gilroy-Medium.ttf"; sourceTree = "<group>"; };
-		55B15CED273DC245002889A6 /* Gilroy-LightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-LightItalic.ttf"; path = "../../font/Gilroy-LightItalic.ttf"; sourceTree = "<group>"; };
-		55B15CEE273DC245002889A6 /* Gilroy-BoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-BoldItalic.ttf"; path = "../../font/Gilroy-BoldItalic.ttf"; sourceTree = "<group>"; };
-		55B15CEF273DC245002889A6 /* Gilroy-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Regular.ttf"; path = "../../font/Gilroy-Regular.ttf"; sourceTree = "<group>"; };
-		55B15CF0273DC245002889A6 /* Gilroy-Extrabold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Extrabold.ttf"; path = "../../font/Gilroy-Extrabold.ttf"; sourceTree = "<group>"; };
-		55B15CF1273DC245002889A6 /* Gilroy-HeavyItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-HeavyItalic.ttf"; path = "../../font/Gilroy-HeavyItalic.ttf"; sourceTree = "<group>"; };
-		55B15CF2273DC245002889A6 /* Gilroy-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Light.ttf"; path = "../../font/Gilroy-Light.ttf"; sourceTree = "<group>"; };
-		55B15CF3273DC245002889A6 /* Gilroy-RegularItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-RegularItalic.ttf"; path = "../../font/Gilroy-RegularItalic.ttf"; sourceTree = "<group>"; };
-		55B15CF4273DC245002889A6 /* Gilroy-ThinItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-ThinItalic.ttf"; path = "../../font/Gilroy-ThinItalic.ttf"; sourceTree = "<group>"; };
-		55B15CF5273DC245002889A6 /* Gilroy-BlackItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-BlackItalic.ttf"; path = "../../font/Gilroy-BlackItalic.ttf"; sourceTree = "<group>"; };
-		55B15CF6273DC245002889A6 /* Gilroy-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Black.ttf"; path = "../../font/Gilroy-Black.ttf"; sourceTree = "<group>"; };
-		55B15CF7273DC245002889A6 /* Gilroy-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Semibold.ttf"; path = "../../font/Gilroy-Semibold.ttf"; sourceTree = "<group>"; };
-		55B15CF8273DC246002889A6 /* Gilroy-ExtraboldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-ExtraboldItalic.ttf"; path = "../../font/Gilroy-ExtraboldItalic.ttf"; sourceTree = "<group>"; };
-		55B15CF9273DC246002889A6 /* Gilroy-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-MediumItalic.ttf"; path = "../../font/Gilroy-MediumItalic.ttf"; sourceTree = "<group>"; };
-		55B15CFA273DC246002889A6 /* Gilroy-UltraLight.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-UltraLight.ttf"; path = "../../font/Gilroy-UltraLight.ttf"; sourceTree = "<group>"; };
-		55B15CFB273DC246002889A6 /* Gilroy-Heavy.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Heavy.ttf"; path = "../../font/Gilroy-Heavy.ttf"; sourceTree = "<group>"; };
-		55B15CFC273DC246002889A6 /* Gilroy-UltraLightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-UltraLightItalic.ttf"; path = "../../font/Gilroy-UltraLightItalic.ttf"; sourceTree = "<group>"; };
-		55B15CFD273DC246002889A6 /* Gilroy-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Bold.ttf"; path = "../../font/Gilroy-Bold.ttf"; sourceTree = "<group>"; };
-		55B15CFE273DC246002889A6 /* Gilroy-SemiboldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-SemiboldItalic.ttf"; path = "../../font/Gilroy-SemiboldItalic.ttf"; sourceTree = "<group>"; };
+		55B15CE4273CA575002889A6 /* MainButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MainButton.png; sourceTree = "<group>"; };
 		7044C93EC0DF26B98254470C /* LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
+		7A6B5C4D3E2F1A0B00000002 /* AHAPCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AHAPCatalog.swift; sourceTree = "<group>"; };
 		AB448547DEF5921FD9D9B092 /* SampleCode.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = SampleCode.xcconfig; path = Configuration/SampleCode.xcconfig; sourceTree = "<group>"; };
 		C40B5723248A061D00BE4EE7 /* AHAP */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AHAP; sourceTree = "<group>"; };
 		C40B5725248A067400BE4EE7 /* UIViewExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewExtensions.swift; sourceTree = "<group>"; };
@@ -79,39 +61,12 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		55B15CE3273CA531002889A6 /* images */ = {
+		55B15CE3273CA531002889A6 /* Images */ = {
 			isa = PBXGroup;
 			children = (
-				55B15CE4273CA575002889A6 /* Group 3nigg.png */,
+				55B15CE4273CA575002889A6 /* MainButton.png */,
 			);
-			path = images;
-			sourceTree = "<group>";
-		};
-		55B15CEA273DC237002889A6 /* fonts */ = {
-			isa = PBXGroup;
-			children = (
-				55B15CF6273DC245002889A6 /* Gilroy-Black.ttf */,
-				55B15CF5273DC245002889A6 /* Gilroy-BlackItalic.ttf */,
-				55B15CFD273DC246002889A6 /* Gilroy-Bold.ttf */,
-				55B15CEE273DC245002889A6 /* Gilroy-BoldItalic.ttf */,
-				55B15CF0273DC245002889A6 /* Gilroy-Extrabold.ttf */,
-				55B15CF8273DC246002889A6 /* Gilroy-ExtraboldItalic.ttf */,
-				55B15CFB273DC246002889A6 /* Gilroy-Heavy.ttf */,
-				55B15CF1273DC245002889A6 /* Gilroy-HeavyItalic.ttf */,
-				55B15CF2273DC245002889A6 /* Gilroy-Light.ttf */,
-				55B15CED273DC245002889A6 /* Gilroy-LightItalic.ttf */,
-				55B15CEC273DC245002889A6 /* Gilroy-Medium.ttf */,
-				55B15CF9273DC246002889A6 /* Gilroy-MediumItalic.ttf */,
-				55B15CEF273DC245002889A6 /* Gilroy-Regular.ttf */,
-				55B15CF3273DC245002889A6 /* Gilroy-RegularItalic.ttf */,
-				55B15CF7273DC245002889A6 /* Gilroy-Semibold.ttf */,
-				55B15CFE273DC246002889A6 /* Gilroy-SemiboldItalic.ttf */,
-				55B15CEB273DC245002889A6 /* Gilroy-Thin.ttf */,
-				55B15CF4273DC245002889A6 /* Gilroy-ThinItalic.ttf */,
-				55B15CFA273DC246002889A6 /* Gilroy-UltraLight.ttf */,
-				55B15CFC273DC246002889A6 /* Gilroy-UltraLightItalic.ttf */,
-			);
-			path = fonts;
+			path = Images;
 			sourceTree = "<group>";
 		};
 		62676F385D9D2551D7FFA614 /* LICENSE */ = {
@@ -138,15 +93,16 @@
 			path = Extensions;
 			sourceTree = "<group>";
 		};
-		C41B6AF9248A3093000A8C44 /* User Interface */ = {
+		C41B6AF9248A3093000A8C44 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				C488614C248A04BC0066977B /* MainViewController.swift */,
+				C40B5723248A061D00BE4EE7 /* AHAP */,
 				C488614E248A04BC0066977B /* Main.storyboard */,
 				C4992594248AF0FB00907E52 /* LaunchScreen.storyboard */,
 				C4886151248A04BD0066977B /* Assets.xcassets */,
+				55B15CE3273CA531002889A6 /* Images */,
 			);
-			path = "User Interface";
+			path = Resources;
 			sourceTree = "<group>";
 		};
 		C41B6AFA248A30AA000A8C44 /* App */ = {
@@ -154,15 +110,55 @@
 			children = (
 				C4886148248A04BC0066977B /* AppDelegate.swift */,
 				C488614A248A04BC0066977B /* SceneDelegate.swift */,
+				C4886156248A04BD0066977B /* Info.plist */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		7A6B5C4D3E2F1A0B00000003 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				7A6B5C4D3E2F1A0B00000004 /* Haptics */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		7A6B5C4D3E2F1A0B00000004 /* Haptics */ = {
+			isa = PBXGroup;
+			children = (
+				7A6B5C4D3E2F1A0B00000002 /* AHAPCatalog.swift */,
+				C41B6AF5248A19C1000A8C44 /* HapticsManager.swift */,
+			);
+			path = Haptics;
+			sourceTree = "<group>";
+		};
+		7A6B5C4D3E2F1A0B00000005 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				7A6B5C4D3E2F1A0B00000006 /* Main */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		7A6B5C4D3E2F1A0B00000006 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				C488614C248A04BC0066977B /* MainViewController.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		7A6B5C4D3E2F1A0B00000007 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				C41B6AF8248A307F000A8C44 /* Extensions */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		C488613C248A04BC0066977B = {
 			isa = PBXGroup;
 			children = (
-				55B15CEA273DC237002889A6 /* fonts */,
-				55B15CE3273CA531002889A6 /* images */,
 				030ADBEE118EED778A542409 /* README.md */,
 				C4886147248A04BC0066977B /* HapticControllers */,
 				C4886146248A04BC0066977B /* Products */,
@@ -183,12 +179,11 @@
 		C4886147248A04BC0066977B /* HapticControllers */ = {
 			isa = PBXGroup;
 			children = (
-				C41B6AF5248A19C1000A8C44 /* HapticsManager.swift */,
-				C40B5723248A061D00BE4EE7 /* AHAP */,
 				C41B6AFA248A30AA000A8C44 /* App */,
-				C41B6AF9248A3093000A8C44 /* User Interface */,
-				C41B6AF8248A307F000A8C44 /* Extensions */,
-				C4886156248A04BD0066977B /* Info.plist */,
+				7A6B5C4D3E2F1A0B00000003 /* Core */,
+				7A6B5C4D3E2F1A0B00000005 /* Features */,
+				7A6B5C4D3E2F1A0B00000007 /* Shared */,
+				C41B6AF9248A3093000A8C44 /* Resources */,
 			);
 			path = HapticControllers;
 			sourceTree = "<group>";
@@ -254,7 +249,7 @@
 				C4886152248A04BD0066977B /* Assets.xcassets in Resources */,
 				C4992596248AF0FB00907E52 /* LaunchScreen.storyboard in Resources */,
 				C40B5724248A061D00BE4EE7 /* AHAP in Resources */,
-				55B15CE5273CA575002889A6 /* Group 3nigg.png in Resources */,
+				55B15CE5273CA575002889A6 /* MainButton.png in Resources */,
 				C4886150248A04BC0066977B /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -266,6 +261,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7A6B5C4D3E2F1A0B00000001 /* AHAPCatalog.swift in Sources */,
 				C41B6AF6248A19C1000A8C44 /* HapticsManager.swift in Sources */,
 				C488614D248A04BC0066977B /* MainViewController.swift in Sources */,
 				C4886149248A04BC0066977B /* AppDelegate.swift in Sources */,
@@ -422,7 +418,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6P3KG5T46K;
-				INFOPLIST_FILE = HapticControllers/Info.plist;
+				INFOPLIST_FILE = HapticControllers/App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -444,7 +440,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6P3KG5T46K;
-				INFOPLIST_FILE = HapticControllers/Info.plist;
+				INFOPLIST_FILE = HapticControllers/App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

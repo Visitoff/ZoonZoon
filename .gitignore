@@ -5,6 +5,9 @@
 # Finder
 .DS_Store
 
+# JetBrains IDE
+.idea/
+
 # Xcode - User files
 xcuserdata/
 
