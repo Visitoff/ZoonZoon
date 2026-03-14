@@ -191,34 +191,67 @@ class MainViewController: UIViewController{
         
         discoveryMessageLabel.translatesAutoresizingMaskIntoConstraints = false
         discoveryMessageLabel.font = .systemFont(ofSize: 15, weight: .regular)
-        discoveryMessageLabel.text = "1. Put the controller into pairing mode.\n2. Tap Open Settings.\n3. Open Bluetooth and select \"DualSense Wireless Controller\".\n4. Return to the app."
-        discoveryMessageLabel.textAlignment = .center
+        discoveryMessageLabel.text = "1. Put the controller into pairing mode.\n\n2. Tap Open Settings.\n\n3. Open Bluetooth and connect your controller.\n\n4. Return to the app."
+        discoveryMessageLabel.textAlignment = .left
         discoveryMessageLabel.numberOfLines = 0
         discoveryMessageLabel.textColor = .secondaryLabel
         
         discoveryOpenSettingsButton.translatesAutoresizingMaskIntoConstraints = false
         discoveryOpenSettingsButton.setTitle("Open Settings", for: .normal)
+        discoveryOpenSettingsButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
         discoveryOpenSettingsButton.addTarget(self, action: #selector(openSettingsForPairing), for: .touchUpInside)
         
         discoveryCancelButton.translatesAutoresizingMaskIntoConstraints = false
         discoveryCancelButton.setTitle("Cancel", for: .normal)
+        discoveryCancelButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
         discoveryCancelButton.addTarget(self, action: #selector(cancelControllerDiscovery), for: .touchUpInside)
         
-        let stackView = UIStackView(arrangedSubviews: [
+        let contentStackView = UIStackView(arrangedSubviews: [
             discoverySpinner,
             discoveryTitleLabel,
-            discoveryMessageLabel,
+            discoveryMessageLabel
+        ])
+        contentStackView.translatesAutoresizingMaskIntoConstraints = false
+        contentStackView.axis = .vertical
+        contentStackView.alignment = .fill
+        contentStackView.spacing = 16
+        
+        let contentContainerView = UIView()
+        contentContainerView.translatesAutoresizingMaskIntoConstraints = false
+        contentContainerView.addSubview(contentStackView)
+        
+        let horizontalSeparator = UIView()
+        horizontalSeparator.translatesAutoresizingMaskIntoConstraints = false
+        horizontalSeparator.backgroundColor = .separator
+        
+        let verticalSeparator = UIView()
+        verticalSeparator.translatesAutoresizingMaskIntoConstraints = false
+        verticalSeparator.backgroundColor = .separator
+        
+        let actionsStackView = UIStackView(arrangedSubviews: [
             discoveryOpenSettingsButton,
+            verticalSeparator,
             discoveryCancelButton
         ])
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .vertical
-        stackView.alignment = .center
-        stackView.spacing = 16
+        actionsStackView.translatesAutoresizingMaskIntoConstraints = false
+        actionsStackView.axis = .horizontal
+        actionsStackView.alignment = .fill
+        actionsStackView.distribution = .fill
+        actionsStackView.spacing = 0
+        
+        let rootStackView = UIStackView(arrangedSubviews: [
+            contentContainerView,
+            horizontalSeparator,
+            actionsStackView
+        ])
+        rootStackView.translatesAutoresizingMaskIntoConstraints = false
+        rootStackView.axis = .vertical
+        rootStackView.alignment = .fill
+        rootStackView.spacing = 0
         
         view.addSubview(discoveryOverlayView)
         discoveryOverlayView.addSubview(discoveryDialogView)
-        discoveryDialogView.addSubview(stackView)
+        discoveryDialogView.addSubview(rootStackView)
         
         NSLayoutConstraint.activate([
             discoveryOverlayView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -232,10 +265,20 @@ class MainViewController: UIViewController{
             discoveryDialogView.trailingAnchor.constraint(lessThanOrEqualTo: discoveryOverlayView.trailingAnchor, constant: -24),
             discoveryDialogView.widthAnchor.constraint(equalToConstant: 300),
             
-            stackView.leadingAnchor.constraint(equalTo: discoveryDialogView.leadingAnchor, constant: 24),
-            stackView.trailingAnchor.constraint(equalTo: discoveryDialogView.trailingAnchor, constant: -24),
-            stackView.topAnchor.constraint(equalTo: discoveryDialogView.topAnchor, constant: 24),
-            stackView.bottomAnchor.constraint(equalTo: discoveryDialogView.bottomAnchor, constant: -24),
+            rootStackView.leadingAnchor.constraint(equalTo: discoveryDialogView.leadingAnchor),
+            rootStackView.trailingAnchor.constraint(equalTo: discoveryDialogView.trailingAnchor),
+            rootStackView.topAnchor.constraint(equalTo: discoveryDialogView.topAnchor),
+            rootStackView.bottomAnchor.constraint(equalTo: discoveryDialogView.bottomAnchor),
+            
+            contentStackView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor, constant: 24),
+            contentStackView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor, constant: -24),
+            contentStackView.topAnchor.constraint(equalTo: contentContainerView.topAnchor, constant: 24),
+            contentStackView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor, constant: -24),
+            
+            horizontalSeparator.heightAnchor.constraint(equalToConstant: 1),
+            verticalSeparator.widthAnchor.constraint(equalToConstant: 1),
+            actionsStackView.heightAnchor.constraint(equalToConstant: 52),
+            discoveryCancelButton.widthAnchor.constraint(equalTo: discoveryOpenSettingsButton.widthAnchor),
             
             discoverySpinner.widthAnchor.constraint(equalToConstant: 36),
             discoverySpinner.heightAnchor.constraint(equalToConstant: 36)
