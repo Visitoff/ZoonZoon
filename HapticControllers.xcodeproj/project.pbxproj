@@ -1,0 +1,497 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		5547C23C27209F7600F4ABA6 /* GameController.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5547C23B27209F7600F4ABA6 /* GameController.framework */; };
+		55B15CE5273CA575002889A6 /* Group 3nigg.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CE4273CA575002889A6 /* Group 3nigg.png */; };
+		55B15CE7273CA744002889A6 /* Group 4nugga.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CE6273CA744002889A6 /* Group 4nugga.png */; };
+		55B15CE9273CA885002889A6 /* Group 5.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CE8273CA885002889A6 /* Group 5.png */; };
+		55B15D00273EFBD6002889A6 /* Group 3zoon.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CFF273EFBD4002889A6 /* Group 3zoon.png */; };
+		C40B5724248A061D00BE4EE7 /* AHAP in Resources */ = {isa = PBXBuildFile; fileRef = C40B5723248A061D00BE4EE7 /* AHAP */; };
+		C40B5726248A067400BE4EE7 /* UIViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40B5725248A067400BE4EE7 /* UIViewExtensions.swift */; };
+		C41B6AF6248A19C1000A8C44 /* HapticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41B6AF5248A19C1000A8C44 /* HapticsManager.swift */; };
+		C4886149248A04BC0066977B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4886148248A04BC0066977B /* AppDelegate.swift */; };
+		C488614B248A04BC0066977B /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C488614A248A04BC0066977B /* SceneDelegate.swift */; };
+		C488614D248A04BC0066977B /* MainViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C488614C248A04BC0066977B /* MainViewController.swift */; };
+		C4886150248A04BC0066977B /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C488614E248A04BC0066977B /* Main.storyboard */; };
+		C4886152248A04BD0066977B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C4886151248A04BD0066977B /* Assets.xcassets */; };
+		C4992596248AF0FB00907E52 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C4992594248AF0FB00907E52 /* LaunchScreen.storyboard */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		030ADBEE118EED778A542409 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		5547C23B27209F7600F4ABA6 /* GameController.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameController.framework; path = System/Library/Frameworks/GameController.framework; sourceTree = SDKROOT; };
+		55B15CE4273CA575002889A6 /* Group 3nigg.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Group 3nigg.png"; path = "images/Group 3nigg.png"; sourceTree = SOURCE_ROOT; };
+		55B15CE6273CA744002889A6 /* Group 4nugga.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Group 4nugga.png"; path = "../../Group 4nugga.png"; sourceTree = "<group>"; };
+		55B15CE8273CA885002889A6 /* Group 5.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Group 5.png"; path = "../../Group 5.png"; sourceTree = "<group>"; };
+		55B15CEB273DC245002889A6 /* Gilroy-Thin.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Thin.ttf"; path = "../../font/Gilroy-Thin.ttf"; sourceTree = "<group>"; };
+		55B15CEC273DC245002889A6 /* Gilroy-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Medium.ttf"; path = "../../font/Gilroy-Medium.ttf"; sourceTree = "<group>"; };
+		55B15CED273DC245002889A6 /* Gilroy-LightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-LightItalic.ttf"; path = "../../font/Gilroy-LightItalic.ttf"; sourceTree = "<group>"; };
+		55B15CEE273DC245002889A6 /* Gilroy-BoldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-BoldItalic.ttf"; path = "../../font/Gilroy-BoldItalic.ttf"; sourceTree = "<group>"; };
+		55B15CEF273DC245002889A6 /* Gilroy-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Regular.ttf"; path = "../../font/Gilroy-Regular.ttf"; sourceTree = "<group>"; };
+		55B15CF0273DC245002889A6 /* Gilroy-Extrabold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Extrabold.ttf"; path = "../../font/Gilroy-Extrabold.ttf"; sourceTree = "<group>"; };
+		55B15CF1273DC245002889A6 /* Gilroy-HeavyItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-HeavyItalic.ttf"; path = "../../font/Gilroy-HeavyItalic.ttf"; sourceTree = "<group>"; };
+		55B15CF2273DC245002889A6 /* Gilroy-Light.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Light.ttf"; path = "../../font/Gilroy-Light.ttf"; sourceTree = "<group>"; };
+		55B15CF3273DC245002889A6 /* Gilroy-RegularItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-RegularItalic.ttf"; path = "../../font/Gilroy-RegularItalic.ttf"; sourceTree = "<group>"; };
+		55B15CF4273DC245002889A6 /* Gilroy-ThinItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-ThinItalic.ttf"; path = "../../font/Gilroy-ThinItalic.ttf"; sourceTree = "<group>"; };
+		55B15CF5273DC245002889A6 /* Gilroy-BlackItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-BlackItalic.ttf"; path = "../../font/Gilroy-BlackItalic.ttf"; sourceTree = "<group>"; };
+		55B15CF6273DC245002889A6 /* Gilroy-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Black.ttf"; path = "../../font/Gilroy-Black.ttf"; sourceTree = "<group>"; };
+		55B15CF7273DC245002889A6 /* Gilroy-Semibold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Semibold.ttf"; path = "../../font/Gilroy-Semibold.ttf"; sourceTree = "<group>"; };
+		55B15CF8273DC246002889A6 /* Gilroy-ExtraboldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-ExtraboldItalic.ttf"; path = "../../font/Gilroy-ExtraboldItalic.ttf"; sourceTree = "<group>"; };
+		55B15CF9273DC246002889A6 /* Gilroy-MediumItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-MediumItalic.ttf"; path = "../../font/Gilroy-MediumItalic.ttf"; sourceTree = "<group>"; };
+		55B15CFA273DC246002889A6 /* Gilroy-UltraLight.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-UltraLight.ttf"; path = "../../font/Gilroy-UltraLight.ttf"; sourceTree = "<group>"; };
+		55B15CFB273DC246002889A6 /* Gilroy-Heavy.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Heavy.ttf"; path = "../../font/Gilroy-Heavy.ttf"; sourceTree = "<group>"; };
+		55B15CFC273DC246002889A6 /* Gilroy-UltraLightItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-UltraLightItalic.ttf"; path = "../../font/Gilroy-UltraLightItalic.ttf"; sourceTree = "<group>"; };
+		55B15CFD273DC246002889A6 /* Gilroy-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-Bold.ttf"; path = "../../font/Gilroy-Bold.ttf"; sourceTree = "<group>"; };
+		55B15CFE273DC246002889A6 /* Gilroy-SemiboldItalic.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Gilroy-SemiboldItalic.ttf"; path = "../../font/Gilroy-SemiboldItalic.ttf"; sourceTree = "<group>"; };
+		55B15CFF273EFBD4002889A6 /* Group 3zoon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = "Group 3zoon.png"; path = "../../Group 3zoon.png"; sourceTree = "<group>"; };
+		7044C93EC0DF26B98254470C /* LICENSE.txt */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
+		AB448547DEF5921FD9D9B092 /* SampleCode.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = SampleCode.xcconfig; path = Configuration/SampleCode.xcconfig; sourceTree = "<group>"; };
+		C40B5723248A061D00BE4EE7 /* AHAP */ = {isa = PBXFileReference; lastKnownFileType = folder; path = AHAP; sourceTree = "<group>"; };
+		C40B5725248A067400BE4EE7 /* UIViewExtensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewExtensions.swift; sourceTree = "<group>"; };
+		C41B6AF5248A19C1000A8C44 /* HapticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticsManager.swift; sourceTree = "<group>"; };
+		C4886145248A04BC0066977B /* HapticControllers.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HapticControllers.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C4886148248A04BC0066977B /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		C488614A248A04BC0066977B /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		C488614C248A04BC0066977B /* MainViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewController.swift; sourceTree = "<group>"; };
+		C488614F248A04BC0066977B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		C4886151248A04BD0066977B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C4886156248A04BD0066977B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C4992595248AF0FB00907E52 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C4886142248A04BC0066977B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5547C23C27209F7600F4ABA6 /* GameController.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5547C23A27209F7600F4ABA6 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5547C23B27209F7600F4ABA6 /* GameController.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		55B15CE3273CA531002889A6 /* images */ = {
+			isa = PBXGroup;
+			children = (
+				55B15CFF273EFBD4002889A6 /* Group 3zoon.png */,
+				55B15CE6273CA744002889A6 /* Group 4nugga.png */,
+				55B15CE4273CA575002889A6 /* Group 3nigg.png */,
+				55B15CE8273CA885002889A6 /* Group 5.png */,
+			);
+			path = images;
+			sourceTree = "<group>";
+		};
+		55B15CEA273DC237002889A6 /* fonts */ = {
+			isa = PBXGroup;
+			children = (
+				55B15CF6273DC245002889A6 /* Gilroy-Black.ttf */,
+				55B15CF5273DC245002889A6 /* Gilroy-BlackItalic.ttf */,
+				55B15CFD273DC246002889A6 /* Gilroy-Bold.ttf */,
+				55B15CEE273DC245002889A6 /* Gilroy-BoldItalic.ttf */,
+				55B15CF0273DC245002889A6 /* Gilroy-Extrabold.ttf */,
+				55B15CF8273DC246002889A6 /* Gilroy-ExtraboldItalic.ttf */,
+				55B15CFB273DC246002889A6 /* Gilroy-Heavy.ttf */,
+				55B15CF1273DC245002889A6 /* Gilroy-HeavyItalic.ttf */,
+				55B15CF2273DC245002889A6 /* Gilroy-Light.ttf */,
+				55B15CED273DC245002889A6 /* Gilroy-LightItalic.ttf */,
+				55B15CEC273DC245002889A6 /* Gilroy-Medium.ttf */,
+				55B15CF9273DC246002889A6 /* Gilroy-MediumItalic.ttf */,
+				55B15CEF273DC245002889A6 /* Gilroy-Regular.ttf */,
+				55B15CF3273DC245002889A6 /* Gilroy-RegularItalic.ttf */,
+				55B15CF7273DC245002889A6 /* Gilroy-Semibold.ttf */,
+				55B15CFE273DC246002889A6 /* Gilroy-SemiboldItalic.ttf */,
+				55B15CEB273DC245002889A6 /* Gilroy-Thin.ttf */,
+				55B15CF4273DC245002889A6 /* Gilroy-ThinItalic.ttf */,
+				55B15CFA273DC246002889A6 /* Gilroy-UltraLight.ttf */,
+				55B15CFC273DC246002889A6 /* Gilroy-UltraLightItalic.ttf */,
+			);
+			path = fonts;
+			sourceTree = "<group>";
+		};
+		62676F385D9D2551D7FFA614 /* LICENSE */ = {
+			isa = PBXGroup;
+			children = (
+				7044C93EC0DF26B98254470C /* LICENSE.txt */,
+			);
+			path = LICENSE;
+			sourceTree = "<group>";
+		};
+		C383CB6E4B752B91A516A1FE /* Configuration */ = {
+			isa = PBXGroup;
+			children = (
+				AB448547DEF5921FD9D9B092 /* SampleCode.xcconfig */,
+			);
+			name = Configuration;
+			sourceTree = "<group>";
+		};
+		C41B6AF8248A307F000A8C44 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				C40B5725248A067400BE4EE7 /* UIViewExtensions.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		C41B6AF9248A3093000A8C44 /* User Interface */ = {
+			isa = PBXGroup;
+			children = (
+				C488614C248A04BC0066977B /* MainViewController.swift */,
+				C488614E248A04BC0066977B /* Main.storyboard */,
+				C4992594248AF0FB00907E52 /* LaunchScreen.storyboard */,
+				C4886151248A04BD0066977B /* Assets.xcassets */,
+			);
+			path = "User Interface";
+			sourceTree = "<group>";
+		};
+		C41B6AFA248A30AA000A8C44 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				C4886148248A04BC0066977B /* AppDelegate.swift */,
+				C488614A248A04BC0066977B /* SceneDelegate.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C488613C248A04BC0066977B = {
+			isa = PBXGroup;
+			children = (
+				55B15CEA273DC237002889A6 /* fonts */,
+				55B15CE3273CA531002889A6 /* images */,
+				030ADBEE118EED778A542409 /* README.md */,
+				C4886147248A04BC0066977B /* HapticControllers */,
+				C4886146248A04BC0066977B /* Products */,
+				C383CB6E4B752B91A516A1FE /* Configuration */,
+				62676F385D9D2551D7FFA614 /* LICENSE */,
+				5547C23A27209F7600F4ABA6 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		C4886146248A04BC0066977B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C4886145248A04BC0066977B /* HapticControllers.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		C4886147248A04BC0066977B /* HapticControllers */ = {
+			isa = PBXGroup;
+			children = (
+				C41B6AF5248A19C1000A8C44 /* HapticsManager.swift */,
+				C40B5723248A061D00BE4EE7 /* AHAP */,
+				C41B6AFA248A30AA000A8C44 /* App */,
+				C41B6AF9248A3093000A8C44 /* User Interface */,
+				C41B6AF8248A307F000A8C44 /* Extensions */,
+				C4886156248A04BD0066977B /* Info.plist */,
+			);
+			path = HapticControllers;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C4886144248A04BC0066977B /* HapticControllers */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C4886159248A04BD0066977B /* Build configuration list for PBXNativeTarget "HapticControllers" */;
+			buildPhases = (
+				C4886141248A04BC0066977B /* Sources */,
+				C4886142248A04BC0066977B /* Frameworks */,
+				C4886143248A04BC0066977B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HapticControllers;
+			productName = HapticControllers;
+			productReference = C4886145248A04BC0066977B /* HapticControllers.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C488613D248A04BC0066977B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1200;
+				LastUpgradeCheck = 1200;
+				ORGANIZATIONNAME = Apple;
+				TargetAttributes = {
+					C4886144248A04BC0066977B = {
+						CreatedOnToolsVersion = 12.0;
+					};
+				};
+			};
+			buildConfigurationList = C4886140248A04BC0066977B /* Build configuration list for PBXProject "HapticControllers" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = C488613C248A04BC0066977B;
+			productRefGroup = C4886146248A04BC0066977B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C4886144248A04BC0066977B /* HapticControllers */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C4886143248A04BC0066977B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				55B15D00273EFBD6002889A6 /* Group 3zoon.png in Resources */,
+				C4886152248A04BD0066977B /* Assets.xcassets in Resources */,
+				C4992596248AF0FB00907E52 /* LaunchScreen.storyboard in Resources */,
+				55B15CE7273CA744002889A6 /* Group 4nugga.png in Resources */,
+				C40B5724248A061D00BE4EE7 /* AHAP in Resources */,
+				55B15CE5273CA575002889A6 /* Group 3nigg.png in Resources */,
+				C4886150248A04BC0066977B /* Main.storyboard in Resources */,
+				55B15CE9273CA885002889A6 /* Group 5.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C4886141248A04BC0066977B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C41B6AF6248A19C1000A8C44 /* HapticsManager.swift in Sources */,
+				C488614D248A04BC0066977B /* MainViewController.swift in Sources */,
+				C4886149248A04BC0066977B /* AppDelegate.swift in Sources */,
+				C40B5726248A067400BE4EE7 /* UIViewExtensions.swift in Sources */,
+				C488614B248A04BC0066977B /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		C488614E248A04BC0066977B /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C488614F248A04BC0066977B /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		C4992594248AF0FB00907E52 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C4992595248AF0FB00907E52 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		C4886157248A04BD0066977B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB448547DEF5921FD9D9B092 /* SampleCode.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		C4886158248A04BD0066977B /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB448547DEF5921FD9D9B092 /* SampleCode.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C488615A248A04BD0066977B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB448547DEF5921FD9D9B092 /* SampleCode.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 6P3KG5T46K;
+				INFOPLIST_FILE = HapticControllers/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.afafas.afaf;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C488615B248A04BD0066977B /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB448547DEF5921FD9D9B092 /* SampleCode.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 6P3KG5T46K;
+				INFOPLIST_FILE = HapticControllers/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.afafas.afaf;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		C4886140248A04BC0066977B /* Build configuration list for PBXProject "HapticControllers" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C4886157248A04BD0066977B /* Debug */,
+				C4886158248A04BD0066977B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C4886159248A04BD0066977B /* Build configuration list for PBXNativeTarget "HapticControllers" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C488615A248A04BD0066977B /* Debug */,
+				C488615B248A04BD0066977B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C488613D248A04BC0066977B /* Project object */;
+}
