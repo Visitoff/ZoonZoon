@@ -15,7 +15,7 @@ BUNDLE_ID ?= com.ZoonZoon
 DEVICE ?=
 DEVICE_JSON ?= /tmp/hapticcontrollers-devices.json
 
-.PHONY: format format-check lint check run
+.PHONY: format format-check lint check run run-console
 
 format:
 	"$(SWIFTFORMAT)" $(SWIFT_TARGETS)
@@ -28,7 +28,10 @@ lint:
 
 check: format-check lint
 
-run:
+run: LAUNCH_MODE :=
+run-console: LAUNCH_MODE := --console
+
+run run-console:
 	@set -eu; \
 	$(DEVICECTL) list devices --json-output "$(DEVICE_JSON)" >/dev/null; \
 	DEVICE_ID="$$( \
@@ -62,4 +65,4 @@ print devices.first.dig("hardwareProperties", "udid") \
 	echo "Using device $$DEVICE_ID"; \
 	"$(XCODEBUILD)" -project "$(PROJECT)" -scheme "$(SCHEME)" -configuration "$(CONFIGURATION)" -destination "id=$$DEVICE_ID" -derivedDataPath "$(DERIVED_DATA)" build; \
 	$(DEVICECTL) device install app --device "$$DEVICE_ID" "$(APP_PATH)"; \
-	$(DEVICECTL) device process launch --device "$$DEVICE_ID" --terminate-existing "$(BUNDLE_ID)"
+	$(DEVICECTL) device process launch --device "$$DEVICE_ID" --terminate-existing $(LAUNCH_MODE) "$(BUNDLE_ID)"
