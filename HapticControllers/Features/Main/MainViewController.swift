@@ -12,8 +12,13 @@ class MainViewController: UIViewController {
 
     let manager: HapticsManager
 
-    let maxColIndex = 3
-    let maxRowIndex = 3
+    var maxColIndex: Int {
+        return 3
+    }
+    
+    var maxRowIndex: Int {
+        return (ahapPatterns.count - 1) / 4
+    }
 
     var selectedRow = 0
     var selectedCol = 0
@@ -126,11 +131,15 @@ class MainViewController: UIViewController {
 
     func highlightButton(atRow row: Int, column: Int) {
         highlightedButton?.backgroundColor = buttonColor
-
+        
+        let index = row * 4 + column
+        guard ahapPatterns.indices.contains(index) else { return }
+        
+        highlightedButton = view.viewWithTag(index) as? UIButton
         highlightedButton?.backgroundColor = selectedButtonColor
     }
 
-    @IBAction func StopButton(_ sender: Any) {
+    @IBAction func connectControllerButton(_ sender: Any) {
         guard controller == nil else { return }
         presentPairingInstructions()
     }
