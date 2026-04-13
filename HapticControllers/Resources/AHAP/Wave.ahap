@@ -1,0 +1,34 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "ZoonZoon Vibrator",
+    "Created": "13 April 2026",
+    "Description": "Smooth wave pattern with gradual intensity rise and fall"
+  },
+  "Pattern": [
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticIntensityControl",
+        "Time": 0.0,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.0, "ParameterValue": 0.2 },
+          { "Time": 0.5, "ParameterValue": 1.0 },
+          { "Time": 1.0, "ParameterValue": 0.2 },
+          { "Time": 1.5, "ParameterValue": 1.0 },
+          { "Time": 2.0, "ParameterValue": 0.2 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.0,
+        "EventType": "HapticContinuous",
+        "EventDuration": 2.0,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.8 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.4 }
+        ]
+      }
+    }
+  ]
+}

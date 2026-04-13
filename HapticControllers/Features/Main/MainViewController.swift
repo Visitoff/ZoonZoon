@@ -12,7 +12,7 @@ class MainViewController: UIViewController {
 
     let manager: HapticsManager
 
-    let maxColIndex = 1
+    let maxColIndex = 3
     let maxRowIndex = 3
 
     var selectedRow = 0
@@ -160,20 +160,16 @@ class MainViewController: UIViewController {
         let filename = pattern.resourceName
         let locality = pattern.locality
 
-        if sender.tag == 5 {
-            switch manager.playbackState {
-            case .idle:
-                manager.startLoopingHapticsFile(named: filename, locality: locality)
-            case .playing:
-                manager.stopHaptics()
-            case .starting, .stopping, .stopped:
-                break
-            }
-            updateControllerLabel()
-            return
+        // All patterns now support looping
+        switch manager.playbackState {
+        case .idle:
+            manager.startLoopingHapticsFile(named: filename, locality: locality)
+        case .playing:
+            manager.stopHaptics()
+        case .starting, .stopping, .stopped:
+            break
         }
-
-        manager.playHapticsFile(named: filename, locality: locality)
+        updateControllerLabel()
     }
 
     private func playbackIndicatorAppearance() -> PlaybackIndicatorAppearance? {

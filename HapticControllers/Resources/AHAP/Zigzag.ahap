@@ -1,0 +1,46 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "ZoonZoon Vibrator",
+    "Created": "13 April 2026",
+    "Description": "Zigzag pattern with sharp transitions between intensity levels"
+  },
+  "Pattern": [
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticIntensityControl",
+        "Time": 0.0,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.0, "ParameterValue": 0.3 },
+          { "Time": 0.01, "ParameterValue": 0.9 },
+          { "Time": 0.25, "ParameterValue": 0.9 },
+          { "Time": 0.26, "ParameterValue": 0.3 },
+          { "Time": 0.5, "ParameterValue": 0.3 },
+          { "Time": 0.51, "ParameterValue": 1.0 },
+          { "Time": 0.75, "ParameterValue": 1.0 },
+          { "Time": 0.76, "ParameterValue": 0.4 },
+          { "Time": 1.0, "ParameterValue": 0.4 },
+          { "Time": 1.01, "ParameterValue": 0.85 },
+          { "Time": 1.25, "ParameterValue": 0.85 },
+          { "Time": 1.26, "ParameterValue": 0.35 },
+          { "Time": 1.5, "ParameterValue": 0.35 },
+          { "Time": 1.51, "ParameterValue": 0.95 },
+          { "Time": 1.75, "ParameterValue": 0.95 },
+          { "Time": 1.76, "ParameterValue": 0.3 },
+          { "Time": 2.0, "ParameterValue": 0.3 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.0,
+        "EventType": "HapticContinuous",
+        "EventDuration": 2.0,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.85 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.8 }
+        ]
+      }
+    }
+  ]
+}

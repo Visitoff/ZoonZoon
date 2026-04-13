@@ -1,0 +1,71 @@
+{
+  "Version": 1.0,
+  "Metadata": {
+    "Project": "ZoonZoon Vibrator",
+    "Created": "13 April 2026",
+    "Description": "Random pattern with unpredictable intensity changes"
+  },
+  "Pattern": [
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticIntensityControl",
+        "Time": 0.0,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.0, "ParameterValue": 0.5 },
+          { "Time": 0.08, "ParameterValue": 0.8 },
+          { "Time": 0.15, "ParameterValue": 0.4 },
+          { "Time": 0.23, "ParameterValue": 0.9 },
+          { "Time": 0.31, "ParameterValue": 0.6 },
+          { "Time": 0.38, "ParameterValue": 0.3 },
+          { "Time": 0.47, "ParameterValue": 0.95 },
+          { "Time": 0.54, "ParameterValue": 0.5 },
+          { "Time": 0.62, "ParameterValue": 0.75 },
+          { "Time": 0.71, "ParameterValue": 0.35 },
+          { "Time": 0.79, "ParameterValue": 0.85 },
+          { "Time": 0.86, "ParameterValue": 0.55 },
+          { "Time": 0.94, "ParameterValue": 0.7 },
+          { "Time": 1.02, "ParameterValue": 0.4 },
+          { "Time": 1.11, "ParameterValue": 1.0 },
+          { "Time": 1.18, "ParameterValue": 0.6 },
+          { "Time": 1.26, "ParameterValue": 0.45 },
+          { "Time": 1.34, "ParameterValue": 0.8 },
+          { "Time": 1.42, "ParameterValue": 0.5 },
+          { "Time": 1.49, "ParameterValue": 0.9 },
+          { "Time": 1.57, "ParameterValue": 0.35 },
+          { "Time": 1.65, "ParameterValue": 0.75 },
+          { "Time": 1.73, "ParameterValue": 0.55 },
+          { "Time": 1.81, "ParameterValue": 0.95 },
+          { "Time": 1.89, "ParameterValue": 0.65 },
+          { "Time": 2.0, "ParameterValue": 0.5 }
+        ]
+      }
+    },
+    {
+      "ParameterCurve": {
+        "ParameterID": "HapticSharpnessControl",
+        "Time": 0.0,
+        "ParameterCurveControlPoints": [
+          { "Time": 0.0, "ParameterValue": 0.5 },
+          { "Time": 0.3, "ParameterValue": 0.8 },
+          { "Time": 0.6, "ParameterValue": 0.3 },
+          { "Time": 0.9, "ParameterValue": 0.7 },
+          { "Time": 1.2, "ParameterValue": 0.4 },
+          { "Time": 1.5, "ParameterValue": 0.9 },
+          { "Time": 1.8, "ParameterValue": 0.6 },
+          { "Time": 2.0, "ParameterValue": 0.5 }
+        ]
+      }
+    },
+    {
+      "Event": {
+        "Time": 0.0,
+        "EventType": "HapticContinuous",
+        "EventDuration": 2.0,
+        "EventParameters": [
+          { "ParameterID": "HapticIntensity", "ParameterValue": 0.8 },
+          { "ParameterID": "HapticSharpness", "ParameterValue": 0.6 }
+        ]
+      }
+    }
+  ]
+}
