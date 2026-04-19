@@ -49,3 +49,6 @@ node_modules/
 *.keystore
 google-services.json
 GoogleService-Info.plist
+
+# Temp output files
+*.txt
