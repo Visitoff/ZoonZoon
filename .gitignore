@@ -1,0 +1,51 @@
+# Gradle
+*.iml
+.gradle
+**/build/
+!src/**/build/
+gradle-app.setting
+.gradletasknamecache
+
+# Local config
+local.properties
+
+# IDE
+.idea
+.vscode
+*.iws
+*.ipr
+
+# Kotlin
+.kotlin
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Android
+captures
+.externalNativeBuild
+.cxx
+
+# iOS / Xcode
+xcuserdata
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
+*.xcuserstate
+DerivedData/
+
+# Kiro
+.kiro/settings/
+
+# Node
+node_modules/
+
+# Secrets / keys
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
