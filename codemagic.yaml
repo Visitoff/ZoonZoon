@@ -1,11 +1,11 @@
 workflows:
-  ios-workflow:
-    name: iOS Workflow
+  ios-kmm-workflow:
+    name: iOS KMM Workflow
     instance_type: mac_mini_m2
     max_build_duration: 120
 
     integrations:
-      app_store_connect: codemagic  # <-- Name of your App Store Connect API key in Codemagic
+      app_store_connect: codemagic  # <-- Name of your App Store Connect API key in Codemagic UI
 
     triggering:
       events:
@@ -18,7 +18,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.ZoonZoon  # <-- Your bundle ID
+        bundle_identifier: com.ZoonZoon
       vars:
         XCODE_PROJECT: "iosApp.xcodeproj"
         XCODE_SCHEME: "iosApp"
@@ -26,11 +26,6 @@ workflows:
       xcode: latest
 
     scripts:
-      - name: Build Kotlin/Native framework
-        script: |
-          cd $CM_BUILD_DIR
-          ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode
-
       - name: Set up code signing settings on Xcode project
         script: |
           cd $CM_BUILD_DIR/iosApp
@@ -40,6 +35,7 @@ workflows:
         script: |
           #!/bin/sh
           set -e
+          set -x
           cd $CM_BUILD_DIR/iosApp
           LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_ID")
           agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
