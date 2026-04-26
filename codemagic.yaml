@@ -22,7 +22,7 @@ workflows:
       vars:
         XCODE_PROJECT: "iosApp.xcodeproj"
         XCODE_SCHEME: "iosApp"
-        APP_ID: 0000000000  # <-- Replace with your Apple App ID from App Store Connect
+        APP_ID: 1595186051
       xcode: latest
 
     scripts:
