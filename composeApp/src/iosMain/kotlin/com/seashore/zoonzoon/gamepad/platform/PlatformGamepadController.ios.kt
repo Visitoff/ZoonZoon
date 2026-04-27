@@ -2,6 +2,11 @@ package com.seashore.zoonzoon.gamepad.platform
 
 import com.seashore.zoonzoon.gamepad.engine.GamepadControllerWithState
 import com.seashore.zoonzoon.gamepad.model.ConnectionState
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -13,24 +18,24 @@ import platform.CoreHaptics.CHHapticEvent
 import platform.CoreHaptics.CHHapticEventParameter
 import platform.CoreHaptics.CHHapticEventTypeHapticContinuous
 import platform.CoreHaptics.CHHapticPattern
+import platform.Foundation.NSError
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSOperationQueue
 import platform.GameController.GCController
 import platform.GameController.GCControllerDidConnectNotification
 import platform.GameController.GCControllerDidDisconnectNotification
-import platform.Foundation.NSNotificationCenter
-import platform.Foundation.NSOperationQueue
 
-// CoreHaptics parameter ID constants (string-based in Kotlin/Native)
 private const val kHapticIntensity = "HapticIntensity"
 private const val kHapticSharpness = "HapticSharpness"
 
 /**
  * iOS implementation of PlatformGamepadController.
  *
- * Uses the iOS GameController Framework + CoreHaptics to communicate with
- * MFi-certified controllers. Non-MFi controllers are not supported on iOS.
+ * Uses CoreHaptics for vibration on MFi-certified controllers.
  *
  * **Validates: Requirements 1.1, 1.2, 6.1, 6.3, 1.9, 10.4**
  */
+@OptIn(ExperimentalForeignApi::class)
 actual class PlatformGamepadController : GamepadControllerWithState {
 
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
@@ -82,14 +87,6 @@ actual class PlatformGamepadController : GamepadControllerWithState {
         }
     }
 
-    /**
-     * Send a vibration command to the connected MFi controller.
-     *
-     * Uses CoreHaptics to play a continuous haptic event with the given intensity.
-     * This is the closest public iOS API equivalent to gamepad rumble.
-     *
-     * **Validates: Requirements 6.3, 6.4**
-     */
     actual override suspend fun sendVibrationCommand(
         leftMotor: Float,
         rightMotor: Float
@@ -108,12 +105,10 @@ actual class PlatformGamepadController : GamepadControllerWithState {
                 ?: return Result.failure(IllegalStateException("Failed to create haptic engine"))
 
             if (intensity <= 0f) {
-                // Stop any ongoing haptics
                 engine.stopWithCompletionHandler(null)
                 return Result.success(Unit)
             }
 
-            // Build a short continuous haptic event
             val intensityParam = CHHapticEventParameter(
                 parameterID = kHapticIntensity,
                 value = intensity
@@ -127,19 +122,22 @@ actual class PlatformGamepadController : GamepadControllerWithState {
                 eventType = CHHapticEventTypeHapticContinuous,
                 parameters = listOf(intensityParam, sharpnessParam),
                 relativeTime = 0.0,
-                duration = 0.1  // 100ms pulse per frame
+                duration = 0.1
             )
 
-            val pattern = CHHapticPattern(
-                events = listOf(event),
-                parameters = emptyList<CHHapticEventParameter>(),
-                error = null
-            ) ?: return Result.failure(IllegalStateException("Failed to create haptic pattern"))
+            memScoped {
+                val errorPtr = alloc<ObjCObjectVar<NSError?>>()
+                val pattern = CHHapticPattern(
+                    events = listOf(event),
+                    parameters = emptyList<CHHapticEventParameter>(),
+                    error = errorPtr.ptr
+                ) ?: return Result.failure(IllegalStateException("Failed to create haptic pattern"))
 
-            val player = engine.createPlayerWithPattern(pattern, error = null)
-                ?: return Result.failure(IllegalStateException("Failed to create haptic player"))
+                val player = engine.createPlayerWithPattern(pattern, error = errorPtr.ptr)
+                    ?: return Result.failure(IllegalStateException("Failed to create haptic player"))
 
-            player.startAtTime(0.0, error = null)
+                player.startAtTime(0.0, error = errorPtr.ptr)
+            }
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -156,10 +154,13 @@ actual class PlatformGamepadController : GamepadControllerWithState {
 
     private fun getOrCreateHapticEngine(): CHHapticEngine? {
         hapticEngine?.let { return it }
-        val engine = CHHapticEngine(error = null) ?: return null
-        engine.startAndReturnError(null)
-        hapticEngine = engine
-        return engine
+        return memScoped {
+            val errorPtr = alloc<ObjCObjectVar<NSError?>>()
+            val engine = CHHapticEngine(andReturnError = errorPtr.ptr) ?: return null
+            engine.startWithCompletionHandler(null)
+            hapticEngine = engine
+            engine
+        }
     }
 
     private fun handleControllerConnected(controller: GCController) {
