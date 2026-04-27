@@ -35,7 +35,7 @@ workflows:
             --project "$XCODE_PROJECT" \
             --archive-method app-store \
             --code-signing-setup-verbose-logging \
-            --disable-xcpretty > codesign_raw.log 2>&1 || {
+            > codesign_raw.log 2>&1 || {
               echo "❌ CODESIGN SETUP FAILED:"
               tail -n 200 codesign_raw.log
               exit 1
