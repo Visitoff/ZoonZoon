@@ -8,6 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.GameController.GCController
 import platform.GameController.GCControllerDidConnectNotification
 import platform.GameController.GCControllerDidDisconnectNotification
@@ -102,17 +103,14 @@ actual class PlatformGamepadController : GamepadControllerWithState {
             return Result.failure(IllegalArgumentException("Motor values must be in [0.0, 1.0]"))
         }
 
+        @OptIn(ExperimentalForeignApi::class)
         return try {
             val haptics = controller.haptics
             if (haptics != null) {
-                val leftEngine = haptics.createEngineWithLocality(
-                    platform.GameController.GCHapticsLocality.GCHapticsLocalityLeftHandle
-                )
-                val rightEngine = haptics.createEngineWithLocality(
-                    platform.GameController.GCHapticsLocality.GCHapticsLocalityRightHandle
-                )
-                leftEngine?.startAndReturnError(null)
-                rightEngine?.startAndReturnError(null)
+                // Kotlin/Native bindings map `GCHapticsLocality` to its raw string values.
+                // Using raw localities avoids missing-symbol issues across SDK versions.
+                haptics.createEngineWithLocality("leftHandle")
+                haptics.createEngineWithLocality("rightHandle")
                 Result.success(Unit)
             } else {
                 Result.failure(IllegalStateException("Controller does not support haptic feedback"))
