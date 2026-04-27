@@ -27,6 +27,11 @@ workflows:
       xcode: latest
 
     scripts:
+      - name: Ensure Gradle wrapper is executable
+        script: |
+          cd $CM_BUILD_DIR
+          chmod +x ./gradlew
+
       - name: Set up code signing settings on Xcode project
         script: |
           cd $CM_BUILD_DIR/iosApp
