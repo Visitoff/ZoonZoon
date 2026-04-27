@@ -16,9 +16,6 @@ workflows:
       cancel_previous_builds: true
 
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.ZoonZoon
       vars:
         XCODE_PROJECT: "iosApp.xcodeproj"
         XCODE_SCHEME: "iosApp"
@@ -27,21 +24,22 @@ workflows:
       xcode: latest
 
     scripts:
-      - name: Fetch signing files from Apple Developer Portal
+      - name: Set up code signing
         script: |
-          app-store-connect fetch-signing-files \
-            "$BUNDLE_ID" \
+          keychain initialize
+
+          # Fetch provisioning profile and certificate.
+          # --create will generate a new cert if private key is missing.
+          # NOTE: If you already have 3 distribution certs in Apple Portal, delete one first.
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
 
-      - name: Add certificates to keychain
-        script: |
           keychain add-certificates
 
-      - name: Set up code signing settings on Xcode project
-        script: |
-          cd $CM_BUILD_DIR/iosApp
-          xcode-project use-profiles
+          # Apply signing settings to the Xcode project
+          PROJECT_PATH=$(find "$CM_BUILD_DIR/iosApp" -name "*.xcodeproj" | head -n 1)
+          xcode-project use-profiles --project "$PROJECT_PATH"
 
       - name: Increment build number
         script: |
@@ -57,11 +55,19 @@ workflows:
           cd $CM_BUILD_DIR/iosApp
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --disable-xcpretty > xcode_raw.log 2>&1 || {
+              echo "==============================================="
+              echo "❌ XCODE BUILD FAILED. LOG EXCERPT:"
+              echo "==============================================="
+              grep -iE -A 2 -B 2 "error:|permission denied|no such file|command not found" xcode_raw.log | tail -n 50
+              exit 1
+            }
 
     artifacts:
       - iosApp/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+      - $CM_BUILD_DIR/iosApp/xcode_raw.log
 
     publishing:
       email:
