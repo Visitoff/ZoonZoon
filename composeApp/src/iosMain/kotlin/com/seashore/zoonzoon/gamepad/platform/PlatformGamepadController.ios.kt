@@ -14,8 +14,13 @@ import platform.GameController.GCControllerDidConnectNotification
 import platform.GameController.GCControllerDidDisconnectNotification
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
-import platform.UIKit.UIImpactFeedbackGenerator
-import platform.UIKit.UIImpactFeedbackStyle
+import platform.CoreHaptics.CHHapticEngine
+import platform.CoreHaptics.CHHapticEvent
+import platform.CoreHaptics.CHHapticEventParameter
+import platform.CoreHaptics.CHHapticEventTypeHapticContinuous
+import platform.CoreHaptics.CHHapticParameterIDHapticIntensity
+import platform.CoreHaptics.CHHapticParameterIDHapticSharpness
+import platform.CoreHaptics.CHHapticPattern
 
 /**
  * iOS implementation of PlatformGamepadController.
@@ -35,6 +40,9 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     private var connectedController: GCController? = null
     private var connectObserver: Any? = null
     private var disconnectObserver: Any? = null
+
+    // Controller haptics (CoreHaptics) state. We keep a strong reference so the engine doesn't get deallocated.
+    private var controllerHapticsEngine: CHHapticEngine? = null
 
     /**
      * Start scanning for MFi controllers.
@@ -108,28 +116,51 @@ actual class PlatformGamepadController : GamepadControllerWithState {
         @OptIn(ExperimentalForeignApi::class)
         return try {
             val haptics = controller.haptics
-            if (haptics != null) {
-                // Kotlin/Native bindings map `GCHapticsLocality` to its raw string values.
-                // Using raw localities avoids missing-symbol issues across SDK versions.
-                haptics.createEngineWithLocality("leftHandle")
-                haptics.createEngineWithLocality("rightHandle")
-                Result.success(Unit)
-            } else {
-                // Many Bluetooth controllers (incl. DS4 on iOS) don't expose controller haptics via GameController.
-                // Fallback: trigger device haptics so the user still gets feedback.
-                val intensity = maxOf(leftMotor, rightMotor)
-                if (intensity > 0f) {
-                    val style = when {
-                        intensity >= 0.66f -> UIImpactFeedbackStyle.UIImpactFeedbackStyleHeavy
-                        intensity >= 0.33f -> UIImpactFeedbackStyle.UIImpactFeedbackStyleMedium
-                        else -> UIImpactFeedbackStyle.UIImpactFeedbackStyleLight
-                    }
-                    val generator = UIImpactFeedbackGenerator(style)
-                    generator.prepare()
-                    generator.impactOccurred()
-                }
-                Result.failure(IllegalStateException("Controller haptics not available; used device haptics fallback"))
+            if (haptics == null) {
+                return Result.failure(
+                    IllegalStateException(
+                        "This controller does not expose haptics via iOS GameController API (GCController.haptics is null). " +
+                            "DualShock 4 over Bluetooth commonly has no controller haptics on iOS."
+                    )
+                )
             }
+
+            // Create (or reuse) a CoreHaptics engine backed by the controller haptics.
+            // On Apple platforms, `createEngineWithLocality("handles")` maps to the controller’s primary actuators.
+            val engine = controllerHapticsEngine
+                ?: (haptics.createEngineWithLocality("handles") as? CHHapticEngine)
+                ?: return Result.failure(IllegalStateException("Failed to create CoreHaptics engine for controller"))
+
+            controllerHapticsEngine = engine
+
+            // Start engine (idempotent; OK to call repeatedly).
+            engine.startAndReturnError(null)
+
+            val intensity = maxOf(leftMotor, rightMotor).coerceIn(0f, 1f)
+            if (intensity <= 0f) return Result.success(Unit)
+
+            // Play a short continuous haptic pulse. This is the closest analogue to "rumble"
+            // available through public iOS APIs when controller haptics are supported.
+            val params = listOf(
+                CHHapticEventParameter(parameterID = CHHapticParameterIDHapticIntensity, value = intensity),
+                CHHapticEventParameter(parameterID = CHHapticParameterIDHapticSharpness, value = 0.5f)
+            )
+            val event = CHHapticEvent(
+                eventType = CHHapticEventTypeHapticContinuous,
+                parameters = params,
+                relativeTime = 0.0,
+                duration = 0.08
+            )
+
+            val pattern = CHHapticPattern(events = listOf(event), parameters = emptyList(), error = null)
+                ?: return Result.failure(IllegalStateException("Failed to build CoreHaptics pattern"))
+
+            val player = engine.createPlayerWithPattern(pattern, error = null)
+                ?: return Result.failure(IllegalStateException("Failed to create CoreHaptics player"))
+
+            player.startAtTime(0.0, error = null)
+
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(IllegalStateException("iOS haptic error: ${e.message}", e))
         }
