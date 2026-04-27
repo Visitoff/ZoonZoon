@@ -52,8 +52,14 @@ workflows:
           set -e
           set -x
           cd $CM_BUILD_DIR/iosApp
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_ID")
-          agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_ID" 2>/dev/null || echo "")
+          if [ -z "$LATEST_BUILD_NUMBER" ]; then
+            NEW_BUILD_NUMBER=$BUILD_NUMBER
+          else
+            NEW_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
+          fi
+          echo "Setting build number to: $NEW_BUILD_NUMBER"
+          agvtool new-version -all $NEW_BUILD_NUMBER
 
       - name: Build IPA for distribution
         script: |
