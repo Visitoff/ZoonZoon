@@ -30,7 +30,9 @@ workflows:
       - name: Set up code signing settings on Xcode project
         script: |
           cd $CM_BUILD_DIR/iosApp
-          xcode-project use-profiles --custom-export-options "{\"method\":\"app-store\",\"teamID\":\"${CM_TEAM_ID}\"}"
+          xcode-project use-profiles \
+            --project "$CM_BUILD_DIR/iosApp/$XCODE_PROJECT" \
+            --custom-export-options "{\"method\":\"app-store\",\"teamID\":\"${CM_TEAM_ID}\"}"
 
       - name: Increment build number
         script: |
