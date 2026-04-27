@@ -16,6 +16,9 @@ workflows:
       cancel_previous_builds: true
 
     environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.ZoonZoon
       vars:
         XCODE_PROJECT: "iosApp.xcodeproj"
         XCODE_SCHEME: "iosApp"
@@ -24,22 +27,10 @@ workflows:
       xcode: latest
 
     scripts:
-      - name: Set up code signing
+      - name: Set up code signing settings on Xcode project
         script: |
-          keychain initialize
-
-          # Fetch provisioning profile and certificate.
-          # --create will generate a new cert if private key is missing.
-          # NOTE: If you already have 3 distribution certs in Apple Portal, delete one first.
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --create
-
-          keychain add-certificates
-
-          # Apply signing settings to the Xcode project
-          PROJECT_PATH=$(find "$CM_BUILD_DIR/iosApp" -name "*.xcodeproj" | head -n 1)
-          xcode-project use-profiles --project "$PROJECT_PATH"
+          cd $CM_BUILD_DIR/iosApp
+          xcode-project use-profiles
 
       - name: Increment build number
         script: |
@@ -57,10 +48,8 @@ workflows:
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME" \
             --disable-xcpretty > xcode_raw.log 2>&1 || {
-              echo "==============================================="
-              echo "❌ XCODE BUILD FAILED. LOG EXCERPT:"
-              echo "==============================================="
-              grep -iE -A 2 -B 2 "error:|permission denied|no such file|command not found" xcode_raw.log | tail -n 50
+              echo "❌ BUILD FAILED:"
+              grep -iE -A 2 -B 2 "error:|permission denied|no such file" xcode_raw.log | tail -n 50
               exit 1
             }
 
