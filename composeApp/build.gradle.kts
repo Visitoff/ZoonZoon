@@ -23,6 +23,19 @@ kotlin {
             baseName = "ComposeApp"
             isStatic = true
         }
+        iosTarget.compilations.getByName("main") {
+            cinterops {
+            }
+        }
+    }
+
+    // Link CoreHaptics and GameController frameworks for iOS
+    val iosTargets = listOf(iosArm64(), iosSimulatorArm64())
+    iosTargets.forEach { iosTarget ->
+        iosTarget.binaries.all {
+            linkerOpts("-framework", "CoreHaptics")
+            linkerOpts("-framework", "GameController")
+        }
     }
     
     sourceSets {
