@@ -52,14 +52,18 @@ workflows:
           set -e
           set -x
           cd $CM_BUILD_DIR/iosApp
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_ID" 2>/dev/null || echo "")
-          if [ -z "$LATEST_BUILD_NUMBER" ]; then
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_ID" 2>/dev/null || echo "1")
+          if [ -z "$LATEST_BUILD_NUMBER" ] || [ "$LATEST_BUILD_NUMBER" = "null" ]; then
             NEW_BUILD_NUMBER=$BUILD_NUMBER
           else
             NEW_BUILD_NUMBER=$(($LATEST_BUILD_NUMBER + 1))
           fi
           echo "Setting build number to: $NEW_BUILD_NUMBER"
-          agvtool new-version -all $NEW_BUILD_NUMBER
+          # Update both Info.plist and project settings
+          xcrun agvtool new-version -all $NEW_BUILD_NUMBER
+          # Also set directly in Info.plist as fallback
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD_NUMBER" "$CM_BUILD_DIR/iosApp/iosApp/Info.plist"
+          echo "Build number set to: $NEW_BUILD_NUMBER"
 
       - name: Build IPA for distribution
         script: |
