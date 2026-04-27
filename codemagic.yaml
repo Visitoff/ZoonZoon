@@ -26,11 +26,6 @@ workflows:
       xcode: latest
 
     scripts:
-      - name: Set up code signing settings on Xcode project
-        script: |
-          cd $CM_BUILD_DIR/iosApp
-          xcode-project use-profiles
-
       - name: Increment build number
         script: |
           #!/bin/sh
@@ -45,7 +40,8 @@ workflows:
           cd $CM_BUILD_DIR/iosApp
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" \
+            --config Release
 
     artifacts:
       - iosApp/build/ios/ipa/*.ipa
@@ -54,7 +50,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - your@email.com  # <-- Replace with your email
+          - your@email.com
         notify:
           success: true
           failure: true
