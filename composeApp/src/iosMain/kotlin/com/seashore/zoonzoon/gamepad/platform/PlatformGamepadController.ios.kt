@@ -14,6 +14,8 @@ import platform.GameController.GCControllerDidConnectNotification
 import platform.GameController.GCControllerDidDisconnectNotification
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
+import platform.UIKit.UIImpactFeedbackGenerator
+import platform.UIKit.UIImpactFeedbackStyle
 
 /**
  * iOS implementation of PlatformGamepadController.
@@ -113,7 +115,20 @@ actual class PlatformGamepadController : GamepadControllerWithState {
                 haptics.createEngineWithLocality("rightHandle")
                 Result.success(Unit)
             } else {
-                Result.failure(IllegalStateException("Controller does not support haptic feedback"))
+                // Many Bluetooth controllers (incl. DS4 on iOS) don't expose controller haptics via GameController.
+                // Fallback: trigger device haptics so the user still gets feedback.
+                val intensity = maxOf(leftMotor, rightMotor)
+                if (intensity > 0f) {
+                    val style = when {
+                        intensity >= 0.66f -> UIImpactFeedbackStyle.UIImpactFeedbackStyleHeavy
+                        intensity >= 0.33f -> UIImpactFeedbackStyle.UIImpactFeedbackStyleMedium
+                        else -> UIImpactFeedbackStyle.UIImpactFeedbackStyleLight
+                    }
+                    val generator = UIImpactFeedbackGenerator(style)
+                    generator.prepare()
+                    generator.impactOccurred()
+                }
+                Result.failure(IllegalStateException("Controller haptics not available; used device haptics fallback"))
             }
         } catch (e: Exception) {
             Result.failure(IllegalStateException("iOS haptic error: ${e.message}", e))
