@@ -22,6 +22,7 @@ workflows:
       vars:
         XCODE_PROJECT: "iosApp.xcodeproj"
         XCODE_SCHEME: "iosApp"
+        BUNDLE_ID: "com.ZoonZoon"
         APP_ID: 1595186051
       xcode: latest
 
@@ -29,7 +30,7 @@ workflows:
       - name: Set up code signing settings on Xcode project
         script: |
           cd $CM_BUILD_DIR/iosApp
-          xcode-project use-profiles
+          xcode-project use-profiles --custom-export-options "{\"method\":\"app-store\",\"teamID\":\"${CM_TEAM_ID}\"}"
 
       - name: Increment build number
         script: |
