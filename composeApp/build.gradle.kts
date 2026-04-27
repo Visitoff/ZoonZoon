@@ -48,7 +48,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.ZoonZoon"
+    namespace = "com.seashore.zoonzoon"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
