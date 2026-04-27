@@ -30,7 +30,16 @@ workflows:
       - name: Set up code signing settings on Xcode project
         script: |
           cd $CM_BUILD_DIR/iosApp
-          xcode-project use-profiles
+          xcode-project --version
+          xcode-project use-profiles \
+            --project "$XCODE_PROJECT" \
+            --archive-method app-store \
+            --code-signing-setup-verbose-logging \
+            --disable-xcpretty > codesign_raw.log 2>&1 || {
+              echo "❌ CODESIGN SETUP FAILED:"
+              tail -n 200 codesign_raw.log
+              exit 1
+            }
 
       - name: Increment build number
         script: |
@@ -57,6 +66,7 @@ workflows:
       - iosApp/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
       - $CM_BUILD_DIR/iosApp/xcode_raw.log
+      - $CM_BUILD_DIR/iosApp/codesign_raw.log
 
     publishing:
       email:
