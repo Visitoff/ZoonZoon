@@ -24,7 +24,7 @@ import platform.Foundation.NSOperationQueue
 import platform.GameController.GCController
 import platform.GameController.GCControllerDidConnectNotification
 import platform.GameController.GCControllerDidDisconnectNotification
-import platform.GameController.GCHapticsLocality
+import platform.GameController.GCHapticsLocalityDefault
 
 /**
  * iOS implementation of PlatformGamepadController.
@@ -122,17 +122,15 @@ actual class PlatformGamepadController : GamepadControllerWithState {
             // Get or create engine bound to the CONTROLLER (not phone)
             // This is the key: createEngine(withLocality:) on controller.haptics
             val engine = hapticEngine ?: run {
-                val newEngine = controller.haptics?.createEngine(
-                    withLocality = GCHapticsLocality.default
+                val newEngine = controller.haptics?.createEngineWithLocality(
+                    GCHapticsLocalityDefault
                 ) ?: return Result.failure(
                     IllegalStateException(
-                        "Controller '${controller.vendorName}' does not support GCController.haptics. " +
-                        "Ensure it's a supported MFi controller."
+                        "Controller '${controller.vendorName}' does not support GCController.haptics."
                     )
                 )
 
-                // Set up stopped/reset handlers like Apple sample
-                newEngine.stoppedHandler = { reason ->
+                newEngine.stoppedHandler = { reason: platform.CoreHaptics.CHHapticEngine.StoppedReason ->
                     println("Haptic engine stopped: $reason")
                 }
                 newEngine.resetHandler = {
