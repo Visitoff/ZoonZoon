@@ -2,40 +2,30 @@ package com.seashore.zoonzoon.gamepad.platform
 
 import com.seashore.zoonzoon.gamepad.engine.GamepadControllerWithState
 import com.seashore.zoonzoon.gamepad.model.ConnectionState
-import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.ObjCObjectVar
-import kotlinx.cinterop.alloc
-import kotlinx.cinterop.memScoped
-import kotlinx.cinterop.ptr
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import platform.CoreHaptics.CHHapticEngine
-import platform.CoreHaptics.CHHapticEvent
-import platform.CoreHaptics.CHHapticEventParameter
-import platform.CoreHaptics.CHHapticEventTypeHapticContinuous
-import platform.CoreHaptics.CHHapticPattern
-import platform.Foundation.NSError
-import platform.Foundation.NSNotificationCenter
-import platform.Foundation.NSOperationQueue
 import platform.GameController.GCController
 import platform.GameController.GCControllerDidConnectNotification
 import platform.GameController.GCControllerDidDisconnectNotification
-
-private const val kHapticIntensity = "HapticIntensity"
-private const val kHapticSharpness = "HapticSharpness"
+import platform.Foundation.NSNotificationCenter
+import platform.Foundation.NSOperationQueue
 
 /**
  * iOS implementation of PlatformGamepadController.
  *
- * Uses CoreHaptics for vibration on MFi-certified controllers.
+ * Uses the iOS GameController Framework to communicate with MFi-certified
+ * controllers. Vibration is sent via GCController.haptics API (iOS 14+).
+ *
+ * NOTE: Most MFi controllers do NOT support haptics via GCController.haptics.
+ * DualShock 4 and Xbox controllers connected via Bluetooth on iOS do not
+ * expose haptic motors through public Apple APIs.
  *
  * **Validates: Requirements 1.1, 1.2, 6.1, 6.3, 1.9, 10.4**
  */
-@OptIn(ExperimentalForeignApi::class)
 actual class PlatformGamepadController : GamepadControllerWithState {
 
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
@@ -46,7 +36,6 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     private var connectedController: GCController? = null
     private var connectObserver: Any? = null
     private var disconnectObserver: Any? = null
-    private var hapticEngine: CHHapticEngine? = null
 
     actual override suspend fun startDiscovery() {
         _connectionState.value = ConnectionState.Scanning
@@ -87,57 +76,41 @@ actual class PlatformGamepadController : GamepadControllerWithState {
         }
     }
 
+    /**
+     * Send a vibration command to the connected MFi controller.
+     *
+     * Uses GCController.haptics API. Only works with MFi controllers that
+     * explicitly support haptic feedback (e.g. some Xbox controllers on iOS 14+).
+     * DualShock 4 / DualSense over Bluetooth do NOT support this on iOS.
+     *
+     * **Validates: Requirements 6.3, 6.4**
+     */
     actual override suspend fun sendVibrationCommand(
         leftMotor: Float,
         rightMotor: Float
     ): Result<Unit> {
-        connectedController
+        val controller = connectedController
             ?: return Result.failure(IllegalStateException("No MFi controller connected"))
 
         if (leftMotor !in 0f..1f || rightMotor !in 0f..1f) {
             return Result.failure(IllegalArgumentException("Motor values must be in [0.0, 1.0]"))
         }
 
-        val intensity = maxOf(leftMotor, rightMotor).coerceIn(0f, 1f)
-
         return try {
-            val engine = getOrCreateHapticEngine()
-                ?: return Result.failure(IllegalStateException("Failed to create haptic engine"))
+            val haptics = controller.haptics
+                ?: return Result.failure(
+                    IllegalStateException(
+                        "Controller '${controller.vendorName}' does not support haptics via GCController.haptics. " +
+                        "This is expected for DualShock 4 and Xbox controllers on iOS."
+                    )
+                )
 
-            if (intensity <= 0f) {
-                engine.stopWithCompletionHandler(null)
-                return Result.success(Unit)
-            }
+            // Use GCHapticsLocality to target controller motors
+            val leftEngine = haptics.createEngineWithLocality("GCHapticsLocalityLeftHandle")
+            val rightEngine = haptics.createEngineWithLocality("GCHapticsLocalityRightHandle")
 
-            val intensityParam = CHHapticEventParameter(
-                parameterID = kHapticIntensity,
-                value = intensity
-            )
-            val sharpnessParam = CHHapticEventParameter(
-                parameterID = kHapticSharpness,
-                value = 0.5f
-            )
-
-            val event = CHHapticEvent(
-                eventType = CHHapticEventTypeHapticContinuous,
-                parameters = listOf(intensityParam, sharpnessParam),
-                relativeTime = 0.0,
-                duration = 0.1
-            )
-
-            memScoped {
-                val errorPtr = alloc<ObjCObjectVar<NSError?>>()
-                val pattern = CHHapticPattern(
-                    events = listOf(event),
-                    parameters = emptyList<CHHapticEventParameter>(),
-                    error = errorPtr.ptr
-                ) ?: return Result.failure(IllegalStateException("Failed to create haptic pattern"))
-
-                val player = engine.createPlayerWithPattern(pattern, error = errorPtr.ptr)
-                    ?: return Result.failure(IllegalStateException("Failed to create haptic player"))
-
-                player.startAtTime(0.0, error = errorPtr.ptr)
-            }
+            if (leftMotor > 0f) leftEngine?.startAndReturnError(null)
+            if (rightMotor > 0f) rightEngine?.startAndReturnError(null)
 
             Result.success(Unit)
         } catch (e: Exception) {
@@ -146,21 +119,8 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     }
 
     actual override suspend fun disconnect() {
-        hapticEngine?.stopWithCompletionHandler(null)
-        hapticEngine = null
         connectedController = null
         _connectionState.value = ConnectionState.Disconnected
-    }
-
-    private fun getOrCreateHapticEngine(): CHHapticEngine? {
-        hapticEngine?.let { return it }
-        return memScoped {
-            val errorPtr = alloc<ObjCObjectVar<NSError?>>()
-            val engine = CHHapticEngine(andReturnError = errorPtr.ptr) ?: return null
-            engine.startWithCompletionHandler(null)
-            hapticEngine = engine
-            engine
-        }
     }
 
     private fun handleControllerConnected(controller: GCController) {
@@ -171,8 +131,6 @@ actual class PlatformGamepadController : GamepadControllerWithState {
 
     private fun handleControllerDisconnected(controller: GCController) {
         if (connectedController == controller) {
-            hapticEngine?.stopWithCompletionHandler(null)
-            hapticEngine = null
             connectedController = null
             _connectionState.value = ConnectionState.Disconnected
         }
