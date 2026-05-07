@@ -13,6 +13,7 @@ import platform.Foundation.NSOperationQueue
 import platform.GameController.GCController
 import platform.GameController.GCControllerDidConnectNotification
 import platform.GameController.GCControllerDidDisconnectNotification
+import GameControllerHaptics.GameControllerHaptics
 
 // Locality constants matching GCHapticsLocality raw values
 private const val LOCALITY_DEFAULT = "GCHapticsLocalityDefault"

@@ -25,13 +25,14 @@ kotlin {
         }
         iosTarget.compilations.getByName("main") {
             cinterops {
+                val GameControllerHaptics by creating {
+                    defFile(project.file("src/iosMain/cinterop/GameControllerHaptics.def"))
+                    includeDirs(project.file("src/iosMain/cinterop"))
+                    // Include the iosApp source so ObjC implementation is found
+                    includeDirs(project.file("../iosApp/iosApp"))
+                }
             }
         }
-    }
-
-    // Link CoreHaptics and GameController frameworks for iOS
-    val iosTargets = listOf(iosArm64(), iosSimulatorArm64())
-    iosTargets.forEach { iosTarget ->
         iosTarget.binaries.all {
             linkerOpts("-framework", "CoreHaptics")
             linkerOpts("-framework", "GameController")
