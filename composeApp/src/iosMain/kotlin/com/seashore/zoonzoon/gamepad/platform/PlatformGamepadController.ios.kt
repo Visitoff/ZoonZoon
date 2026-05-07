@@ -1,7 +1,9 @@
 package com.seashore.zoonzoon.gamepad.platform
 
+import GameControllerHaptics.GameControllerHaptics
 import com.seashore.zoonzoon.gamepad.engine.GamepadControllerWithState
 import com.seashore.zoonzoon.gamepad.model.ConnectionState
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -13,9 +15,7 @@ import platform.Foundation.NSOperationQueue
 import platform.GameController.GCController
 import platform.GameController.GCControllerDidConnectNotification
 import platform.GameController.GCControllerDidDisconnectNotification
-import GameControllerHaptics.GameControllerHaptics
 
-// Locality constants matching GCHapticsLocality raw values
 private const val LOCALITY_DEFAULT = "GCHapticsLocalityDefault"
 private const val LOCALITY_LEFT    = "GCHapticsLocalityLeftHandle"
 private const val LOCALITY_RIGHT   = "GCHapticsLocalityRightHandle"
@@ -23,11 +23,12 @@ private const val LOCALITY_RIGHT   = "GCHapticsLocalityRightHandle"
 /**
  * iOS implementation of PlatformGamepadController.
  *
- * Uses GameControllerHaptics Swift bridge to send haptic commands
+ * Uses GameControllerHaptics ObjC bridge to send haptic commands
  * to the game controller via GCController.haptics + CoreHaptics.
  *
  * **Validates: Requirements 1.1, 1.2, 6.1, 6.3, 1.9, 10.4**
  */
+@OptIn(ExperimentalForeignApi::class)
 actual class PlatformGamepadController : GamepadControllerWithState {
 
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
@@ -39,7 +40,6 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     private var connectObserver: Any? = null
     private var disconnectObserver: Any? = null
 
-    // Swift bridge for haptics
     private val haptics = GameControllerHaptics()
 
     actual override suspend fun startDiscovery() {
@@ -97,12 +97,15 @@ actual class PlatformGamepadController : GamepadControllerWithState {
             return Result.success(Unit)
         }
 
-        // Play rumble on left and/or right handle
-        val leftOk  = if (leftMotor  > 0f) haptics.playRumble(leftMotor,  LOCALITY_LEFT)  else true
-        val rightOk = if (rightMotor > 0f) haptics.playRumble(rightMotor, LOCALITY_RIGHT) else true
+        // ObjC method names use full selector: prepareEngineForController:locality:
+        // and playRumbleWithIntensity:locality:
+        val leftOk  = if (leftMotor  > 0f)
+            haptics.playRumbleWithIntensity(leftMotor,  locality = LOCALITY_LEFT)  else true
+        val rightOk = if (rightMotor > 0f)
+            haptics.playRumbleWithIntensity(rightMotor, locality = LOCALITY_RIGHT) else true
 
-        // Fallback to default locality if both handles failed
-        val ok = leftOk || rightOk || haptics.playRumble(maxOf(leftMotor, rightMotor), LOCALITY_DEFAULT)
+        val ok = leftOk || rightOk ||
+            haptics.playRumbleWithIntensity(maxOf(leftMotor, rightMotor), locality = LOCALITY_DEFAULT)
 
         return if (ok) Result.success(Unit)
         else Result.failure(IllegalStateException("Controller does not support haptics"))
@@ -118,10 +121,9 @@ actual class PlatformGamepadController : GamepadControllerWithState {
         connectedController = controller
         val name = controller.vendorName ?: "Game Controller"
 
-        // Pre-create engines for all localities
-        haptics.prepareEngine(controller, LOCALITY_DEFAULT)
-        haptics.prepareEngine(controller, LOCALITY_LEFT)
-        haptics.prepareEngine(controller, LOCALITY_RIGHT)
+        haptics.prepareEngineForController(controller, locality = LOCALITY_DEFAULT)
+        haptics.prepareEngineForController(controller, locality = LOCALITY_LEFT)
+        haptics.prepareEngineForController(controller, locality = LOCALITY_RIGHT)
 
         println("[iOS] Connected: $name")
         _connectionState.value = ConnectionState.Connected(name)
