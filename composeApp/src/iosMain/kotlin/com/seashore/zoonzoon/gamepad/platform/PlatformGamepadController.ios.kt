@@ -13,12 +13,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.GameController.GCController
+import platform.GameController.GCControllerDidBecomeCurrentNotification
 import platform.GameController.GCControllerDidConnectNotification
 import platform.GameController.GCControllerDidDisconnectNotification
-
-private const val LOCALITY_DEFAULT = "GCHapticsLocalityDefault"
-private const val LOCALITY_LEFT    = "GCHapticsLocalityLeftHandle"
-private const val LOCALITY_RIGHT   = "GCHapticsLocalityRightHandle"
 
 /**
  * iOS implementation of PlatformGamepadController.
@@ -39,6 +36,8 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     private var connectedController: GCController? = null
     private var connectObserver: Any? = null
     private var disconnectObserver: Any? = null
+    private var becomeCurrentObserver: Any? = null
+    private var hapticsPrepared = false
 
     private val haptics = GameControllerHaptics()
 
@@ -63,6 +62,15 @@ actual class PlatformGamepadController : GamepadControllerWithState {
             controller?.let { handleControllerDisconnected(it) }
         }
 
+        becomeCurrentObserver = NSNotificationCenter.defaultCenter.addObserverForName(
+            name = GCControllerDidBecomeCurrentNotification,
+            `object` = null,
+            queue = NSOperationQueue.mainQueue
+        ) { notification ->
+            val controller = notification?.`object` as? GCController
+            controller?.let { prepareHapticsIfNeeded(it) }
+        }
+
         val controllers = GCController.controllers()
         if (controllers.isNotEmpty()) {
             val first = controllers.first() as? GCController
@@ -73,8 +81,10 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     actual override suspend fun stopDiscovery() {
         connectObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         disconnectObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
+        becomeCurrentObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         connectObserver = null
         disconnectObserver = null
+        becomeCurrentObserver = null
 
         if (_connectionState.value is ConnectionState.Scanning) {
             _connectionState.value = ConnectionState.Disconnected
@@ -92,27 +102,22 @@ actual class PlatformGamepadController : GamepadControllerWithState {
             return Result.failure(IllegalArgumentException("Motor values must be in [0.0, 1.0]"))
         }
 
-        if (leftMotor <= 0f && rightMotor <= 0f) {
-            haptics.stopAll()
-            return Result.success(Unit)
+        if (!hapticsPrepared) {
+            val prepared = haptics.prepareForController(connectedController!!)
+            if (!prepared) {
+                return Result.failure(IllegalStateException("Controller does not support haptics"))
+            }
+            hapticsPrepared = true
         }
 
-        // ObjC method names use full selector: prepareEngineForController:locality:
-        // and playRumbleWithIntensity:locality:
-        val leftOk  = if (leftMotor  > 0f)
-            haptics.playRumbleWithIntensity(leftMotor,  locality = LOCALITY_LEFT)  else true
-        val rightOk = if (rightMotor > 0f)
-            haptics.playRumbleWithIntensity(rightMotor, locality = LOCALITY_RIGHT) else true
-
-        val ok = leftOk || rightOk ||
-            haptics.playRumbleWithIntensity(maxOf(leftMotor, rightMotor), locality = LOCALITY_DEFAULT)
-
+        val ok = haptics.updateRumbleWithLeftIntensity(leftMotor, rightIntensity = rightMotor)
         return if (ok) Result.success(Unit)
-        else Result.failure(IllegalStateException("Controller does not support haptics"))
+        else Result.failure(IllegalStateException("Failed to update controller haptics"))
     }
 
     actual override suspend fun disconnect() {
         haptics.stopAll()
+        hapticsPrepared = false
         connectedController = null
         _connectionState.value = ConnectionState.Disconnected
     }
@@ -120,20 +125,25 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     private fun handleControllerConnected(controller: GCController) {
         connectedController = controller
         val name = controller.vendorName ?: "Game Controller"
-
-        haptics.prepareEngineForController(controller, locality = LOCALITY_DEFAULT)
-        haptics.prepareEngineForController(controller, locality = LOCALITY_LEFT)
-        haptics.prepareEngineForController(controller, locality = LOCALITY_RIGHT)
-
-        println("[iOS] Connected: $name")
+        prepareHapticsIfNeeded(controller)
+        println("[iOS] Connected: $name, haptics=$hapticsPrepared")
         _connectionState.value = ConnectionState.Connected(name)
     }
 
     private fun handleControllerDisconnected(controller: GCController) {
         if (connectedController == controller) {
             haptics.stopAll()
+            hapticsPrepared = false
             connectedController = null
             _connectionState.value = ConnectionState.Disconnected
         }
+    }
+
+    private fun prepareHapticsIfNeeded(controller: GCController) {
+        if (connectedController != controller) {
+            connectedController = controller
+        }
+        haptics.stopAll()
+        hapticsPrepared = haptics.prepareForController(controller)
     }
 }
