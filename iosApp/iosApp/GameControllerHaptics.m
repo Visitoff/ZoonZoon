@@ -5,7 +5,7 @@
 static const NSTimeInterval kContinuousPatternDuration = 30.0;
 
 @interface GCHapticMotorChannel : NSObject
-- (BOOL)prepareWithController:(GCController *)controller locality:(GCHapticsLocality *)locality;
+- (BOOL)prepareWithController:(GCController *)controller locality:(GCHapticsLocality)locality;
 - (BOOL)setIntensity:(float)intensity;
 - (void)stop;
 @end
@@ -15,7 +15,7 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
     id<CHHapticAdvancedPatternPlayer> _player;
 }
 
-- (BOOL)prepareWithController:(GCController *)controller locality:(GCHapticsLocality *)locality {
+- (BOOL)prepareWithController:(GCController *)controller locality:(GCHapticsLocality)locality {
     [self stop];
 
     if (!controller.haptics) {
@@ -143,7 +143,7 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
 }
 
 - (void)logSupportedLocalitiesForController:(GCController *)controller {
-    NSArray<GCHapticsLocality *> *localities = controller.haptics.supportedLocalities;
+    NSArray<GCHapticsLocality> *localities = controller.haptics.supportedLocalities;
     if (localities.count == 0) {
         NSLog(@"[Haptics] Controller '%@' reports no supported localities", controller.vendorName);
         return;
