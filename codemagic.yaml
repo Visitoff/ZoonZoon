@@ -24,6 +24,7 @@ workflows:
         XCODE_SCHEME: "iosApp"
         BUNDLE_ID: "com.ZoonZoon"
         APP_ID: 1595186051
+        APP_STORE_CONNECT_ALTOOL_ADDITIONAL_ARGUMENTS: "--apple-id 1595186051 --use-old-altool"
       xcode: latest
 
     scripts:
@@ -82,6 +83,5 @@ workflows:
           failure: true
       app_store_connect:
         auth: integration
-        apple_id: 1595186051
         submit_to_testflight: true
         submit_to_app_store: false
