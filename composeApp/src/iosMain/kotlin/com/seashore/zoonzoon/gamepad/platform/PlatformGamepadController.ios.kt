@@ -10,6 +10,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.GameController.GCController
@@ -41,8 +42,9 @@ actual class PlatformGamepadController : GamepadControllerWithState {
 
     private val haptics = GameControllerHaptics()
 
-    actual override suspend fun startDiscovery() {
+    actual override suspend fun startDiscovery() = withContext(Dispatchers.Main) {
         _connectionState.value = ConnectionState.Scanning
+        GCController.startWirelessControllerDiscovery(null)
 
         connectObserver = NSNotificationCenter.defaultCenter.addObserverForName(
             name = GCControllerDidConnectNotification,
@@ -78,7 +80,8 @@ actual class PlatformGamepadController : GamepadControllerWithState {
         }
     }
 
-    actual override suspend fun stopDiscovery() {
+    actual override suspend fun stopDiscovery() = withContext(Dispatchers.Main) {
+        GCController.stopWirelessControllerDiscovery()
         connectObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         disconnectObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         becomeCurrentObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
@@ -94,30 +97,33 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     actual override suspend fun sendVibrationCommand(
         leftMotor: Float,
         rightMotor: Float
-    ): Result<Unit> {
-        connectedController
-            ?: return Result.failure(IllegalStateException("No controller connected"))
+    ): Result<Unit> = withContext(Dispatchers.Main) {
+        val controller = resolveActiveController()
+            ?: return@withContext Result.failure(IllegalStateException("No controller connected"))
 
         if (leftMotor !in 0f..1f || rightMotor !in 0f..1f) {
-            return Result.failure(IllegalArgumentException("Motor values must be in [0.0, 1.0]"))
+            return@withContext Result.failure(IllegalArgumentException("Motor values must be in [0.0, 1.0]"))
         }
 
-        if (!hapticsPrepared) {
-            val prepared = haptics.prepareForController(connectedController!!)
-            if (!prepared) {
-                return Result.failure(IllegalStateException("Controller does not support haptics"))
+        if (!ensureHapticsPrepared(controller)) {
+            return@withContext Result.failure(IllegalStateException("Controller does not support haptics"))
+        }
+
+        var ok = haptics.updateRumbleWithLeftIntensity(leftMotor, rightIntensity = rightMotor)
+        if (!ok) {
+            invalidateHaptics()
+            if (ensureHapticsPrepared(controller)) {
+                ok = haptics.updateRumbleWithLeftIntensity(leftMotor, rightIntensity = rightMotor)
             }
-            hapticsPrepared = true
         }
 
-        val ok = haptics.updateRumbleWithLeftIntensity(leftMotor, rightIntensity = rightMotor)
-        return if (ok) Result.success(Unit)
+        if (ok) Result.success(Unit)
         else Result.failure(IllegalStateException("Failed to update controller haptics"))
     }
 
-    actual override suspend fun disconnect() {
-        haptics.stopAll()
-        hapticsPrepared = false
+    actual override suspend fun disconnect() = withContext(Dispatchers.Main) {
+        GCController.stopWirelessControllerDiscovery()
+        invalidateHaptics()
         connectedController = null
         _connectionState.value = ConnectionState.Disconnected
     }
@@ -132,18 +138,35 @@ actual class PlatformGamepadController : GamepadControllerWithState {
 
     private fun handleControllerDisconnected(controller: GCController) {
         if (connectedController == controller) {
-            haptics.stopAll()
-            hapticsPrepared = false
+            invalidateHaptics()
             connectedController = null
             _connectionState.value = ConnectionState.Disconnected
         }
     }
 
     private fun prepareHapticsIfNeeded(controller: GCController) {
-        if (connectedController != controller) {
-            connectedController = controller
-        }
-        haptics.stopAll()
+        connectedController = controller
+        invalidateHaptics()
         hapticsPrepared = haptics.prepareForController(controller)
+    }
+
+    private fun resolveActiveController(): GCController? {
+        val current = GCController.current
+        if (current != null) {
+            connectedController = current
+            return current
+        }
+        return connectedController
+    }
+
+    private fun ensureHapticsPrepared(controller: GCController): Boolean {
+        if (hapticsPrepared) return true
+        hapticsPrepared = haptics.prepareForController(controller)
+        return hapticsPrepared
+    }
+
+    private fun invalidateHaptics() {
+        haptics.stopAll()
+        hapticsPrepared = false
     }
 }

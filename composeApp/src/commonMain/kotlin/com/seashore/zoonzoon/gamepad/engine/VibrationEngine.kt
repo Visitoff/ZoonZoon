@@ -178,11 +178,7 @@ class VibrationEngine(
                 val motorLevel = maxOf(left, right)
 
                 if (useGamepad) {
-                    val result = controller.sendVibrationCommand(leftMotor = left, rightMotor = right)
-                    if (result.isFailure && !usePhone) {
-                        _vibrationState.value = _vibrationState.value.copy(enabled = false)
-                        break
-                    }
+                    controller.sendVibrationCommand(leftMotor = left, rightMotor = right)
                 }
 
                 if (usePhone) {

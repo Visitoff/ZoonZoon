@@ -66,14 +66,10 @@ class CommandFailureResiliencePropertyTest {
     }
 
     /**
-     * Property: When a command fails, the engine stops the execution loop
-     * (connection loss scenario) rather than continuing to send failing commands.
-     *
-     * This validates that the engine handles failures gracefully by stopping
-     * rather than hammering a broken connection.
+     * Property: When a command fails, the engine keeps running and retries on later frames.
      */
     @Test
-    fun testCommandFailureStopsExecutionLoop() = runTest {
+    fun testCommandFailureContinuesExecutionLoop() = runTest {
         val controller = FailingGamepadController()
         val engine = VibrationEngine(controller, this)
 
@@ -81,20 +77,18 @@ class CommandFailureResiliencePropertyTest {
         engine.setIntensity(0.5f)
         engine.enableVibration()
 
-        // Advance time — the first failure should stop the loop
         advanceTimeBy(VibrationEngine.FRAME_INTERVAL_MS * 5)
 
-        // Engine should have disabled vibration after the failure
-        assertFalse(
+        assertTrue(
             engine.vibrationState.value.enabled,
-            "Engine should disable vibration after command failure"
+            "Engine should stay enabled and keep retrying after command failures"
+        )
+        assertTrue(
+            controller.failureCount >= 3,
+            "Engine should keep attempting commands each frame. Got ${controller.failureCount} failures"
         )
 
-        // Only a small number of failures should have occurred (not 5 frames worth)
-        assertTrue(
-            controller.failureCount <= 2,
-            "Engine should stop quickly after failure, not keep retrying. Got ${controller.failureCount} failures"
-        )
+        engine.disableVibration()
     }
 
     /**

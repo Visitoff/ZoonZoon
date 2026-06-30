@@ -106,6 +106,7 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
     NSError *error = nil;
     if (![_player sendParameters:@[param] atTime:0 error:&error]) {
         NSLog(@"[Haptics] sendParameters error: %@", error);
+        [self stop];
         return NO;
     }
     return YES;
