@@ -2,6 +2,7 @@ package com.seashore.zoonzoon.gamepad.model
 
 import com.seashore.zoonzoon.gamepad.engine.FakePlatformGamepadController
 import com.seashore.zoonzoon.gamepad.engine.VibrationEngine
+import com.seashore.zoonzoon.gamepad.model.ConnectionState
 import com.seashore.zoonzoon.gamepad.viewmodel.GamepadViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
@@ -145,6 +146,7 @@ class CustomPatternSupportPropertyTest {
     @Test
     fun testViewModelCustomPatternExecutesDuringVibration() = runTest {
         val controller = FakePlatformGamepadController()
+        controller.setConnectionState(ConnectionState.Connected("Test Pad"))
         val engine = VibrationEngine(controller, this)
         val viewModel = GamepadViewModel(engine, this)
 

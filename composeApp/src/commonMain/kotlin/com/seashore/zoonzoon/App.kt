@@ -1,22 +1,21 @@
 package com.seashore.zoonzoon
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.tooling.preview.Preview
 import com.seashore.zoonzoon.gamepad.engine.VibrationEngine
 import com.seashore.zoonzoon.gamepad.platform.PlatformGamepadController
+import com.seashore.zoonzoon.gamepad.platform.createPhoneVibrator
 import com.seashore.zoonzoon.gamepad.theme.GamepadVibratorTheme
-import com.seashore.zoonzoon.gamepad.ui.GamepadVibratorScreen
 import com.seashore.zoonzoon.gamepad.viewmodel.GamepadViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.seashore.zoonzoon.settings.createAppSettings
+import com.seashore.zoonzoon.ui.shell.ZoonZoonAppShell
+import kotlinx.coroutines.flow.MutableStateFlow
 
-/**
- * App entry point composable.
- *
- * Wires together PlatformGamepadController → VibrationEngine → GamepadViewModel → UI.
- *
- * **Validates: Requirements 1.1, 7.1, 7.2, 9.1, 9.2, 9.3**
- */
 @Composable
 @Preview
 fun App(controller: PlatformGamepadController? = null) {
@@ -26,21 +25,38 @@ fun App(controller: PlatformGamepadController? = null) {
         controller ?: createPlatformController()
     }
 
-    val engine = remember(resolvedController) {
-        VibrationEngine(resolvedController, scope)
+    val appSettings = remember { createAppSettings() }
+    val phoneVibrator = remember { createPhoneVibrator() }
+    val vibrationTarget = remember {
+        MutableStateFlow(appSettings.getVibrationTarget())
     }
 
-    val viewModel = remember(engine) {
-        GamepadViewModel(engine, scope)
+    val engine = remember(resolvedController, vibrationTarget) {
+        VibrationEngine(
+            controller = resolvedController,
+            scope = scope,
+            phoneVibrator = phoneVibrator,
+            vibrationTarget = vibrationTarget
+        )
     }
 
-    GamepadVibratorTheme {
-        GamepadVibratorScreen(viewModel = viewModel)
+    val viewModel = remember(engine, vibrationTarget) {
+        GamepadViewModel(
+            vibrationEngine = engine,
+            scope = scope,
+            appSettings = appSettings,
+            vibrationTargetFlow = vibrationTarget
+        )
+    }
+
+    val themeMode by viewModel.themeMode.collectAsState()
+
+    GamepadVibratorTheme(themeMode = themeMode) {
+        LaunchedEffect(viewModel) {
+            viewModel.onAppStarted()
+        }
+        ZoonZoonAppShell(viewModel = viewModel)
     }
 }
 
-/**
- * Expect function to create a platform-specific controller.
- * Each platform provides its own actual implementation.
- */
 expect fun createPlatformController(): PlatformGamepadController

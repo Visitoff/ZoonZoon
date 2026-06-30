@@ -4,6 +4,29 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
+// Brand accent gradient (#CA5AFF → #7E6BF3)
+val ZoonZoonAccentStart = Color(0xFFCA5AFF)
+val ZoonZoonAccentEnd = Color(0xFF7E6BF3)
+val ZoonZoonAccentMuted = Color(0xFFCA5AFF).copy(alpha = 0.14f)
+
+// iOS system surfaces (HIG)
+val IosGroupedBackgroundLight = Color(0xFFF2F2F7)
+val IosSecondaryGroupedLight = Color(0xFFFFFFFF)
+val IosLabelSecondaryLight = Color(0x993C3C43)
+val IosSeparatorLight = Color(0x335C3C43)
+
+val IosGroupedBackgroundDark = Color(0xFF000000)
+val IosSecondaryGroupedDark = Color(0xFF1C1C1E)
+val IosTertiaryGroupedDark = Color(0xFF2C2C2E)
+val IosLabelSecondaryDark = Color(0x99EBEBF5)
+val IosSeparatorDark = Color(0x33EBEBF5)
+
+// Legacy tokens (Home glow only)
+val ZoonZoonBackgroundStart = Color(0xFFF7E7FF)
+val ZoonZoonBackgroundEnd = Color(0xFFECF0F3)
+val ZoonZoonBackgroundFallback = Color(0xFFF0F0F3)
+val ZoonZoonRippleRing = Color(0x80E3E6EC)
+
 // Pink Pastel Color Palette
 val PinkPastel10 = Color(0xFFFFF0F5)  // Very light pink
 val PinkPastel20 = Color(0xFFFFE4E8)  // Light pink
@@ -41,94 +64,94 @@ val NeutralPastel90 = Color(0xFF1C1B1F)
 val NeutralPastel95 = Color(0xFF141218)
 val NeutralPastel99 = Color(0xFF0A0A0A)
 
-// Light theme color scheme with pink pastels
+// iOS-native light theme + ZoonZoon accent
 val GamepadVibratorLightColorScheme = lightColorScheme(
-    primary = PinkPastel70,
+    primary = ZoonZoonAccentStart,
     onPrimary = Color.White,
-    primaryContainer = PinkPastel20,
-    onPrimaryContainer = PinkPastel90,
-    
-    secondary = PurplePastel60,
+    primaryContainer = Color(0xFFF3E5FF),
+    onPrimaryContainer = ZoonZoonAccentEnd,
+
+    secondary = ZoonZoonAccentEnd,
     onSecondary = Color.White,
-    secondaryContainer = PurplePastel20,
-    onSecondaryContainer = PurplePastel80,
-    
-    tertiary = PinkPastel50,
+    secondaryContainer = Color(0xFFEDE8FF),
+    onSecondaryContainer = ZoonZoonAccentEnd,
+
+    tertiary = ZoonZoonAccentStart,
     onTertiary = Color.White,
-    tertiaryContainer = PinkPastel10,
-    onTertiaryContainer = PinkPastel80,
-    
-    error = Color(0xFFBA1A1A),
+    tertiaryContainer = Color(0xFFF8F0FF),
+    onTertiaryContainer = ZoonZoonAccentEnd,
+
+    error = Color(0xFFFF3B30),
     onError = Color.White,
-    errorContainer = Color(0xFFFFDAD6),
-    onErrorContainer = Color(0xFF410002),
-    
-    background = NeutralPastel10,
-    onBackground = NeutralPastel90,
-    surface = NeutralPastel10,
-    onSurface = NeutralPastel90,
-    surfaceVariant = NeutralPastel30,
-    onSurfaceVariant = NeutralPastel70,
-    
-    outline = NeutralPastel50,
-    outlineVariant = NeutralPastel40,
+    errorContainer = Color(0xFFFFEBEA),
+    onErrorContainer = Color(0xFFBA1A1A),
+
+    background = IosGroupedBackgroundLight,
+    onBackground = Color(0xFF000000),
+    surface = IosSecondaryGroupedLight,
+    onSurface = Color(0xFF000000),
+    surfaceVariant = Color(0xFFE5E5EA),
+    onSurfaceVariant = Color(0xFF8E8E93),
+
+    outline = IosSeparatorLight,
+    outlineVariant = Color(0xFFD1D1D6),
     scrim = Color.Black,
-    
-    inverseSurface = NeutralPastel90,
-    inverseOnSurface = NeutralPastel20,
-    inversePrimary = PinkPastel40,
-    
-    surfaceDim = NeutralPastel20,
-    surfaceBright = NeutralPastel10,
-    surfaceContainerLowest = Color.White,
-    surfaceContainerLow = NeutralPastel20,
-    surfaceContainer = NeutralPastel30,
-    surfaceContainerHigh = NeutralPastel40,
-    surfaceContainerHighest = NeutralPastel50
+
+    inverseSurface = Color(0xFF1C1C1E),
+    inverseOnSurface = Color(0xFFF2F2F7),
+    inversePrimary = ZoonZoonAccentEnd,
+
+    surfaceDim = Color(0xFFE5E5EA),
+    surfaceBright = IosSecondaryGroupedLight,
+    surfaceContainerLowest = IosSecondaryGroupedLight,
+    surfaceContainerLow = Color(0xFFF9F9FB),
+    surfaceContainer = IosSecondaryGroupedLight,
+    surfaceContainerHigh = Color(0xFFECECF0),
+    surfaceContainerHighest = Color(0xFFE5E5EA)
 )
 
-// Dark theme color scheme with pink pastels
+// iOS-native dark theme + ZoonZoon accent
 val GamepadVibratorDarkColorScheme = darkColorScheme(
-    primary = PinkPastel40,
-    onPrimary = PinkPastel90,
-    primaryContainer = PinkPastel80,
-    onPrimaryContainer = PinkPastel20,
-    
-    secondary = PurplePastel40,
-    onSecondary = PurplePastel80,
-    secondaryContainer = PurplePastel70,
-    onSecondaryContainer = PurplePastel20,
-    
-    tertiary = PinkPastel30,
-    onTertiary = PinkPastel80,
-    tertiaryContainer = PinkPastel70,
-    onTertiaryContainer = PinkPastel10,
-    
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005),
+    primary = ZoonZoonAccentStart,
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFF4A2D66),
+    onPrimaryContainer = Color(0xFFF3E5FF),
+
+    secondary = ZoonZoonAccentEnd,
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFF3D3566),
+    onSecondaryContainer = Color(0xFFE8E0FF),
+
+    tertiary = ZoonZoonAccentStart,
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFF352848),
+    onTertiaryContainer = Color(0xFFF3E5FF),
+
+    error = Color(0xFFFF453A),
+    onError = Color.White,
     errorContainer = Color(0xFF93000A),
     onErrorContainer = Color(0xFFFFDAD6),
-    
-    background = NeutralPastel95,
-    onBackground = NeutralPastel20,
-    surface = NeutralPastel95,
-    onSurface = NeutralPastel20,
-    surfaceVariant = NeutralPastel70,
-    onSurfaceVariant = NeutralPastel40,
-    
-    outline = NeutralPastel60,
-    outlineVariant = NeutralPastel70,
+
+    background = IosGroupedBackgroundDark,
+    onBackground = Color(0xFFFFFFFF),
+    surface = IosSecondaryGroupedDark,
+    onSurface = Color(0xFFFFFFFF),
+    surfaceVariant = IosTertiaryGroupedDark,
+    onSurfaceVariant = Color(0xFF8E8E93),
+
+    outline = IosSeparatorDark,
+    outlineVariant = Color(0xFF38383A),
     scrim = Color.Black,
-    
-    inverseSurface = NeutralPastel20,
-    inverseOnSurface = NeutralPastel90,
-    inversePrimary = PinkPastel70,
-    
-    surfaceDim = NeutralPastel95,
-    surfaceBright = NeutralPastel80,
-    surfaceContainerLowest = NeutralPastel99,
-    surfaceContainerLow = NeutralPastel90,
-    surfaceContainer = NeutralPastel80,
-    surfaceContainerHigh = NeutralPastel70,
-    surfaceContainerHighest = NeutralPastel60
+
+    inverseSurface = Color(0xFFF2F2F7),
+    inverseOnSurface = Color(0xFF1C1C1E),
+    inversePrimary = ZoonZoonAccentEnd,
+
+    surfaceDim = IosGroupedBackgroundDark,
+    surfaceBright = IosSecondaryGroupedDark,
+    surfaceContainerLowest = IosGroupedBackgroundDark,
+    surfaceContainerLow = IosSecondaryGroupedDark,
+    surfaceContainer = IosTertiaryGroupedDark,
+    surfaceContainerHigh = Color(0xFF3A3A3C),
+    surfaceContainerHighest = Color(0xFF48484A)
 )

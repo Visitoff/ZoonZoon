@@ -8,65 +8,59 @@ import kotlin.test.assertTrue
 class ThemeTest {
 
     @Test
-    fun `light theme primary colors should be pink pastels`() {
+    fun `light theme primary colors should use ZoonZoon brand tokens`() {
         val lightScheme = GamepadVibratorLightColorScheme
-        
-        // Primary should be a medium pink (PinkPastel70)
-        assertEquals(PinkPastel70, lightScheme.primary)
+
+        assertEquals(ZoonZoonAccentStart, lightScheme.primary)
         assertEquals(Color.White, lightScheme.onPrimary)
-        assertEquals(PinkPastel20, lightScheme.primaryContainer)
-        assertEquals(PinkPastel90, lightScheme.onPrimaryContainer)
+        assertEquals(Color(0xFFF3E5FF), lightScheme.primaryContainer)
+        assertEquals(ZoonZoonAccentEnd, lightScheme.onPrimaryContainer)
     }
 
     @Test
-    fun `dark theme primary colors should be pink pastels`() {
+    fun `dark theme primary colors should use ZoonZoon brand tokens`() {
         val darkScheme = GamepadVibratorDarkColorScheme
-        
-        // Primary should be a lighter pink for dark theme (PinkPastel40)
-        assertEquals(PinkPastel40, darkScheme.primary)
-        assertEquals(PinkPastel90, darkScheme.onPrimary)
-        assertEquals(PinkPastel80, darkScheme.primaryContainer)
-        assertEquals(PinkPastel20, darkScheme.onPrimaryContainer)
+
+        assertEquals(ZoonZoonAccentStart, darkScheme.primary)
+        assertEquals(Color.White, darkScheme.onPrimary)
+        assertEquals(Color(0xFF4A2D66), darkScheme.primaryContainer)
+        assertEquals(Color(0xFFF3E5FF), darkScheme.onPrimaryContainer)
     }
 
     @Test
-    fun `light theme secondary colors should be purple pastels`() {
+    fun `light theme secondary colors should use ZoonZoon accent gradient end`() {
         val lightScheme = GamepadVibratorLightColorScheme
-        
-        assertEquals(PurplePastel60, lightScheme.secondary)
+
+        assertEquals(ZoonZoonAccentEnd, lightScheme.secondary)
         assertEquals(Color.White, lightScheme.onSecondary)
-        assertEquals(PurplePastel20, lightScheme.secondaryContainer)
-        assertEquals(PurplePastel80, lightScheme.onSecondaryContainer)
+        assertEquals(Color(0xFFEDE8FF), lightScheme.secondaryContainer)
+        assertEquals(ZoonZoonAccentEnd, lightScheme.onSecondaryContainer)
     }
 
     @Test
-    fun `dark theme secondary colors should be purple pastels`() {
+    fun `dark theme secondary colors should use ZoonZoon accent end`() {
         val darkScheme = GamepadVibratorDarkColorScheme
-        
-        assertEquals(PurplePastel40, darkScheme.secondary)
-        assertEquals(PurplePastel80, darkScheme.onSecondary)
-        assertEquals(PurplePastel70, darkScheme.secondaryContainer)
-        assertEquals(PurplePastel20, darkScheme.onSecondaryContainer)
+
+        assertEquals(ZoonZoonAccentEnd, darkScheme.secondary)
+        assertEquals(Color.White, darkScheme.onSecondary)
     }
 
     @Test
-    fun `light theme tertiary colors should be pink pastels`() {
+    fun `light theme tertiary colors should use ZoonZoon accent tokens`() {
         val lightScheme = GamepadVibratorLightColorScheme
-        
-        assertEquals(PinkPastel50, lightScheme.tertiary)
+
+        assertEquals(ZoonZoonAccentStart, lightScheme.tertiary)
         assertEquals(Color.White, lightScheme.onTertiary)
-        assertEquals(PinkPastel10, lightScheme.tertiaryContainer)
-        assertEquals(PinkPastel80, lightScheme.onTertiaryContainer)
+        assertEquals(Color(0xFFF8F0FF), lightScheme.tertiaryContainer)
+        assertEquals(ZoonZoonAccentEnd, lightScheme.onTertiaryContainer)
     }
 
     @Test
-    fun `dark theme tertiary colors should be pink pastels`() {
+    fun `dark theme tertiary colors should use ZoonZoon accent tokens`() {
         val darkScheme = GamepadVibratorDarkColorScheme
-        
-        assertEquals(PinkPastel30, darkScheme.tertiary)
-        assertEquals(PinkPastel80, darkScheme.onTertiary)
-        assertEquals(PinkPastel70, darkScheme.tertiaryContainer)
-        assertEquals(PinkPastel10, darkScheme.onTertiaryContainer)
+
+        assertEquals(ZoonZoonAccentStart, darkScheme.tertiary)
+        assertEquals(Color.White, darkScheme.onTertiary)
     }
 
     @Test

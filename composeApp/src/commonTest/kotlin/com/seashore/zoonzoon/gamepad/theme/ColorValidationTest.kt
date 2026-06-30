@@ -2,6 +2,7 @@ package com.seashore.zoonzoon.gamepad.theme
 
 import androidx.compose.ui.graphics.Color
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
@@ -101,18 +102,12 @@ class ColorValidationTest {
     }
 
     @Test
-    fun `light and dark themes should have different primary colors`() {
+    fun `light and dark themes should share brand primary accent`() {
         val lightScheme = GamepadVibratorLightColorScheme
         val darkScheme = GamepadVibratorDarkColorScheme
-        
-        // Primary colors should be different between light and dark themes
-        val lightPrimary = lightScheme.primary
-        val darkPrimary = darkScheme.primary
-        
-        assertTrue(
-            lightPrimary != darkPrimary,
-            "Light and dark themes should have different primary colors"
-        )
+
+        assertEquals(ZoonZoonAccentStart, lightScheme.primary)
+        assertEquals(ZoonZoonAccentStart, darkScheme.primary)
     }
 
     @Test

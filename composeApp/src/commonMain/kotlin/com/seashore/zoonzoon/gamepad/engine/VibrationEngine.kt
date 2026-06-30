@@ -3,6 +3,9 @@ package com.seashore.zoonzoon.gamepad.engine
 import com.seashore.zoonzoon.gamepad.model.ConnectionState
 import com.seashore.zoonzoon.gamepad.model.VibrationPattern
 import com.seashore.zoonzoon.gamepad.model.VibrationState
+import com.seashore.zoonzoon.gamepad.platform.PhoneVibrator
+import com.seashore.zoonzoon.gamepad.platform.NoOpPhoneVibrator
+import com.seashore.zoonzoon.settings.VibrationTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -36,7 +39,9 @@ import kotlinx.coroutines.launch
  */
 class VibrationEngine(
     val controller: GamepadControllerWithState,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val phoneVibrator: PhoneVibrator = NoOpPhoneVibrator,
+    private val vibrationTarget: StateFlow<VibrationTarget>? = null
 ) {
     companion object {
         /** Target frame interval in milliseconds (~60 fps). */
@@ -86,9 +91,9 @@ class VibrationEngine(
     fun disableVibration() {
         stopExecutionLoop()
         _vibrationState.value = _vibrationState.value.copy(enabled = false)
-        // Send stop command asynchronously so callers are not blocked.
         scope.launch {
             controller.sendVibrationCommand(leftMotor = 0f, rightMotor = 0f)
+            phoneVibrator.stop()
         }
     }
 
@@ -153,30 +158,40 @@ class VibrationEngine(
             while (isActive) {
                 val state = _vibrationState.value
                 if (!state.enabled) break
-                
-                // Check connection state - stop if disconnected
-                if (controller.connectionState.value is ConnectionState.Disconnected) {
-                    // Connection lost, disable vibration
+
+                val connected = controller.connectionState.value is ConnectionState.Connected
+                val target = vibrationTarget?.value ?: VibrationTarget.GAMEPAD_ONLY
+                val usePhone = phoneVibrator.isAvailable && when (target) {
+                    VibrationTarget.PHONE_ONLY -> true
+                    VibrationTarget.GAMEPAD_AND_PHONE -> true
+                    VibrationTarget.GAMEPAD_ONLY -> !connected
+                }
+                val useGamepad = connected && target != VibrationTarget.PHONE_ONLY
+
+                if (!usePhone && !useGamepad) {
                     _vibrationState.value = _vibrationState.value.copy(enabled = false)
                     break
                 }
 
                 val elapsed = currentTimeMillis() - startTime
                 val (left, right) = state.activePattern.calculateFrame(elapsed, state.intensity)
-                
-                // Send vibration command and check for failure
-                val result = controller.sendVibrationCommand(leftMotor = left, rightMotor = right)
-                
-                // If command fails (e.g., due to connection loss), stop the execution loop
-                if (result.isFailure) {
-                    // Log the error but don't throw - just stop execution
-                    // The connection state will be updated by the controller
-                    _vibrationState.value = _vibrationState.value.copy(enabled = false)
-                    break
+                val motorLevel = maxOf(left, right)
+
+                if (useGamepad) {
+                    val result = controller.sendVibrationCommand(leftMotor = left, rightMotor = right)
+                    if (result.isFailure && !usePhone) {
+                        _vibrationState.value = _vibrationState.value.copy(enabled = false)
+                        break
+                    }
+                }
+
+                if (usePhone) {
+                    phoneVibrator.vibrate(motorLevel)
                 }
 
                 delay(FRAME_INTERVAL_MS)
             }
+            phoneVibrator.stop()
         }
     }
 

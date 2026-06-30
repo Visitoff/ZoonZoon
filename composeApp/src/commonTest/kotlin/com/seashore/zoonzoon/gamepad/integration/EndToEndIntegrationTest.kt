@@ -115,6 +115,7 @@ class EndToEndIntegrationTest {
     @Test
     fun testPatternSwitchingDuringVibration() = runTest {
         val controller = FakePlatformGamepadController()
+        controller.setConnectionState(ConnectionState.Connected("Test Pad"))
         val engine = VibrationEngine(controller, this)
         val viewModel = GamepadViewModel(engine, this)
 

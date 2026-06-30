@@ -161,5 +161,6 @@ class UiStateDisplayPropertyTest {
         is VibrationPattern.Pulse    -> "Pulse"
         is VibrationPattern.Wave     -> "Wave"
         is VibrationPattern.Custom   -> "Custom"
+        else -> "Pattern"
     }
 }

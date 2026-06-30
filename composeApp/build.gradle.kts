@@ -53,6 +53,9 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.haze)
+            implementation(libs.haze.blur)
+            implementation(libs.haze.blur.materials)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -69,8 +72,8 @@ android {
         applicationId = "com.ZoonZoon"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 13
+        versionName = "1.4"
         
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

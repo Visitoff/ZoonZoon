@@ -52,3 +52,7 @@ GoogleService-Info.plist
 
 # Temp output files
 *.txt
+
+# Personal notes (not for repo)
+docs/plans/atomic-habits-6-months.md
+docs/plans/my-6-month-plan.md

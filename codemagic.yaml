@@ -54,7 +54,7 @@ workflows:
           set -x
           # Build number is hardcoded in Info.plist CFBundleVersion
           # Update it manually before each release
-          echo "Build number: 12"
+          echo "Build number: 13"
 
       - name: Build IPA for distribution
         script: |

@@ -1,11 +1,12 @@
 package com.seashore.zoonzoon
 
 import android.app.Application
+import com.seashore.zoonzoon.gamepad.platform.initPhoneVibratorContext
 import com.seashore.zoonzoon.gamepad.platform.PlatformGamepadController
+import com.seashore.zoonzoon.settings.initAppSettingsContext
 
 // Application instance held for context access
-private lateinit var appContext: Application
-
+internal lateinit var appContext: Application
 /**
  * Android Application class to hold context.
  */
@@ -13,6 +14,8 @@ class GamepadApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         appContext = this
+        initPhoneVibratorContext(this)
+        initAppSettingsContext(this)
     }
 }
 

@@ -3,31 +3,35 @@ package com.seashore.zoonzoon.gamepad.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import com.seashore.zoonzoon.settings.AppThemeMode
 
-/**
- * GamepadVibratorTheme provides a pink pastel Material3 theme for the Gamepad Vibration Controller app.
- * 
- * This theme implements the pink pastel color scheme as specified in Requirement 7.3.
- * It supports both light and dark theme variants that automatically adapt to system preferences.
- * 
- * @param darkTheme Whether to use the dark theme variant. Defaults to system preference.
- * @param content The composable content to be themed.
- */
 @Composable
 fun GamepadVibratorTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themeMode) {
+        AppThemeMode.LIGHT -> false
+        AppThemeMode.DARK -> true
+        AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
     val colorScheme = if (darkTheme) {
         GamepadVibratorDarkColorScheme
     } else {
         GamepadVibratorLightColorScheme
     }
+    val glassTokens = if (darkTheme) DarkGlassTokens else LightGlassTokens
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = MaterialTheme.typography, // Use default Material3 typography
-        shapes = MaterialTheme.shapes, // Use default Material3 shapes
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalGlassTokens provides glassTokens,
+        LocalAppDarkTheme provides darkTheme
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = ZoonZoonTypography,
+            shapes = ZoonZoonShapes,
+            content = content
+        )
+    }
 }
