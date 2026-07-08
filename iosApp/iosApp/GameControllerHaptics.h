@@ -8,6 +8,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// matching Apple's recommended rumble migration pattern (WWDC20).
 @interface GameControllerHaptics : NSObject
 
+/// Start scanning for nearby wireless controllers.
++ (void)startWirelessDiscovery;
+
+/// Stop wireless controller discovery.
++ (void)stopWirelessDiscovery;
+
 /// Prepare haptic engines for the connected controller. Call on connect / become-current.
 - (BOOL)prepareForController:(GCController *)controller;
 

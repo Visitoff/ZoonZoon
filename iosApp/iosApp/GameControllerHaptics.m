@@ -132,6 +132,14 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
     BOOL _useSplitMotors;
 }
 
++ (void)startWirelessDiscovery {
+    [GCController startWirelessControllerDiscoveryWithCompletionHandler:nil];
+}
+
++ (void)stopWirelessDiscovery {
+    [GCController stopWirelessControllerDiscovery];
+}
+
 - (instancetype)init {
     self = [super init];
     if (self) {

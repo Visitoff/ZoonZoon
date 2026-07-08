@@ -44,7 +44,7 @@ actual class PlatformGamepadController : GamepadControllerWithState {
 
     actual override suspend fun startDiscovery() = withContext(Dispatchers.Main) {
         _connectionState.value = ConnectionState.Scanning
-        GCController.startWirelessControllerDiscovery(null)
+        GameControllerHaptics.startWirelessDiscovery()
 
         connectObserver = NSNotificationCenter.defaultCenter.addObserverForName(
             name = GCControllerDidConnectNotification,
@@ -81,7 +81,7 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     }
 
     actual override suspend fun stopDiscovery() = withContext(Dispatchers.Main) {
-        GCController.stopWirelessControllerDiscovery()
+        GameControllerHaptics.stopWirelessDiscovery()
         connectObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         disconnectObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
         becomeCurrentObserver?.let { NSNotificationCenter.defaultCenter.removeObserver(it) }
@@ -122,7 +122,7 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     }
 
     actual override suspend fun disconnect() = withContext(Dispatchers.Main) {
-        GCController.stopWirelessControllerDiscovery()
+        GameControllerHaptics.stopWirelessDiscovery()
         invalidateHaptics()
         connectedController = null
         _connectionState.value = ConnectionState.Disconnected
