@@ -39,8 +39,8 @@
     if ([engine respondsToSelector:@selector(setPlaysHapticsOnly:)]) {
         engine.playsHapticsOnly = YES;
     }
-    if ([engine respondsToSelector:@selector(setIsAutoShutdownEnabled:)]) {
-        engine.isAutoShutdownEnabled = NO;
+    if ([engine respondsToSelector:@selector(setAutoShutdownEnabled:)]) {
+        engine.autoShutdownEnabled = NO;
     }
 
     __weak GCHapticMotorChannel *weakSelf = self;
