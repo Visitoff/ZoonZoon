@@ -38,55 +38,61 @@ actual class PlatformGamepadController : GamepadControllerWithState {
 
     private val haptics = GameControllerHaptics()
 
-    actual override suspend fun startDiscovery() = withContext(Dispatchers.Main) {
-        _connectionState.value = ConnectionState.Scanning
-        GameControllerHaptics.startWirelessDiscovery()
+    actual override suspend fun startDiscovery() {
+        withContext(Dispatchers.Main) {
+            _connectionState.value = ConnectionState.Scanning
+            GameControllerHaptics.startWirelessDiscovery()
 
-        if (connectObserver == null) {
-            connectObserver = NSNotificationCenter.defaultCenter.addObserverForName(
-                name = GCControllerDidConnectNotification,
-                `object` = null,
-                queue = NSOperationQueue.mainQueue
-            ) { notification ->
-                val controller = notification?.`object` as? GCController
-                controller?.let { handleControllerConnected(it) }
+            if (connectObserver == null) {
+                connectObserver = NSNotificationCenter.defaultCenter.addObserverForName(
+                    name = GCControllerDidConnectNotification,
+                    `object` = null,
+                    queue = NSOperationQueue.mainQueue
+                ) { notification ->
+                    val controller = notification?.`object` as? GCController
+                    controller?.let { handleControllerConnected(it) }
+                }
+            }
+
+            if (disconnectObserver == null) {
+                disconnectObserver = NSNotificationCenter.defaultCenter.addObserverForName(
+                    name = GCControllerDidDisconnectNotification,
+                    `object` = null,
+                    queue = NSOperationQueue.mainQueue
+                ) { notification ->
+                    val controller = notification?.`object` as? GCController
+                    controller?.let { handleControllerDisconnected(it) }
+                }
+            }
+
+            if (becomeCurrentObserver == null) {
+                becomeCurrentObserver = NSNotificationCenter.defaultCenter.addObserverForName(
+                    name = GCControllerDidBecomeCurrentNotification,
+                    `object` = null,
+                    queue = NSOperationQueue.mainQueue
+                ) { notification ->
+                    val controller = notification?.`object` as? GCController
+                    controller?.let { handleControllerConnected(it) }
+                }
+            }
+
+            // Prefer the actively used controller, then any already-connected one.
+            val preferred = GCController.current
+                ?: (GCController.controllers().firstOrNull() as? GCController)
+            if (preferred != null) {
+                handleControllerConnected(preferred)
             }
         }
-
-        if (disconnectObserver == null) {
-            disconnectObserver = NSNotificationCenter.defaultCenter.addObserverForName(
-                name = GCControllerDidDisconnectNotification,
-                `object` = null,
-                queue = NSOperationQueue.mainQueue
-            ) { notification ->
-                val controller = notification?.`object` as? GCController
-                controller?.let { handleControllerDisconnected(it) }
-            }
-        }
-
-        if (becomeCurrentObserver == null) {
-            becomeCurrentObserver = NSNotificationCenter.defaultCenter.addObserverForName(
-                name = GCControllerDidBecomeCurrentNotification,
-                `object` = null,
-                queue = NSOperationQueue.mainQueue
-            ) { notification ->
-                val controller = notification?.`object` as? GCController
-                controller?.let { handleControllerConnected(it) }
-            }
-        }
-
-        // Prefer the actively used controller, then any already-connected one.
-        val preferred = GCController.current
-            ?: (GCController.controllers().firstOrNull() as? GCController)
-        preferred?.let { handleControllerConnected(it) }
     }
 
-    actual override suspend fun stopDiscovery() = withContext(Dispatchers.Main) {
-        GameControllerHaptics.stopWirelessDiscovery()
-        // Keep observers — controller may reconnect while app stays open.
-        // Only leave Scanning if we never connected.
-        if (_connectionState.value is ConnectionState.Scanning) {
-            _connectionState.value = ConnectionState.Disconnected
+    actual override suspend fun stopDiscovery() {
+        withContext(Dispatchers.Main) {
+            GameControllerHaptics.stopWirelessDiscovery()
+            // Keep observers — controller may reconnect while app stays open.
+            // Only leave Scanning if we never connected.
+            if (_connectionState.value is ConnectionState.Scanning) {
+                _connectionState.value = ConnectionState.Disconnected
+            }
         }
     }
 
@@ -122,11 +128,13 @@ actual class PlatformGamepadController : GamepadControllerWithState {
         }
     }
 
-    actual override suspend fun disconnect() = withContext(Dispatchers.Main) {
-        GameControllerHaptics.stopWirelessDiscovery()
-        invalidateHaptics()
-        connectedController = null
-        _connectionState.value = ConnectionState.Disconnected
+    actual override suspend fun disconnect() {
+        withContext(Dispatchers.Main) {
+            GameControllerHaptics.stopWirelessDiscovery()
+            invalidateHaptics()
+            connectedController = null
+            _connectionState.value = ConnectionState.Disconnected
+        }
     }
 
     private fun handleControllerConnected(controller: GCController) {
