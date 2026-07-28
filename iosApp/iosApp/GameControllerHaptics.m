@@ -2,8 +2,9 @@
 #import <CoreHaptics/CoreHaptics.h>
 #import <GameController/GameController.h>
 
-static const NSTimeInterval kContinuousPatternDuration = 30.0;
-
+/// One motor channel: infinite continuous event at base intensity 1.0,
+/// modulated by CHHapticDynamicParameterIDHapticIntensityControl (multiply).
+/// Matches Apple's LongRunningHaptics sample from game-porting-toolkit.
 @interface GCHapticMotorChannel : NSObject
 - (BOOL)prepareWithController:(GCController *)controller locality:(GCHapticsLocality)locality;
 - (BOOL)setIntensity:(float)intensity;
@@ -12,7 +13,8 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
 
 @implementation GCHapticMotorChannel {
     CHHapticEngine *_engine;
-    id<CHHapticAdvancedPatternPlayer> _player;
+    id<CHHapticPatternPlayer> _player;
+    BOOL _engineStopped;
 }
 
 - (BOOL)prepareWithController:(GCController *)controller locality:(GCHapticsLocality)locality {
@@ -22,34 +24,55 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
         return NO;
     }
 
+    NSArray<GCHapticsLocality> *supported = controller.haptics.supportedLocalities;
+    if (supported.count > 0 && ![supported containsObject:locality]) {
+        NSLog(@"[Haptics] Locality %@ not in supported %@", locality, supported);
+        return NO;
+    }
+
     CHHapticEngine *engine = [controller.haptics createEngineWithLocality:locality];
     if (!engine) {
         NSLog(@"[Haptics] createEngine failed for locality %@", locality);
         return NO;
     }
 
+    if ([engine respondsToSelector:@selector(setPlaysHapticsOnly:)]) {
+        engine.playsHapticsOnly = YES;
+    }
+    if ([engine respondsToSelector:@selector(setIsAutoShutdownEnabled:)]) {
+        engine.isAutoShutdownEnabled = NO;
+    }
+
+    __weak GCHapticMotorChannel *weakSelf = self;
     engine.stoppedHandler = ^(CHHapticEngineStoppedReason reason) {
         NSLog(@"[Haptics] Engine stopped: %ld", (long)reason);
-    };
-
-    __weak CHHapticEngine *weakEngine = engine;
-    engine.resetHandler = ^{
-        NSError *restartError = nil;
-        [weakEngine startAndReturnError:&restartError];
-        if (restartError) {
-            NSLog(@"[Haptics] Engine restart error: %@", restartError);
+        GCHapticMotorChannel *strongSelf = weakSelf;
+        if (strongSelf) {
+            strongSelf->_engineStopped = YES;
         }
     };
 
-    NSError *startError = nil;
-    if (![engine startAndReturnError:&startError]) {
-        NSLog(@"[Haptics] Engine start error: %@", startError);
+    engine.resetHandler = ^{
+        NSLog(@"[Haptics] Engine reset — will restart on next intensity update");
+        GCHapticMotorChannel *strongSelf = weakSelf;
+        if (strongSelf) {
+            strongSelf->_engineStopped = YES;
+        }
+    };
+
+    _engine = engine;
+    _engineStopped = YES;
+
+    if (![self startEngineIfNeeded]) {
+        _engine = nil;
         return NO;
     }
 
+    // Base intensity MUST be 1.0: dynamic IntensityControl multiplies against it.
+    // Starting at 0.0 makes every update permanently silent.
     CHHapticEventParameter *intensityParam =
         [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticIntensity
-                                                      value:0.0f];
+                                                      value:1.0f];
     CHHapticEventParameter *sharpnessParam =
         [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticSharpness
                                                       value:0.5f];
@@ -58,42 +81,72 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
         [[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticContinuous
                                       parameters:@[intensityParam, sharpnessParam]
                                     relativeTime:0
-                                        duration:kContinuousPatternDuration];
+                                        duration:GCHapticDurationInfinite];
 
     NSError *patternError = nil;
     CHHapticPattern *pattern =
         [[CHHapticPattern alloc] initWithEvents:@[event] parameters:@[] error:&patternError];
     if (patternError || !pattern) {
         NSLog(@"[Haptics] Pattern error: %@", patternError);
-        [engine stopWithCompletionHandler:nil];
+        [self stop];
         return NO;
     }
 
+    // Prefer regular PatternPlayer — AdvancedPlayer fails on some DualShock/DualSense stacks.
     NSError *playerError = nil;
-    id<CHHapticAdvancedPatternPlayer> player =
-        [engine createAdvancedPlayerWithPattern:pattern error:&playerError];
+    id<CHHapticPatternPlayer> player = [engine createPlayerWithPattern:pattern error:&playerError];
     if (playerError || !player) {
-        NSLog(@"[Haptics] Advanced player error: %@", playerError);
-        [engine stopWithCompletionHandler:nil];
-        return NO;
+        NSLog(@"[Haptics] Pattern player error: %@ — trying advanced player", playerError);
+        playerError = nil;
+        player = [engine createAdvancedPlayerWithPattern:pattern error:&playerError];
+        if (playerError || !player) {
+            NSLog(@"[Haptics] Advanced player also failed: %@", playerError);
+            [self stop];
+            return NO;
+        }
+        if ([player respondsToSelector:@selector(setLoopEnabled:)]) {
+            [(id<CHHapticAdvancedPatternPlayer>)player setLoopEnabled:YES];
+        }
     }
-
-    player.loopEnabled = YES;
 
     NSError *playError = nil;
-    if (![player startAtTime:0 error:&playError]) {
+    if (![player startAtTime:CHHapticTimeImmediate error:&playError]) {
         NSLog(@"[Haptics] Player start error: %@", playError);
-        [engine stopWithCompletionHandler:nil];
+        [self stop];
         return NO;
     }
 
-    _engine = engine;
     _player = player;
+
+    // Mute until the first real intensity update (Apple sample pattern).
+    [self setIntensity:0.0f];
+    NSLog(@"[Haptics] Channel ready for locality %@", locality);
+    return YES;
+}
+
+- (BOOL)startEngineIfNeeded {
+    if (!_engine) {
+        return NO;
+    }
+    if (!_engineStopped) {
+        return YES;
+    }
+
+    NSError *startError = nil;
+    if (![_engine startAndReturnError:&startError]) {
+        NSLog(@"[Haptics] Engine start error: %@", startError);
+        return NO;
+    }
+    _engineStopped = NO;
     return YES;
 }
 
 - (BOOL)setIntensity:(float)intensity {
-    if (!_player) {
+    if (!_player || !_engine) {
+        return NO;
+    }
+
+    if (![self startEngineIfNeeded]) {
         return NO;
     }
 
@@ -104,9 +157,9 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
                                                   relativeTime:0];
 
     NSError *error = nil;
-    if (![_player sendParameters:@[param] atTime:0 error:&error]) {
+    if (![_player sendParameters:@[param] atTime:CHHapticTimeImmediate error:&error]) {
         NSLog(@"[Haptics] sendParameters error: %@", error);
-        [self stop];
+        _engineStopped = YES;
         return NO;
     }
     return YES;
@@ -121,6 +174,7 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
         [_engine stopWithCompletionHandler:nil];
         _engine = nil;
     }
+    _engineStopped = YES;
 }
 
 @end
@@ -130,6 +184,7 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
     GCHapticMotorChannel *_rightChannel;
     GCHapticMotorChannel *_combinedChannel;
     BOOL _useSplitMotors;
+    __weak GCController *_preparedController;
 }
 
 + (void)startWirelessDiscovery {
@@ -160,6 +215,17 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
     NSLog(@"[Haptics] Controller '%@' supported localities: %@", controller.vendorName, localities);
 }
 
+- (BOOL)prepareChannel:(GCHapticMotorChannel *)channel
+        withController:(GCController *)controller
+             localities:(NSArray<GCHapticsLocality> *)localities {
+    for (GCHapticsLocality locality in localities) {
+        if ([channel prepareWithController:controller locality:locality]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
 - (BOOL)prepareForController:(GCController *)controller {
     [self stopAll];
 
@@ -175,6 +241,7 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
 
     if (leftOk && rightOk) {
         _useSplitMotors = YES;
+        _preparedController = controller;
         NSLog(@"[Haptics] Prepared split left/right motors for '%@'", controller.vendorName);
         return YES;
     }
@@ -183,18 +250,23 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
     [_rightChannel stop];
     _useSplitMotors = NO;
 
-    if ([_combinedChannel prepareWithController:controller locality:GCHapticsLocalityHandles]) {
-        NSLog(@"[Haptics] Prepared combined handles motor for '%@'", controller.vendorName);
+    NSArray<GCHapticsLocality> *fallbackLocalities = @[
+        GCHapticsLocalityHandles,
+        GCHapticsLocalityDefault,
+        GCHapticsLocalityAll
+    ];
+
+    if ([self prepareChannel:_combinedChannel withController:controller localities:fallbackLocalities]) {
+        _preparedController = controller;
+        NSLog(@"[Haptics] Prepared combined motor for '%@'", controller.vendorName);
         return YES;
     }
 
-    if ([_combinedChannel prepareWithController:controller locality:GCHapticsLocalityDefault]) {
-        NSLog(@"[Haptics] Prepared default motor for '%@'", controller.vendorName);
-        return YES;
-    }
-
-    if ([_combinedChannel prepareWithController:controller locality:GCHapticsLocalityAll]) {
-        NSLog(@"[Haptics] Prepared all-motors channel for '%@'", controller.vendorName);
+    // Last resort: try every locality the controller reports.
+    NSArray<GCHapticsLocality> *supported = controller.haptics.supportedLocalities;
+    if ([self prepareChannel:_combinedChannel withController:controller localities:supported]) {
+        _preparedController = controller;
+        NSLog(@"[Haptics] Prepared via supported locality for '%@'", controller.vendorName);
         return YES;
     }
 
@@ -218,6 +290,7 @@ static const NSTimeInterval kContinuousPatternDuration = 30.0;
     [_rightChannel stop];
     [_combinedChannel stop];
     _useSplitMotors = NO;
+    _preparedController = nil;
 }
 
 @end

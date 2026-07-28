@@ -4,8 +4,8 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// ObjC bridge for game controller haptics (GCController.haptics + CoreHaptics).
-/// Uses CHHapticAdvancedPatternPlayer with per-frame dynamic intensity updates,
-/// matching Apple's recommended rumble migration pattern (WWDC20).
+/// Infinite continuous event at base intensity 1.0, modulated via
+/// CHHapticDynamicParameterIDHapticIntensityControl (Apple LongRunningHaptics pattern).
 @interface GameControllerHaptics : NSObject
 
 /// Start scanning for nearby wireless controllers.
