@@ -7,7 +7,23 @@ enum HapticsPlaybackState: Equatable {
     case starting
     case playing
     case stopping
-    case stopped
+}
+
+enum HapticsManagerError: LocalizedError {
+    case noController
+    case hapticsUnsupported
+    case playbackFailed(Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .noController:
+            return "Connect a compatible game controller first."
+        case .hapticsUnsupported:
+            return "This controller does not provide vibration through iOS."
+        case .playbackFailed:
+            return "Vibration could not be started. Reconnect the controller and try again."
+        }
+    }
 }
 
 protocol HapticsManagerDelegate: AnyObject {
@@ -16,416 +32,245 @@ protocol HapticsManagerDelegate: AnyObject {
     func didUpdatePlaybackState(_ state: HapticsPlaybackState)
 }
 
-class HapticsManager {
-    private enum LoopingConstants {
-        static let overlapFactor = 0.83
-        static let fallbackRepeatDelay: TimeInterval = 2.5
-        static let minimumRepeatDelay: TimeInterval = 0.25
-        static let reasonableEventTimeUpperBound: TimeInterval = 5.0
-        static let stopSettleBuffer: TimeInterval = 0.08
-        static let stoppedIndicatorDuration: TimeInterval = 1.0
+final class HapticsManager {
+    weak var delegate: HapticsManagerDelegate?
+
+    private(set) var connectedController: GCController?
+    private(set) var playbackState: HapticsPlaybackState = .idle
+
+    private var isMonitoring = false
+    private var engine: CHHapticEngine?
+    private var player: CHHapticAdvancedPatternPlayer?
+    private var engineIdentifier: UUID?
+
+    var isControllerConnected: Bool {
+        connectedController != nil
     }
 
-    private struct PatternTiming {
-        let duration: TimeInterval
-        let repeatDelay: TimeInterval
+    var supportsHaptics: Bool {
+        connectedController?.haptics != nil
     }
 
-    private var isSetup = false
-    private var controller: GCController?
-    private var engineMap = [GCHapticsLocality: CHHapticEngine]()
-
-    private let loopingStateQueue = DispatchQueue(label: "HapticsManager.looping-state")
-    private var loopingReplayWorkItem: DispatchWorkItem?
-    private var loopingPatternIdentifier: String?
-    private var loopingLocality: GCHapticsLocality?
-    private var activeIterationEndUptime: TimeInterval?
-    private var stoppedTransitionWorkItem: DispatchWorkItem?
-    private var idleTransitionWorkItem: DispatchWorkItem?
-
-    private(set) var playbackState: HapticsPlaybackState = .idle {
-        didSet {
-            guard oldValue != playbackState else { return }
-            if Thread.isMainThread {
-                delegate?.didUpdatePlaybackState(playbackState)
-            } else {
-                DispatchQueue.main.async { [weak self] in
-                    guard let self else { return }
-                    self.delegate?.didUpdatePlaybackState(self.playbackState)
-                }
-            }
-        }
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
-    weak var delegate: HapticsManagerDelegate? {
-        didSet {
-            if delegate != nil {
-                startObserving()
-            }
-        }
-    }
-
-    private func startObserving() {
-        guard !isSetup else { return }
-
-        let nc = NotificationCenter.default
-
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(controllerDidConnect),
-                                               name: .GCControllerDidConnect,
-                                               object: nil)
-
-        nc.addObserver(self,
-                       selector: #selector(controllerDidDisconnect),
-                       name: .GCControllerDidDisconnect,
-                       object: nil)
-        isSetup = true
-    }
-
-    @objc private func controllerDidConnect(notification: Notification) {
-        guard let controller = notification.object as? GCController else {
-            fatalError("Invalid notification object.")
-        }
-
-        print("Connected \(controller.productCategory) game controller.")
-
-        self.controller = controller
-        if let engine = createEngine(for: controller, locality: .default) {
-            engineMap[GCHapticsLocality.default] = engine
-        }
-
-        delegate?.didConnect(controller: controller)
-    }
-
-    private func createEngine(for controller: GCController, locality: GCHapticsLocality) -> CHHapticEngine? {
-        guard let engine = controller.haptics?.createEngine(withLocality: locality) else {
-            print("Failed to create engine.")
-            return nil
-        }
-
-        engine.isAutoShutdownEnabled = false
-
-        engine.stoppedHandler = { [weak self] reason in
-            print("The engine stopped because \(reason.message)")
-            guard let self else { return }
-            switch reason {
-            case .gameControllerDisconnect, .systemError, .engineDestroyed:
-                self.clearLoopingState()
-                self.engineMap.removeValue(forKey: locality)
-                self.playbackState = .idle
-            default:
-                break
-            }
-        }
-
-        engine.resetHandler = {
-            print("The engine reset --> Restarting now!")
-            do {
-                try engine.start()
-            } catch {
-                print("Failed to restart the engine: \(error)")
-            }
-        }
-        return engine
-    }
-
-    @objc private func controllerDidDisconnect(notification: Notification) {
-        guard controller == notification.object as? GCController else { return }
-
-        clearLoopingState()
-        cancelPlaybackTransitionWorkItems()
-        engineMap.removeAll(keepingCapacity: true)
-        controller = nil
-        playbackState = .idle
-        delegate?.didDisconnectController()
-    }
-
-    func playHapticsFile(named filename: String, locality: GCHapticsLocality = .default) {
-        guard let engine = engine(for: locality) else {
-            print("Unable to play haptics: no engine available for locality \(locality)")
+    func startMonitoring() {
+        guard !isMonitoring else {
+            refreshConnectedController()
             return
         }
 
-        guard let url = Bundle.main.url(forResource: filename, withExtension: "ahap") else {
-            print("Unable to find haptics file named '\(filename)'.")
-            return
+        let notificationCenter = NotificationCenter.default
+        notificationCenter.addObserver(self,
+                                       selector: #selector(controllerDidConnect),
+                                       name: .GCControllerDidConnect,
+                                       object: nil)
+        notificationCenter.addObserver(self,
+                                       selector: #selector(controllerDidDisconnect),
+                                       name: .GCControllerDidDisconnect,
+                                       object: nil)
+        isMonitoring = true
+        refreshConnectedController()
+    }
+
+    func stopMonitoring() {
+        stopHaptics()
+        guard isMonitoring else { return }
+
+        NotificationCenter.default.removeObserver(self,
+                                                  name: .GCControllerDidConnect,
+                                                  object: nil)
+        NotificationCenter.default.removeObserver(self,
+                                                  name: .GCControllerDidDisconnect,
+                                                  object: nil)
+        isMonitoring = false
+    }
+
+    func refreshConnectedController() {
+        let detectedController = GCController.controllers().first
+        updateConnectedController(detectedController)
+    }
+
+    @discardableResult
+    func startDefaultHaptics() -> Result<Void, HapticsManagerError> {
+        guard playbackState != .playing else {
+            return .success(())
         }
+        guard let controller = connectedController else {
+            return .failure(.noController)
+        }
+        guard controller.haptics != nil else {
+            return .failure(.hapticsUnsupported)
+        }
+
+        stopHaptics()
+        updatePlaybackState(.starting)
+
+        guard let newEngine = controller.haptics?.createEngine(withLocality: .default) else {
+            updatePlaybackState(.idle)
+            return .failure(.hapticsUnsupported)
+        }
+
+        let identifier = UUID()
+        engineIdentifier = identifier
+        configure(newEngine, identifier: identifier)
 
         do {
-            try engine.start()
-            try engine.playPattern(from: url)
+            let hapticPattern = try makeDefaultPattern()
+            let newPlayer = try newEngine.makeAdvancedPlayer(with: hapticPattern)
+            engine = newEngine
+            player = newPlayer
+
+            try newEngine.start()
+            try newPlayer.start(atTime: CHHapticTimeImmediate)
+
+            updatePlaybackState(.playing)
+            return .success(())
         } catch {
-            print("An error occured playing \(filename): \(error).")
-        }
-    }
-
-    func startLoopingHapticsFile(named filename: String, locality: GCHapticsLocality = .default) {
-        guard playbackState == .idle else { return }
-
-        guard let engine = engine(for: locality) else {
-            print("Unable to play haptics: no engine available for locality \(locality)")
-            return
-        }
-
-        guard let url = Bundle.main.url(forResource: filename, withExtension: "ahap") else {
-            print("Unable to find haptics file named '\(filename)'.")
-            return
-        }
-
-        clearLoopingState()
-        cancelPlaybackTransitionWorkItems()
-
-        let identifier = playbackIdentifier(for: filename, locality: locality)
-        let resolvedPatternTiming: PatternTiming
-        if let timingOverride = AHAPCatalog.timing(for: filename) {
-            resolvedPatternTiming = PatternTiming(duration: timingOverride.duration,
-                                                  repeatDelay: timingOverride.repeatDelay)
-        } else {
-            resolvedPatternTiming = patternTiming(for: url)
-        }
-
-        loopingStateQueue.sync {
-            loopingPatternIdentifier = identifier
-            loopingLocality = locality
-            activeIterationEndUptime = nil
-        }
-
-        playbackState = .starting
-
-        do {
-            try engine.start()
-            playLoopIteration(filename: filename,
-                              url: url,
-                              engine: engine,
-                              identifier: identifier,
-                              locality: locality,
-                              patternDuration: resolvedPatternTiming.duration,
-                              repeatDelay: resolvedPatternTiming.repeatDelay)
-        } catch {
-            clearLoopingState()
-            engineMap.removeValue(forKey: locality)
-            playbackState = .idle
-            print("An error occured playing \(filename): \(error).")
+            newEngine.stop(completionHandler: nil)
+            clearPlaybackObjects()
+            updatePlaybackState(.idle)
+            return .failure(.playbackFailed(error))
         }
     }
 
     func stopHaptics() {
-        guard playbackState == .starting || playbackState == .playing else { return }
+        guard player != nil || engine != nil || playbackState != .idle else { return }
 
-        playbackState = .stopping
+        updatePlaybackState(.stopping)
 
-        let activeLoop = loopingStateQueue.sync { () -> (DispatchWorkItem?, GCHapticsLocality?, TimeInterval) in
-            let activeReplayWorkItem = loopingReplayWorkItem
-            let activeLoopingLocality = loopingLocality
-            let now = ProcessInfo.processInfo.systemUptime
-            let remainingTailDuration = max(0, (activeIterationEndUptime ?? now) - now)
-            loopingReplayWorkItem = nil
-            loopingPatternIdentifier = nil
-            loopingLocality = nil
-            activeIterationEndUptime = nil
-            return (activeReplayWorkItem, activeLoopingLocality, remainingTailDuration)
-        }
-
-        activeLoop.0?.cancel()
-        scheduleStoppedStateTransition(after: activeLoop.2 + LoopingConstants.stopSettleBuffer,
-                                       locality: activeLoop.1)
-    }
-
-    func isLoopingHapticsFile(named filename: String, locality: GCHapticsLocality = .default) -> Bool {
-        let identifier = playbackIdentifier(for: filename, locality: locality)
-        return loopingStateQueue.sync {
-            (playbackState == .starting || playbackState == .playing) &&
-                loopingPatternIdentifier == identifier
-        }
-    }
-
-    private func playLoopIteration(filename: String,
-                                   url: URL,
-                                   engine: CHHapticEngine,
-                                   identifier: String,
-                                   locality: GCHapticsLocality,
-                                   patternDuration: TimeInterval,
-                                   repeatDelay: TimeInterval) {
-        guard shouldKeepLooping(identifier: identifier, locality: locality) else {
-            return
-        }
+        let activePlayer = player
+        let activeEngine = engine
+        clearPlaybackObjects()
 
         do {
-            try engine.start()
-            try engine.playPattern(from: url)
-            let expectedEndUptime = ProcessInfo.processInfo.systemUptime + patternDuration
-            if playbackState == .starting {
-                playbackState = .playing
-            }
-
-            let replayWorkItem = DispatchWorkItem { [weak self] in
-                self?.playLoopIteration(filename: filename,
-                                        url: url,
-                                        engine: engine,
-                                        identifier: identifier,
-                                        locality: locality,
-                                        patternDuration: patternDuration,
-                                        repeatDelay: repeatDelay)
-            }
-
-            loopingStateQueue.sync {
-                guard loopingPatternIdentifier == identifier,
-                      loopingLocality == locality else { return }
-                activeIterationEndUptime = expectedEndUptime
-                loopingReplayWorkItem = replayWorkItem
-            }
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + repeatDelay, execute: replayWorkItem)
+            try activePlayer?.cancel()
         } catch {
-            clearLoopingState()
-            engine.stop(completionHandler: nil)
-            engineMap.removeValue(forKey: locality)
-            playbackState = .idle
-            print("An error occured playing \(filename): \(error).")
+            print("Unable to stop the haptic player immediately: \(error)")
+        }
+        activeEngine?.stop(completionHandler: nil)
+        updatePlaybackState(.idle)
+    }
+
+    @objc private func controllerDidConnect(notification: Notification) {
+        guard let controller = notification.object as? GCController else { return }
+        performOnMain { [weak self] in
+            guard let self, self.connectedController == nil else { return }
+            self.updateConnectedController(controller)
         }
     }
 
-    private func clearLoopingState() {
-        let activeWorkItem = loopingStateQueue.sync { () -> DispatchWorkItem? in
-            let workItem = loopingReplayWorkItem
-            loopingReplayWorkItem = nil
-            loopingPatternIdentifier = nil
-            loopingLocality = nil
-            activeIterationEndUptime = nil
-            return workItem
-        }
-        activeWorkItem?.cancel()
-    }
-
-    private func cancelPlaybackTransitionWorkItems() {
-        stoppedTransitionWorkItem?.cancel()
-        idleTransitionWorkItem?.cancel()
-        stoppedTransitionWorkItem = nil
-        idleTransitionWorkItem = nil
-    }
-
-    private func scheduleStoppedStateTransition(after delay: TimeInterval,
-                                                locality: GCHapticsLocality?) {
-        cancelPlaybackTransitionWorkItems()
-
-        let stoppedWorkItem = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            self.stopEngine(for: locality)
-            self.playbackState = .stopped
-            self.scheduleIdleStateTransition()
-        }
-        stoppedTransitionWorkItem = stoppedWorkItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + max(0, delay),
-                                      execute: stoppedWorkItem)
-    }
-
-    private func scheduleIdleStateTransition() {
-        idleTransitionWorkItem?.cancel()
-
-        let idleWorkItem = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            self.playbackState = .idle
-        }
-        idleTransitionWorkItem = idleWorkItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + LoopingConstants.stoppedIndicatorDuration,
-                                      execute: idleWorkItem)
-    }
-
-    private func patternTiming(for url: URL) -> PatternTiming {
-        do {
-            let data = try Data(contentsOf: url)
-            let object = try JSONSerialization.jsonObject(with: data)
-            guard let dictionary = object as? [String: Any],
-                  let patternItems = dictionary["Pattern"] as? [[String: Any]] else {
-                return PatternTiming(duration: LoopingConstants.fallbackRepeatDelay,
-                                     repeatDelay: LoopingConstants.fallbackRepeatDelay)
+    @objc private func controllerDidDisconnect(notification: Notification) {
+        guard let disconnectedController = notification.object as? GCController else { return }
+        performOnMain { [weak self] in
+            guard let self, disconnectedController === self.connectedController else { return }
+            let replacementController = GCController.controllers().first {
+                $0 !== disconnectedController
             }
+            self.updateConnectedController(replacementController)
+        }
+    }
 
-            let duration = patternItems.reduce(0.0) { currentMax, item in
-                guard let event = item["Event"] as? [String: Any] else {
-                    return currentMax
-                }
+    private func updateConnectedController(_ controller: GCController?) {
+        guard controller !== connectedController else { return }
 
-                let time = event["Time"] as? TimeInterval ?? 0
-                guard time <= LoopingConstants.reasonableEventTimeUpperBound else {
-                    return currentMax
-                }
-                let eventDuration = event["EventDuration"] as? TimeInterval ?? 0
-                return max(currentMax, time + eventDuration)
+        stopHaptics()
+        connectedController = controller
+
+        if let controller {
+            delegateOnMain { delegate in
+                delegate.didConnect(controller: controller)
             }
-
-            guard duration > 0 else {
-                return PatternTiming(duration: LoopingConstants.fallbackRepeatDelay,
-                                     repeatDelay: LoopingConstants.fallbackRepeatDelay)
+        } else {
+            delegateOnMain { delegate in
+                delegate.didDisconnectController()
             }
-
-            return PatternTiming(duration: duration,
-                                 repeatDelay: max(duration * LoopingConstants.overlapFactor,
-                                                  LoopingConstants.minimumRepeatDelay))
-        } catch {
-            print("Failed to calculate repeat delay for \(url.lastPathComponent): \(error)")
-            return PatternTiming(duration: LoopingConstants.fallbackRepeatDelay,
-                                 repeatDelay: LoopingConstants.fallbackRepeatDelay)
         }
     }
 
-    private func stopEngine(for locality: GCHapticsLocality?) {
-        guard let locality,
-              let engine = engineMap[locality] else { return }
-        engine.stop(completionHandler: nil)
-        engineMap.removeValue(forKey: locality)
-    }
-
-    private func engine(for locality: GCHapticsLocality) -> CHHapticEngine? {
-        guard let controller else {
-            print("Unable to play haptics: no game controller connected")
-            return nil
+    private func configure(_ engine: CHHapticEngine, identifier: UUID) {
+        engine.isAutoShutdownEnabled = false
+        engine.stoppedHandler = { [weak self] reason in
+            print("The haptic engine stopped because \(reason.message)")
+            DispatchQueue.main.async {
+                self?.handleEngineStop(identifier: identifier)
+            }
         }
-
-        if let existingEngine = engineMap[locality] {
-            return existingEngine
-        }
-
-        guard let newEngine = createEngine(for: controller, locality: locality) else {
-            return nil
-        }
-
-        engineMap[locality] = newEngine
-        return newEngine
-    }
-
-    private func shouldKeepLooping(identifier: String, locality: GCHapticsLocality) -> Bool {
-        loopingStateQueue.sync {
-            loopingPatternIdentifier == identifier &&
-                loopingLocality == locality &&
-                (playbackState == .starting || playbackState == .playing)
+        engine.resetHandler = { [weak self] in
+            DispatchQueue.main.async {
+                self?.handleEngineStop(identifier: identifier)
+            }
         }
     }
 
-    private func playbackIdentifier(for filename: String, locality: GCHapticsLocality) -> String {
-        "\(filename)|\(String(describing: locality))"
+    private func makeDefaultPattern() throws -> CHHapticPattern {
+        let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 1.0)
+        let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.25)
+        let continuousEvent = CHHapticEvent(
+            eventType: .hapticContinuous,
+            parameters: [intensity, sharpness],
+            relativeTime: 0,
+            duration: TimeInterval(GCHapticDurationInfinite)
+        )
+        return try CHHapticPattern(events: [continuousEvent], parameters: [])
+    }
+
+    private func handleEngineStop(identifier: UUID) {
+        guard engineIdentifier == identifier else { return }
+        clearPlaybackObjects()
+        updatePlaybackState(.idle)
+    }
+
+    private func clearPlaybackObjects() {
+        player = nil
+        engine = nil
+        engineIdentifier = nil
+    }
+
+    private func updatePlaybackState(_ state: HapticsPlaybackState) {
+        guard playbackState != state else { return }
+        playbackState = state
+        delegateOnMain { delegate in
+            delegate.didUpdatePlaybackState(state)
+        }
+    }
+
+    private func delegateOnMain(_ action: @escaping (HapticsManagerDelegate) -> Void) {
+        performOnMain { [weak self] in
+            guard let delegate = self?.delegate else { return }
+            action(delegate)
+        }
+    }
+
+    private func performOnMain(_ action: @escaping () -> Void) {
+        if Thread.isMainThread {
+            action()
+        } else {
+            DispatchQueue.main.async(execute: action)
+        }
     }
 }
 
-extension CHHapticEngine.StoppedReason {
+private extension CHHapticEngine.StoppedReason {
     var message: String {
         switch self {
         case .audioSessionInterrupt:
-            return "the audio session was interrupted."
+            return "the audio session was interrupted"
         case .applicationSuspended:
-            return "the application was suspended."
+            return "the application was suspended"
         case .idleTimeout:
-            return "an idle timeout occurred."
+            return "an idle timeout occurred"
         case .systemError:
-            return "a system error occurred."
+            return "a system error occurred"
         case .notifyWhenFinished:
-            return "playback finished."
+            return "playback finished"
         case .engineDestroyed:
-            return "the engine was destroyed."
+            return "the engine was destroyed"
         case .gameControllerDisconnect:
-            return "the game controller disconnected."
+            return "the game controller disconnected"
         @unknown default:
-            fatalError()
+            return "an unknown error occurred"
         }
     }
 }

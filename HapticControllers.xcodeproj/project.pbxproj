@@ -8,9 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		5547C23C27209F7600F4ABA6 /* GameController.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5547C23B27209F7600F4ABA6 /* GameController.framework */; };
-		55B15CE5273CA575002889A6 /* MainButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 55B15CE4273CA575002889A6 /* MainButton.png */; };
-		7A6B5C4D3E2F1A0B00000001 /* AHAPCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A6B5C4D3E2F1A0B00000002 /* AHAPCatalog.swift */; };
-		C40B5724248A061D00BE4EE7 /* AHAP in Resources */ = {isa = PBXBuildFile; fileRef = C40B5723248A061D00BE4EE7 /* AHAP */; };
 		C40B5726248A067400BE4EE7 /* UIViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40B5725248A067400BE4EE7 /* UIViewExtensions.swift */; };
 		C41B6AF6248A19C1000A8C44 /* HapticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41B6AF5248A19C1000A8C44 /* HapticsManager.swift */; };
 		C4886149248A04BC0066977B /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4886148248A04BC0066977B /* AppDelegate.swift */; };
@@ -249,8 +246,6 @@
 			files = (
 				C4886152248A04BD0066977B /* Assets.xcassets in Resources */,
 				C4992596248AF0FB00907E52 /* LaunchScreen.storyboard in Resources */,
-				C40B5724248A061D00BE4EE7 /* AHAP in Resources */,
-				55B15CE5273CA575002889A6 /* MainButton.png in Resources */,
 				C4886150248A04BC0066977B /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -284,7 +279,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A6B5C4D3E2F1A0B00000001 /* AHAPCatalog.swift in Sources */,
 				C41B6AF6248A19C1000A8C44 /* HapticsManager.swift in Sources */,
 				C488614D248A04BC0066977B /* MainViewController.swift in Sources */,
 				C4886149248A04BC0066977B /* AppDelegate.swift in Sources */,

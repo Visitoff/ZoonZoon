@@ -1,473 +1,889 @@
-import CoreHaptics
 import GameController
 import UIKit
 
-class MainViewController: UIViewController {
-    private struct PlaybackIndicatorAppearance {
-        let title: String
-        let dotColor: UIColor
-        let backgroundColor: UIColor
-        let textColor: UIColor
+final class MainViewController: UIViewController {
+    fileprivate enum Palette {
+        static let backgroundTop = UIColor(red: 0.16, green: 0.09, blue: 0.29, alpha: 1.00)
+        static let backgroundBottom = UIColor(red: 0.035, green: 0.025, blue: 0.10, alpha: 1.00)
+        static let surface = UIColor(red: 0.10, green: 0.07, blue: 0.23, alpha: 1.00)
+        static let accent = UIColor(red: 0.79, green: 0.29, blue: 1.00, alpha: 1.00)
+        static let accentBlue = UIColor(red: 0.43, green: 0.36, blue: 1.00, alpha: 1.00)
+        static let connected = UIColor(red: 0.27, green: 0.91, blue: 0.64, alpha: 1.00)
+        static let primaryText = UIColor.white
+        static let secondaryText = UIColor.white.withAlphaComponent(0.58)
+        static let border = UIColor.white.withAlphaComponent(0.20)
     }
 
-    let manager: HapticsManager
+    private let manager: HapticsManager
+    private let backgroundGradient = CAGradientLayer()
+    private let topGlowGradient = CAGradientLayer()
+    private let bottomGlowGradient = CAGradientLayer()
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let connectionStatusView = ConnectionStatusView()
+    private let hapticControl = HapticControlView()
+    private let helperLabel = UILabel()
+    private let instructionsCard = InstructionsCardView()
 
-    var maxColIndex: Int {
-        return 3
-    }
-    
-    var maxRowIndex: Int {
-        return (ahapPatterns.count - 1) / 4
-    }
-
-    var selectedRow = 0
-    var selectedCol = 0
-
-    var highlightedButton: UIButton?
-    var discoveryStatusText: String?
-    var isDiscoveringController = false
-
-    private let discoveryOverlayView = UIView()
-    private let discoveryDialogView = UIView()
-    private let discoveryTitleLabel = UILabel()
-    private let discoveryMessageLabel = UILabel()
-    private let discoveryOpenSettingsButton = UIButton(type: .system)
-    private let discoveryCancelButton = UIButton(type: .system)
-    private let playbackStatusView = UIView()
-    private let playbackStatusDotView = UIView()
-    private let playbackStatusLabel = UILabel()
-
-    let buttonColor = UIColor(red: 0.937, green: 0.937, blue: 0.937, alpha: 1.0)
-    let selectedButtonColor = UIColor(red: 0.77, green: 0.77, blue: 0.85, alpha: 1.0)
-
-    let ahapPatterns = AHAPCatalog.mainButtonPatterns
-
-    var controller: GCController? {
-        didSet {
-            if let controller = controller {
-                configure(controller: controller)
-            }
-        }
-    }
+    private var isDiscoveringController = false
 
     required init?(coder: NSCoder) {
         manager = HapticsManager()
         super.init(coder: coder)
-        manager.delegate = self
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+        GCController.stopWirelessControllerDiscovery()
+        UIApplication.shared.isIdleTimerDisabled = false
+        manager.delegate = nil
+        manager.stopMonitoring()
+    }
+
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        .lightContent
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        configureAppearance()
+        buildInterface()
+        observeApplicationLifecycle()
 
-        setupDiscoveryOverlay()
-        setupPlaybackStatusIndicator()
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(appDidBecomeActive),
-                                               name: UIApplication.didBecomeActiveNotification,
-                                               object: nil)
-        refreshConnectedController(reason: "viewDidLoad")
+        manager.delegate = self
+        manager.startMonitoring()
+        updateInterface()
     }
 
-    func configure(controller: GCController) {
-        guard let gamePad = controller.extendedGamepad else { fatalError() }
-
-        // Set the initial button "selection".
-        highlightButton(atRow: 0, column: 0)
-
-        gamePad.dpad.valueChangedHandler = { _, x, y in
-            var row = self.selectedRow
-            var col = self.selectedCol
-            switch (x, y) {
-            case (-1.0, _):
-                col -= 1
-            case (1.0, _):
-                col += 1
-            case (_, 1.0):
-                row -= 1
-            case (_, -1.0):
-                row += 1
-            default: ()
-            }
-            self.selectedCol = max(0, min(col, self.maxColIndex))
-            self.selectedRow = max(0, min(row, self.maxRowIndex))
-            self.highlightButton(atRow: self.selectedRow, column: self.selectedCol)
-        }
-
-        gamePad.buttonA.pressedChangedHandler = { _, _, isPressed in
-            if isPressed {
-                let highlightedToggleCellColor = UIColor(red: 0.65, green: 0.65, blue: 0.75, alpha: 1.0)
-                self.highlightedButton?.backgroundColor = highlightedToggleCellColor
-                if let index = self.highlightedButton?.tag,
-                   self.ahapPatterns.indices.contains(index) {
-                    let pattern = self.ahapPatterns[index]
-                    self.manager.playHapticsFile(named: pattern.resourceName, locality: pattern.locality)
-                }
-            } else {
-                self.highlightedButton?.backgroundColor = self.selectedButtonColor
-            }
-        }
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        backgroundGradient.frame = view.bounds
+        topGlowGradient.frame = view.bounds
+        bottomGlowGradient.frame = view.bounds
     }
 
-    func updateControllerLabel() {
-        if controller != nil {
-            discoveryStatusText = nil
-            controllerLabel.text = controller?.productCategory
-            controllerLabel.textColor = .black
-            setControllerActionButton(title: "Connected", isEnabled: false)
-            updatePlaybackStatusIndicator()
-        } else if let discoveryStatusText {
-            controllerLabel.text = discoveryStatusText
-            controllerLabel.textColor = .lightGray
-            setControllerActionButton(title: "Connect Controller", isEnabled: true)
-            playbackStatusView.isHidden = true
-        } else {
-            controllerLabel.text = "Tap Connect Controller to connect a controller"
-            controllerLabel.textColor = .lightGray
-            setControllerActionButton(title: "Connect Controller", isEnabled: true)
-            playbackStatusView.isHidden = true
-        }
-        updateMainHapticButtonState()
+    private func configureAppearance() {
+        overrideUserInterfaceStyle = .dark
+        view.backgroundColor = Palette.backgroundBottom
+
+        backgroundGradient.colors = [
+            Palette.backgroundTop.cgColor,
+            UIColor(red: 0.07, green: 0.045, blue: 0.17, alpha: 1.00).cgColor,
+            Palette.backgroundBottom.cgColor,
+        ]
+        backgroundGradient.locations = [0.0, 0.48, 1.0]
+        backgroundGradient.startPoint = CGPoint(x: 0.18, y: 0.0)
+        backgroundGradient.endPoint = CGPoint(x: 0.82, y: 1.0)
+        view.layer.insertSublayer(backgroundGradient, at: 0)
+
+        topGlowGradient.type = .radial
+        topGlowGradient.colors = [
+            Palette.accent.withAlphaComponent(0.22).cgColor,
+            UIColor.clear.cgColor,
+        ]
+        topGlowGradient.locations = [0.0, 1.0]
+        topGlowGradient.startPoint = CGPoint(x: 0.86, y: 0.09)
+        topGlowGradient.endPoint = CGPoint(x: 0.20, y: 0.65)
+        view.layer.insertSublayer(topGlowGradient, above: backgroundGradient)
+
+        bottomGlowGradient.type = .radial
+        bottomGlowGradient.colors = [
+            Palette.accentBlue.withAlphaComponent(0.18).cgColor,
+            UIColor.clear.cgColor,
+        ]
+        bottomGlowGradient.locations = [0.0, 1.0]
+        bottomGlowGradient.startPoint = CGPoint(x: 0.82, y: 0.96)
+        bottomGlowGradient.endPoint = CGPoint(x: 0.18, y: 0.43)
+        view.layer.insertSublayer(bottomGlowGradient, above: topGlowGradient)
     }
 
-    func highlightButton(atRow row: Int, column: Int) {
-        highlightedButton?.backgroundColor = buttonColor
-        
-        let index = row * 4 + column
-        guard ahapPatterns.indices.contains(index) else { return }
-        
-        highlightedButton = view.viewWithTag(index) as? UIButton
-        highlightedButton?.backgroundColor = selectedButtonColor
+    private func buildInterface() {
+        scrollView.alwaysBounceVertical = true
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+
+        let brandLabel = UILabel()
+        brandLabel.text = "ZOONZOON"
+        brandLabel.font = .systemFont(ofSize: 35, weight: .bold)
+        brandLabel.textColor = Palette.primaryText
+        brandLabel.adjustsFontSizeToFitWidth = true
+        brandLabel.minimumScaleFactor = 0.8
+        brandLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        connectionStatusView.translatesAutoresizingMaskIntoConstraints = false
+        connectionStatusView.accessibilityIdentifier = "connectionStatusCard"
+        connectionStatusView.addTarget(self,
+                                       action: #selector(connectionStatusTapped),
+                                       for: .touchUpInside)
+
+        hapticControl.translatesAutoresizingMaskIntoConstraints = false
+        hapticControl.accessibilityIdentifier = "hapticControlButton"
+        hapticControl.addTarget(self,
+                                action: #selector(hapticControlTapped),
+                                for: .touchUpInside)
+
+        helperLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        helperLabel.textColor = Palette.secondaryText
+        helperLabel.textAlignment = .center
+        helperLabel.numberOfLines = 0
+        helperLabel.isHidden = true
+        helperLabel.accessibilityIdentifier = "activeVibrationNotice"
+        helperLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        instructionsCard.translatesAutoresizingMaskIntoConstraints = false
+        instructionsCard.accessibilityIdentifier = "pairingInstructionsButton"
+        instructionsCard.addTarget(self,
+                                   action: #selector(showPairingInstructions),
+                                   for: .touchUpInside)
+
+        contentView.addSubview(connectionStatusView)
+        contentView.addSubview(brandLabel)
+        contentView.addSubview(hapticControl)
+        contentView.addSubview(helperLabel)
+        contentView.addSubview(instructionsCard)
+
+        let safeArea = view.safeAreaLayoutGuide
+        let contentGuide = scrollView.contentLayoutGuide
+        let frameGuide = scrollView.frameLayoutGuide
+        let hapticVerticalPosition = NSLayoutConstraint(
+            item: hapticControl,
+            attribute: .centerY,
+            relatedBy: .equal,
+            toItem: contentView,
+            attribute: .bottom,
+            multiplier: 0.25,
+            constant: 140
+        )
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentView.topAnchor.constraint(equalTo: contentGuide.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: contentGuide.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: frameGuide.widthAnchor),
+            contentView.heightAnchor.constraint(greaterThanOrEqualTo: frameGuide.heightAnchor),
+
+            connectionStatusView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+            connectionStatusView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            connectionStatusView.widthAnchor.constraint(equalToConstant: 144),
+            connectionStatusView.heightAnchor.constraint(equalToConstant: 44),
+
+            brandLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 78),
+            brandLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 22),
+            brandLabel.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -22),
+
+            hapticControl.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            hapticVerticalPosition,
+            hapticControl.widthAnchor.constraint(equalToConstant: 258),
+            hapticControl.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, constant: -56),
+            hapticControl.heightAnchor.constraint(equalTo: hapticControl.widthAnchor),
+
+            helperLabel.topAnchor.constraint(equalTo: hapticControl.bottomAnchor, constant: 24),
+            helperLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 34),
+            helperLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -34),
+
+            instructionsCard.topAnchor.constraint(greaterThanOrEqualTo: helperLabel.bottomAnchor, constant: 28),
+            instructionsCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            instructionsCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            instructionsCard.heightAnchor.constraint(equalToConstant: 76),
+            instructionsCard.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22),
+        ])
     }
 
-    @IBAction func connectControllerButton(_ sender: Any) {
-        guard controller == nil else { return }
-        presentPairingInstructions()
+    private func observeApplicationLifecycle() {
+        let notificationCenter = NotificationCenter.default
+        notificationCenter.addObserver(self,
+                                       selector: #selector(applicationWillLeaveForeground),
+                                       name: UIApplication.willResignActiveNotification,
+                                       object: nil)
+        notificationCenter.addObserver(self,
+                                       selector: #selector(applicationWillLeaveForeground),
+                                       name: UIApplication.didEnterBackgroundNotification,
+                                       object: nil)
+        notificationCenter.addObserver(self,
+                                       selector: #selector(applicationWillLeaveForeground),
+                                       name: UIApplication.willTerminateNotification,
+                                       object: nil)
+        notificationCenter.addObserver(self,
+                                       selector: #selector(applicationDidBecomeActive),
+                                       name: UIApplication.didBecomeActiveNotification,
+                                       object: nil)
     }
 
-    @IBOutlet var controllerActionButton: UIButton!
-    @IBOutlet var controllerLabel: UILabel!
-    @IBOutlet var mainHapticButton: UIButton!
-
-    @IBAction func buttonBackgroundRegular(_ sender: UIButton) {
-        sender.backgroundColor = #colorLiteral(red: 1, green: 1, blue: 1, alpha: 0.8470588235)
-    }
-
-    @IBAction func buttonBackgroundHighlight(_ sender: UIButton) {
-        sender.backgroundColor = #colorLiteral(red: 0, green: 0, blue: 0, alpha: 0)
-    }
-
-    /// Respond to presses from each button, created in Interface Builder.
-    @IBAction func playAHAP(sender: UIButton) {
-        guard controller != nil else {
-            presentPairingInstructions()
+    @objc private func hapticControlTapped() {
+        guard manager.isControllerConnected else {
+            showPairingInstructions()
             return
         }
 
-        let index = sender.tag
-        guard ahapPatterns.indices.contains(index) else { return }
-        let pattern = ahapPatterns[index]
-        let filename = pattern.resourceName
-        let locality = pattern.locality
-
-        // All patterns now support looping
-        switch manager.playbackState {
-        case .idle:
-            manager.startLoopingHapticsFile(named: filename, locality: locality)
-        case .playing:
+        if manager.playbackState == .playing || manager.playbackState == .starting {
             manager.stopHaptics()
-        case .starting, .stopping, .stopped:
-            break
-        }
-        updateControllerLabel()
-    }
-
-    private func playbackIndicatorAppearance() -> PlaybackIndicatorAppearance? {
-        switch manager.playbackState {
-        case .idle:
-            return nil
-        case .starting:
-            return PlaybackIndicatorAppearance(title: "Starting",
-                                               dotColor: UIColor(red: 0.97, green: 0.65, blue: 0.24, alpha: 1.0),
-                                               backgroundColor: UIColor(red: 1.0, green: 0.95, blue: 0.86, alpha: 1.0),
-                                               textColor: UIColor(red: 0.61, green: 0.38, blue: 0.04, alpha: 1.0))
-        case .playing:
-            return PlaybackIndicatorAppearance(title: "On",
-                                               dotColor: UIColor(red: 0.21, green: 0.71, blue: 0.45, alpha: 1.0),
-                                               backgroundColor: UIColor(red: 0.88, green: 0.97, blue: 0.92, alpha: 1.0),
-                                               textColor: UIColor(red: 0.10, green: 0.46, blue: 0.27, alpha: 1.0))
-        case .stopping:
-            return PlaybackIndicatorAppearance(title: "Stopping",
-                                               dotColor: UIColor(red: 0.96, green: 0.53, blue: 0.19, alpha: 1.0),
-                                               backgroundColor: UIColor(red: 1.0, green: 0.93, blue: 0.88, alpha: 1.0),
-                                               textColor: UIColor(red: 0.63, green: 0.29, blue: 0.08, alpha: 1.0))
-        case .stopped:
-            return PlaybackIndicatorAppearance(title: "Stopped",
-                                               dotColor: UIColor(red: 0.86, green: 0.20, blue: 0.19, alpha: 1.0),
-                                               backgroundColor: UIColor(red: 0.99, green: 0.90, blue: 0.90, alpha: 1.0),
-                                               textColor: UIColor(red: 0.62, green: 0.12, blue: 0.13, alpha: 1.0))
-        }
-    }
-
-    private func setupPlaybackStatusIndicator() {
-        playbackStatusView.translatesAutoresizingMaskIntoConstraints = false
-        playbackStatusView.layer.cornerRadius = 13
-        playbackStatusView.layer.cornerCurve = .continuous
-        playbackStatusView.isHidden = true
-
-        playbackStatusDotView.translatesAutoresizingMaskIntoConstraints = false
-        playbackStatusDotView.layer.cornerRadius = 4
-        playbackStatusDotView.layer.cornerCurve = .continuous
-
-        playbackStatusLabel.translatesAutoresizingMaskIntoConstraints = false
-        playbackStatusLabel.font = .systemFont(ofSize: 13, weight: .semibold)
-        playbackStatusLabel.textAlignment = .left
-
-        let playbackStatusStackView = UIStackView(arrangedSubviews: [
-            playbackStatusDotView,
-            playbackStatusLabel,
-        ])
-        playbackStatusStackView.translatesAutoresizingMaskIntoConstraints = false
-        playbackStatusStackView.axis = .horizontal
-        playbackStatusStackView.alignment = .center
-        playbackStatusStackView.spacing = 8
-
-        playbackStatusView.addSubview(playbackStatusStackView)
-        view.addSubview(playbackStatusView)
-
-        NSLayoutConstraint.activate([
-            playbackStatusView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            playbackStatusView.topAnchor.constraint(equalTo: controllerLabel.bottomAnchor, constant: 8),
-
-            playbackStatusStackView.leadingAnchor.constraint(equalTo: playbackStatusView.leadingAnchor, constant: 12),
-            playbackStatusStackView.trailingAnchor.constraint(equalTo: playbackStatusView.trailingAnchor, constant: -12),
-            playbackStatusStackView.topAnchor.constraint(equalTo: playbackStatusView.topAnchor, constant: 8),
-            playbackStatusStackView.bottomAnchor.constraint(equalTo: playbackStatusView.bottomAnchor, constant: -8),
-
-            playbackStatusDotView.widthAnchor.constraint(equalToConstant: 8),
-            playbackStatusDotView.heightAnchor.constraint(equalToConstant: 8),
-        ])
-    }
-
-    private func updatePlaybackStatusIndicator() {
-        guard let appearance = playbackIndicatorAppearance() else {
-            playbackStatusView.isHidden = true
             return
         }
-        playbackStatusView.isHidden = false
-        playbackStatusView.backgroundColor = appearance.backgroundColor
-        playbackStatusDotView.backgroundColor = appearance.dotColor
-        playbackStatusLabel.textColor = appearance.textColor
-        playbackStatusLabel.text = appearance.title
-    }
 
-    private func updateMainHapticButtonState() {
-        let isTransitioning = manager.playbackState == .starting ||
-            manager.playbackState == .stopping ||
-            manager.playbackState == .stopped
-        mainHapticButton?.isEnabled = !isTransitioning
-        mainHapticButton?.alpha = isTransitioning ? 0.75 : 1.0
-    }
-
-    private func setupDiscoveryOverlay() {
-        discoveryOverlayView.translatesAutoresizingMaskIntoConstraints = false
-        discoveryOverlayView.backgroundColor = UIColor(white: 0, alpha: 0.35)
-        discoveryOverlayView.alpha = 0
-        discoveryOverlayView.isHidden = true
-
-        discoveryDialogView.translatesAutoresizingMaskIntoConstraints = false
-        discoveryDialogView.backgroundColor = .systemBackground
-        discoveryDialogView.layer.cornerRadius = 20
-        discoveryDialogView.layer.cornerCurve = .continuous
-
-        discoveryTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        discoveryTitleLabel.font = .systemFont(ofSize: 20, weight: .semibold)
-        discoveryTitleLabel.text = "Connect Controller"
-        discoveryTitleLabel.textAlignment = .center
-        discoveryTitleLabel.numberOfLines = 0
-
-        discoveryMessageLabel.translatesAutoresizingMaskIntoConstraints = false
-        discoveryMessageLabel.font = .systemFont(ofSize: 15, weight: .regular)
-        discoveryMessageLabel.text = "1. Put the controller into pairing mode.\n\n2. Tap Open Settings.\n\n3. Open Bluetooth and connect your controller.\n\n4. Return to the app."
-        discoveryMessageLabel.textAlignment = .left
-        discoveryMessageLabel.numberOfLines = 0
-        discoveryMessageLabel.textColor = .secondaryLabel
-
-        discoveryOpenSettingsButton.translatesAutoresizingMaskIntoConstraints = false
-        discoveryOpenSettingsButton.setTitle("Open Settings", for: .normal)
-        discoveryOpenSettingsButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        discoveryOpenSettingsButton.addTarget(self, action: #selector(openSettingsForPairing), for: .touchUpInside)
-
-        discoveryCancelButton.translatesAutoresizingMaskIntoConstraints = false
-        discoveryCancelButton.setTitle("Cancel", for: .normal)
-        discoveryCancelButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .regular)
-        discoveryCancelButton.addTarget(self, action: #selector(cancelControllerDiscovery), for: .touchUpInside)
-
-        let contentStackView = UIStackView(arrangedSubviews: [
-            discoveryTitleLabel,
-            discoveryMessageLabel,
-        ])
-        contentStackView.translatesAutoresizingMaskIntoConstraints = false
-        contentStackView.axis = .vertical
-        contentStackView.alignment = .fill
-        contentStackView.spacing = 16
-
-        let contentContainerView = UIView()
-        contentContainerView.translatesAutoresizingMaskIntoConstraints = false
-        contentContainerView.addSubview(contentStackView)
-
-        let horizontalSeparator = UIView()
-        horizontalSeparator.translatesAutoresizingMaskIntoConstraints = false
-        horizontalSeparator.backgroundColor = .separator
-
-        let verticalSeparator = UIView()
-        verticalSeparator.translatesAutoresizingMaskIntoConstraints = false
-        verticalSeparator.backgroundColor = .separator
-
-        let actionsStackView = UIStackView(arrangedSubviews: [
-            discoveryOpenSettingsButton,
-            verticalSeparator,
-            discoveryCancelButton,
-        ])
-        actionsStackView.translatesAutoresizingMaskIntoConstraints = false
-        actionsStackView.axis = .horizontal
-        actionsStackView.alignment = .fill
-        actionsStackView.distribution = .fill
-        actionsStackView.spacing = 0
-
-        let rootStackView = UIStackView(arrangedSubviews: [
-            contentContainerView,
-            horizontalSeparator,
-            actionsStackView,
-        ])
-        rootStackView.translatesAutoresizingMaskIntoConstraints = false
-        rootStackView.axis = .vertical
-        rootStackView.alignment = .fill
-        rootStackView.spacing = 0
-
-        view.addSubview(discoveryOverlayView)
-        discoveryOverlayView.addSubview(discoveryDialogView)
-        discoveryDialogView.addSubview(rootStackView)
-
-        NSLayoutConstraint.activate([
-            discoveryOverlayView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            discoveryOverlayView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            discoveryOverlayView.topAnchor.constraint(equalTo: view.topAnchor),
-            discoveryOverlayView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            discoveryDialogView.centerXAnchor.constraint(equalTo: discoveryOverlayView.centerXAnchor),
-            discoveryDialogView.centerYAnchor.constraint(equalTo: discoveryOverlayView.centerYAnchor),
-            discoveryDialogView.leadingAnchor.constraint(greaterThanOrEqualTo: discoveryOverlayView.leadingAnchor, constant: 24),
-            discoveryDialogView.trailingAnchor.constraint(lessThanOrEqualTo: discoveryOverlayView.trailingAnchor, constant: -24),
-            discoveryDialogView.widthAnchor.constraint(equalToConstant: 300),
-
-            rootStackView.leadingAnchor.constraint(equalTo: discoveryDialogView.leadingAnchor),
-            rootStackView.trailingAnchor.constraint(equalTo: discoveryDialogView.trailingAnchor),
-            rootStackView.topAnchor.constraint(equalTo: discoveryDialogView.topAnchor),
-            rootStackView.bottomAnchor.constraint(equalTo: discoveryDialogView.bottomAnchor),
-
-            contentStackView.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor, constant: 24),
-            contentStackView.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor, constant: -24),
-            contentStackView.topAnchor.constraint(equalTo: contentContainerView.topAnchor, constant: 24),
-            contentStackView.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor, constant: -24),
-
-            horizontalSeparator.heightAnchor.constraint(equalToConstant: 1),
-            verticalSeparator.widthAnchor.constraint(equalToConstant: 1),
-            actionsStackView.heightAnchor.constraint(equalToConstant: 52),
-            discoveryCancelButton.widthAnchor.constraint(equalTo: discoveryOpenSettingsButton.widthAnchor),
-        ])
-    }
-
-    private func showDiscoveryOverlay() {
-        discoveryOverlayView.isHidden = false
-        UIView.animate(withDuration: 0.2) {
-            self.discoveryOverlayView.alpha = 1
+        switch manager.startDefaultHaptics() {
+        case .success:
+            break
+        case let .failure(error):
+            presentPlaybackError(error.localizedDescription)
         }
     }
 
-    private func hideDiscoveryOverlay() {
-        guard !discoveryOverlayView.isHidden else { return }
-
-        UIView.animate(withDuration: 0.2, animations: {
-            self.discoveryOverlayView.alpha = 0
-        }, completion: { _ in
-            self.discoveryOverlayView.isHidden = true
-        })
+    @objc private func connectionStatusTapped() {
+        guard !manager.isControllerConnected else { return }
+        showPairingInstructions()
     }
 
-    private func setControllerActionButton(title: String, isEnabled: Bool) {
-        if var configuration = controllerActionButton.configuration {
-            configuration.title = title
-            controllerActionButton.configuration = configuration
-        } else {
-            controllerActionButton.setTitle(title, for: .normal)
+    @objc private func showPairingInstructions() {
+        guard presentedViewController == nil else { return }
+
+        let instructionsViewController = PairingInstructionsViewController()
+        instructionsViewController.onClose = { [weak self, weak instructionsViewController] in
+            self?.stopControllerDiscovery()
+            instructionsViewController?.dismiss(animated: true)
         }
-        controllerActionButton.isEnabled = isEnabled
-    }
 
-    @objc private func cancelControllerDiscovery() {
-        discoveryStatusText = "Pairing window closed"
-        logDebug("pairing modal closed controllers=\(GCController.controllers().count)")
-        hideDiscoveryOverlay()
-        updateControllerLabel()
-    }
+        if let sheet = instructionsViewController.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.selectedDetentIdentifier = .large
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 30
+        }
 
-    @objc private func openSettingsForPairing() {
-        logDebug("open settings tapped")
-        if let url = URL(string: "App-prefs:"),
-           UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
-        } else if let url = URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(url)
+        present(instructionsViewController, animated: true) { [weak self] in
+            guard let self else { return }
+            instructionsViewController.presentationController?.delegate = self
+            self.startControllerDiscovery()
         }
     }
 
-    @objc private func appDidBecomeActive() {
-        refreshConnectedController(reason: "appDidBecomeActive")
-        if controller == nil, !discoveryOverlayView.isHidden {
-            discoveryStatusText = "Still not connected. Pair your controller in Settings > Bluetooth and try again."
-            updateControllerLabel()
+    @objc private func applicationWillLeaveForeground() {
+        UIApplication.shared.isIdleTimerDisabled = false
+        stopControllerDiscovery()
+        manager.stopHaptics()
+    }
+
+    @objc private func applicationDidBecomeActive() {
+        manager.refreshConnectedController()
+        updateInterface()
+    }
+
+    private func startControllerDiscovery() {
+        guard !isDiscoveringController else { return }
+        isDiscoveringController = true
+        GCController.startWirelessControllerDiscovery { [weak self] in
+            DispatchQueue.main.async {
+                self?.isDiscoveringController = false
+            }
         }
     }
 
-    private func refreshConnectedController(reason: String) {
-        let controllers = GCController.controllers()
-        let firstController = controllers.first
-        controller = firstController
-        logDebug("\(reason) controllers=\(controllers.count) first=\(firstController?.productCategory ?? "nil")")
-        if firstController != nil {
-            hideDiscoveryOverlay()
-        }
-        updateControllerLabel()
+    private func stopControllerDiscovery() {
+        guard isDiscoveringController else { return }
+        GCController.stopWirelessControllerDiscovery()
+        isDiscoveringController = false
     }
 
-    private func presentPairingInstructions() {
-        discoveryStatusText = "Open Settings, pair your controller, then return here."
-        logDebug("pairing instructions opened controllers=\(GCController.controllers().count)")
-        showDiscoveryOverlay()
-        updateControllerLabel()
+    private func presentPlaybackError(_ message: String) {
+        guard presentedViewController == nil else { return }
+        let alert = UIAlertController(title: "Unable to start vibration",
+                                      message: message,
+                                      preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 
-    private func logDebug(_ message: String) {
-        print("[ControllerDiscovery] \(message)")
+    private func updateInterface() {
+        let isConnected = manager.isControllerConnected
+        let controllerName = manager.connectedController?.productCategory
+        let isPlaying = manager.playbackState == .playing
+
+        connectionStatusView.update(isConnected: isConnected, controllerName: controllerName)
+        hapticControl.update(playbackState: manager.playbackState)
+        helperLabel.text = isPlaying
+            ? "Keep the app open. Vibration stops when locked or minimized."
+            : nil
+        helperLabel.isHidden = !isPlaying
+        UIApplication.shared.isIdleTimerDisabled = isPlaying
     }
 }
 
 extension MainViewController: HapticsManagerDelegate {
     func didConnect(controller: GCController) {
-        self.controller = controller
-        logDebug("didConnect product=\(controller.productCategory) controllers=\(GCController.controllers().count)")
-        hideDiscoveryOverlay()
-        updateControllerLabel()
+        stopControllerDiscovery()
+        if presentedViewController is PairingInstructionsViewController {
+            dismiss(animated: true)
+        }
+        updateInterface()
     }
 
     func didDisconnectController() {
-        controller = nil
-        discoveryStatusText = "Controller disconnected"
-        logDebug("didDisconnect controllers=\(GCController.controllers().count)")
-        updateControllerLabel()
+        updateInterface()
     }
 
     func didUpdatePlaybackState(_ state: HapticsPlaybackState) {
-        updateControllerLabel()
+        updateInterface()
+    }
+}
+
+extension MainViewController: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        stopControllerDiscovery()
+    }
+}
+
+private final class ConnectionStatusView: UIControl {
+    private let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
+    private let statusDot = UIView()
+    private let titleLabel = UILabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.cornerRadius = bounds.height / 2
+        blurView.frame = bounds
+        blurView.layer.cornerRadius = bounds.height / 2
+        statusDot.layer.cornerRadius = 5
+    }
+
+    func update(isConnected: Bool, controllerName: String?) {
+        statusDot.backgroundColor = isConnected ? MainViewController.Palette.connected : MainViewController.Palette.accent
+        titleLabel.text = isConnected ? "Connected" : "Connect"
+        titleLabel.textColor = isConnected ? MainViewController.Palette.connected : MainViewController.Palette.accent
+
+        isAccessibilityElement = true
+        accessibilityTraits = isConnected ? .staticText : .button
+        accessibilityLabel = isConnected ? "Controller connected" : "Connect controller"
+        accessibilityValue = isConnected ? controllerName : nil
+        accessibilityHint = isConnected ? nil : "Opens controller connection instructions"
+    }
+
+    private func setup() {
+        clipsToBounds = true
+        backgroundColor = UIColor.white.withAlphaComponent(0.035)
+        layer.borderWidth = 1
+        layer.borderColor = MainViewController.Palette.border.cgColor
+
+        blurView.alpha = 0.30
+        blurView.isUserInteractionEnabled = false
+        addSubview(blurView)
+
+        statusDot.translatesAutoresizingMaskIntoConstraints = false
+
+        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        addSubview(statusDot)
+        addSubview(titleLabel)
+
+        NSLayoutConstraint.activate([
+            statusDot.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            statusDot.centerYAnchor.constraint(equalTo: centerYAnchor),
+            statusDot.widthAnchor.constraint(equalToConstant: 10),
+            statusDot.heightAnchor.constraint(equalTo: statusDot.widthAnchor),
+
+            titleLabel.leadingAnchor.constraint(equalTo: statusDot.trailingAnchor, constant: 11),
+            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
+        ])
+
+        addTarget(self, action: #selector(pressed), for: .touchDown)
+        addTarget(self, action: #selector(released), for: [.touchUpInside, .touchCancel, .touchDragExit])
+        update(isConnected: false, controllerName: nil)
+    }
+
+    @objc private func pressed() {
+        UIView.animate(withDuration: 0.12) {
+            self.alpha = 0.72
+            self.transform = CGAffineTransform(scaleX: 0.97, y: 0.97)
+        }
+    }
+
+    @objc private func released() {
+        UIView.animate(withDuration: 0.18) {
+            self.alpha = 1
+            self.transform = .identity
+        }
+    }
+}
+
+private final class HapticControlView: UIControl {
+    private let pulseLayer = CAShapeLayer()
+    private let surfaceGradient = CAGradientLayer()
+    private let highlightGradient = CAGradientLayer()
+    private let borderGradient = CAGradientLayer()
+    private let borderMask = CAShapeLayer()
+    private let innerRingLayer = CAShapeLayer()
+    private let titleLabel = UILabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let circlePath = UIBezierPath(ovalIn: bounds.insetBy(dx: 2, dy: 2)).cgPath
+        let innerPath = UIBezierPath(ovalIn: bounds.insetBy(dx: 8, dy: 8)).cgPath
+
+        layer.cornerRadius = bounds.width / 2
+        layer.shadowPath = UIBezierPath(ovalIn: bounds).cgPath
+
+        surfaceGradient.frame = bounds
+        surfaceGradient.cornerRadius = bounds.width / 2
+
+        highlightGradient.frame = bounds
+        highlightGradient.cornerRadius = bounds.width / 2
+
+        borderGradient.frame = bounds
+        borderMask.frame = bounds
+        borderMask.path = circlePath
+
+        innerRingLayer.frame = bounds
+        innerRingLayer.path = innerPath
+
+        pulseLayer.frame = bounds
+        pulseLayer.path = circlePath
+    }
+
+    func update(playbackState: HapticsPlaybackState) {
+        let isActive = playbackState == .playing || playbackState == .starting
+
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        if isActive {
+            surfaceGradient.colors = [
+                MainViewController.Palette.accent.withAlphaComponent(0.58).cgColor,
+                MainViewController.Palette.accentBlue.withAlphaComponent(0.42).cgColor,
+                MainViewController.Palette.surface.cgColor,
+            ]
+            layer.shadowColor = MainViewController.Palette.accent.cgColor
+            layer.shadowOpacity = 0.55
+        } else {
+            surfaceGradient.colors = [
+                UIColor.white.withAlphaComponent(0.38).cgColor,
+                UIColor(red: 0.18, green: 0.12, blue: 0.31, alpha: 0.88).cgColor,
+                MainViewController.Palette.surface.withAlphaComponent(0.96).cgColor,
+            ]
+            layer.shadowColor = MainViewController.Palette.accentBlue.cgColor
+            layer.shadowOpacity = 0.20
+        }
+        CATransaction.commit()
+
+        switch playbackState {
+        case .idle:
+            setTitle("VIBRATE", color: MainViewController.Palette.accent)
+            stopPulseAnimation()
+            accessibilityLabel = "Start vibration"
+            accessibilityValue = "Off"
+        case .starting:
+            setTitle("STARTING", color: .white)
+            startPulseAnimation()
+            accessibilityLabel = "Stop vibration"
+            accessibilityValue = "Starting"
+        case .playing:
+            setTitle("STOP", color: .white)
+            startPulseAnimation()
+            accessibilityLabel = "Stop vibration"
+            accessibilityValue = "On"
+        case .stopping:
+            setTitle("STOPPING", color: UIColor.white.withAlphaComponent(0.74))
+            stopPulseAnimation()
+            accessibilityLabel = "Vibration stopping"
+            accessibilityValue = "Stopping"
+        }
+    }
+
+    private func setup() {
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        layer.masksToBounds = false
+        layer.shadowRadius = 34
+        layer.shadowOffset = .zero
+
+        pulseLayer.fillColor = UIColor.clear.cgColor
+        pulseLayer.strokeColor = MainViewController.Palette.accent.withAlphaComponent(0.62).cgColor
+        pulseLayer.lineWidth = 2
+        pulseLayer.opacity = 0
+        layer.addSublayer(pulseLayer)
+
+        surfaceGradient.locations = [0.0, 0.42, 1.0]
+        surfaceGradient.startPoint = CGPoint(x: 0.16, y: 0.10)
+        surfaceGradient.endPoint = CGPoint(x: 0.82, y: 0.90)
+        layer.addSublayer(surfaceGradient)
+
+        highlightGradient.type = .radial
+        highlightGradient.colors = [
+            UIColor.white.withAlphaComponent(0.34).cgColor,
+            UIColor.white.withAlphaComponent(0.05).cgColor,
+            UIColor.clear.cgColor,
+        ]
+        highlightGradient.locations = [0.0, 0.35, 1.0]
+        highlightGradient.startPoint = CGPoint(x: 0.30, y: 0.28)
+        highlightGradient.endPoint = CGPoint(x: 0.84, y: 0.84)
+        layer.addSublayer(highlightGradient)
+
+        borderGradient.colors = [
+            MainViewController.Palette.accent.cgColor,
+            MainViewController.Palette.accentBlue.cgColor,
+            MainViewController.Palette.accent.cgColor,
+        ]
+        borderGradient.locations = [0.0, 0.55, 1.0]
+        borderGradient.startPoint = CGPoint(x: 0.1, y: 0.0)
+        borderGradient.endPoint = CGPoint(x: 0.9, y: 1.0)
+        borderMask.fillColor = UIColor.clear.cgColor
+        borderMask.strokeColor = UIColor.white.cgColor
+        borderMask.lineWidth = 3
+        borderGradient.mask = borderMask
+        layer.addSublayer(borderGradient)
+
+        innerRingLayer.fillColor = UIColor.clear.cgColor
+        innerRingLayer.strokeColor = UIColor.white.withAlphaComponent(0.06).cgColor
+        innerRingLayer.lineWidth = 1
+        layer.addSublayer(innerRingLayer)
+
+        titleLabel.textAlignment = .center
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(titleLabel)
+
+        NSLayoutConstraint.activate([
+            titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 28),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -28),
+        ])
+
+        addTarget(self, action: #selector(pressed), for: .touchDown)
+        addTarget(self, action: #selector(released), for: [.touchUpInside, .touchCancel, .touchDragExit])
+        update(playbackState: .idle)
+    }
+
+    private func setTitle(_ title: String, color: UIColor) {
+        titleLabel.attributedText = NSAttributedString(
+            string: title,
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 22, weight: .bold),
+                .foregroundColor: color,
+                .kern: 3.2,
+            ]
+        )
+    }
+
+    private func startPulseAnimation() {
+        guard pulseLayer.animation(forKey: "pulse") == nil else { return }
+
+        let scale = CABasicAnimation(keyPath: "transform.scale")
+        scale.fromValue = 1.0
+        scale.toValue = 1.10
+
+        let opacity = CABasicAnimation(keyPath: "opacity")
+        opacity.fromValue = 0.48
+        opacity.toValue = 0.0
+
+        let group = CAAnimationGroup()
+        group.animations = [scale, opacity]
+        group.duration = 1.45
+        group.repeatCount = .infinity
+        group.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        pulseLayer.add(group, forKey: "pulse")
+    }
+
+    private func stopPulseAnimation() {
+        pulseLayer.removeAnimation(forKey: "pulse")
+        pulseLayer.opacity = 0
+    }
+
+    @objc private func pressed() {
+        UIView.animate(withDuration: 0.12) {
+            self.transform = CGAffineTransform(scaleX: 0.97, y: 0.97)
+        }
+    }
+
+    @objc private func released() {
+        UIView.animate(withDuration: 0.22,
+                       delay: 0,
+                       usingSpringWithDamping: 0.70,
+                       initialSpringVelocity: 0.5) {
+            self.transform = .identity
+        }
+    }
+}
+
+private final class InstructionsCardView: UIControl {
+    private let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
+    private let iconContainer = UIView()
+    private let iconView = UIImageView(image: UIImage(systemName: "gamecontroller.fill"))
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.cornerRadius = 24
+        blurView.frame = bounds
+        blurView.layer.cornerRadius = 24
+        iconContainer.layer.cornerRadius = 18
+    }
+
+    private func setup() {
+        clipsToBounds = true
+        backgroundColor = UIColor.white.withAlphaComponent(0.035)
+        layer.borderWidth = 1
+        layer.borderColor = MainViewController.Palette.border.cgColor
+
+        blurView.alpha = 0.28
+        blurView.isUserInteractionEnabled = false
+        addSubview(blurView)
+
+        iconContainer.backgroundColor = MainViewController.Palette.accent.withAlphaComponent(0.14)
+        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+
+        iconView.tintColor = MainViewController.Palette.accent
+        iconView.contentMode = .scaleAspectFit
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+
+        let titleLabel = UILabel()
+        titleLabel.text = "How to connect"
+        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
+        titleLabel.textColor = MainViewController.Palette.primaryText
+
+        let detailLabel = UILabel()
+        detailLabel.text = "PlayStation, Xbox or MFi controller"
+        detailLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        detailLabel.textColor = MainViewController.Palette.secondaryText
+
+        let labels = UIStackView(arrangedSubviews: [titleLabel, detailLabel])
+        labels.axis = .vertical
+        labels.spacing = 3
+        labels.translatesAutoresizingMaskIntoConstraints = false
+
+        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
+        chevron.tintColor = MainViewController.Palette.accent
+        chevron.contentMode = .scaleAspectFit
+        chevron.translatesAutoresizingMaskIntoConstraints = false
+
+        addSubview(iconContainer)
+        iconContainer.addSubview(iconView)
+        addSubview(labels)
+        addSubview(chevron)
+
+        NSLayoutConstraint.activate([
+            iconContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
+            iconContainer.centerYAnchor.constraint(equalTo: centerYAnchor),
+            iconContainer.widthAnchor.constraint(equalToConstant: 44),
+            iconContainer.heightAnchor.constraint(equalTo: iconContainer.widthAnchor),
+
+            iconView.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor),
+            iconView.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor),
+            iconView.widthAnchor.constraint(equalToConstant: 23),
+            iconView.heightAnchor.constraint(equalTo: iconView.widthAnchor),
+
+            labels.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 14),
+            labels.centerYAnchor.constraint(equalTo: centerYAnchor),
+            labels.trailingAnchor.constraint(lessThanOrEqualTo: chevron.leadingAnchor, constant: -12),
+
+            chevron.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
+            chevron.centerYAnchor.constraint(equalTo: centerYAnchor),
+            chevron.widthAnchor.constraint(equalToConstant: 16),
+            chevron.heightAnchor.constraint(equalTo: chevron.widthAnchor),
+        ])
+
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = "How to connect a controller"
+        accessibilityHint = "Opens controller connection instructions"
+
+        addTarget(self, action: #selector(pressed), for: .touchDown)
+        addTarget(self, action: #selector(released), for: [.touchUpInside, .touchCancel, .touchDragExit])
+    }
+
+    @objc private func pressed() {
+        UIView.animate(withDuration: 0.12) {
+            self.alpha = 0.72
+            self.transform = CGAffineTransform(scaleX: 0.985, y: 0.985)
+        }
+    }
+
+    @objc private func released() {
+        UIView.animate(withDuration: 0.18) {
+            self.alpha = 1
+            self.transform = .identity
+        }
+    }
+}
+
+private final class PairingInstructionsViewController: UIViewController {
+    private let backgroundGradient = CAGradientLayer()
+    var onClose: (() -> Void)?
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        overrideUserInterfaceStyle = .dark
+        view.backgroundColor = MainViewController.Palette.backgroundBottom
+        configureBackground()
+        buildInterface()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        backgroundGradient.frame = view.bounds
+    }
+
+    private func configureBackground() {
+        backgroundGradient.colors = [
+            MainViewController.Palette.backgroundTop.cgColor,
+            MainViewController.Palette.backgroundBottom.cgColor,
+        ]
+        backgroundGradient.startPoint = CGPoint(x: 0.2, y: 0.0)
+        backgroundGradient.endPoint = CGPoint(x: 0.8, y: 1.0)
+        view.layer.insertSublayer(backgroundGradient, at: 0)
+    }
+
+    private func buildInterface() {
+        let titleLabel = UILabel()
+        titleLabel.text = "Connect a controller"
+        titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
+        titleLabel.textColor = MainViewController.Palette.primaryText
+        titleLabel.numberOfLines = 0
+
+        let subtitleLabel = UILabel()
+        subtitleLabel.text = "Pair it in iPhone Settings, then return to ZOONZOON."
+        subtitleLabel.font = .systemFont(ofSize: 15, weight: .medium)
+        subtitleLabel.textColor = MainViewController.Palette.secondaryText
+        subtitleLabel.numberOfLines = 0
+
+        let firstStep = makeStep(
+            number: "1",
+            title: "Turn on pairing mode",
+            detail: "PlayStation: hold PS + Share/Create. Xbox: hold the Pair button."
+        )
+        let secondStep = makeStep(
+            number: "2",
+            title: "Open Bluetooth settings",
+            detail: "On your iPhone, go to Settings → Bluetooth and select the controller."
+        )
+        let thirdStep = makeStep(
+            number: "3",
+            title: "Return to ZOONZOON",
+            detail: "The connection status updates automatically when pairing is complete."
+        )
+
+        let compatibilityLabel = UILabel()
+        compatibilityLabel.text = "Compatible with PlayStation, Xbox and MFi controllers supported by iOS."
+        compatibilityLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        compatibilityLabel.textColor = MainViewController.Palette.secondaryText
+        compatibilityLabel.numberOfLines = 0
+        compatibilityLabel.textAlignment = .center
+
+        var closeConfiguration = UIButton.Configuration.filled()
+        closeConfiguration.title = "Got it"
+        closeConfiguration.baseBackgroundColor = MainViewController.Palette.accent
+        closeConfiguration.baseForegroundColor = .white
+        closeConfiguration.cornerStyle = .large
+        closeConfiguration.contentInsets = NSDirectionalEdgeInsets(
+            top: 14,
+            leading: 18,
+            bottom: 14,
+            trailing: 18
+        )
+        let closeButton = UIButton(configuration: closeConfiguration)
+        closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
+
+        let stack = UIStackView(arrangedSubviews: [
+            titleLabel,
+            subtitleLabel,
+            firstStep,
+            secondStep,
+            thirdStep,
+            compatibilityLabel,
+            closeButton,
+        ])
+        stack.axis = .vertical
+        stack.alignment = .fill
+        stack.spacing = 13
+        stack.setCustomSpacing(20, after: subtitleLabel)
+        stack.setCustomSpacing(18, after: thirdStep)
+        stack.setCustomSpacing(18, after: compatibilityLabel)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 22),
+            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            closeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 50),
+        ])
+    }
+
+    private func makeStep(number: String, title: String, detail: String) -> UIView {
+        let badge = UILabel()
+        badge.text = number
+        badge.font = .systemFont(ofSize: 14, weight: .bold)
+        badge.textColor = .white
+        badge.textAlignment = .center
+        badge.backgroundColor = MainViewController.Palette.accent
+        badge.layer.cornerRadius = 15
+        badge.clipsToBounds = true
+        badge.translatesAutoresizingMaskIntoConstraints = false
+
+        let titleLabel = UILabel()
+        titleLabel.text = title
+        titleLabel.font = .systemFont(ofSize: 15, weight: .bold)
+        titleLabel.textColor = MainViewController.Palette.primaryText
+
+        let detailLabel = UILabel()
+        detailLabel.text = detail
+        detailLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        detailLabel.textColor = MainViewController.Palette.secondaryText
+        detailLabel.numberOfLines = 0
+
+        let labels = UIStackView(arrangedSubviews: [titleLabel, detailLabel])
+        labels.axis = .vertical
+        labels.spacing = 3
+
+        let row = UIStackView(arrangedSubviews: [badge, labels])
+        row.axis = .horizontal
+        row.alignment = .top
+        row.spacing = 12
+
+        NSLayoutConstraint.activate([
+            badge.widthAnchor.constraint(equalToConstant: 30),
+            badge.heightAnchor.constraint(equalTo: badge.widthAnchor),
+        ])
+        return row
+    }
+
+    @objc private func close() {
+        onClose?()
     }
 }
