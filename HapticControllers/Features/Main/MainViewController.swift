@@ -18,7 +18,6 @@ final class MainViewController: UIViewController {
     private let backgroundGradient = CAGradientLayer()
     private let topGlowGradient = CAGradientLayer()
     private let bottomGlowGradient = CAGradientLayer()
-    private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let connectionStatusView = ConnectionStatusView()
     private let hapticControl = HapticControlView()
@@ -98,19 +97,17 @@ final class MainViewController: UIViewController {
     }
 
     private func buildInterface() {
-        scrollView.alwaysBounceVertical = true
-        scrollView.showsVerticalScrollIndicator = false
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
+        view.addSubview(contentView)
 
         let brandLabel = UILabel()
         brandLabel.text = "ZOONZOON"
         brandLabel.font = .systemFont(ofSize: 35, weight: .bold)
         brandLabel.textColor = Palette.primaryText
         brandLabel.adjustsFontSizeToFitWidth = true
-        brandLabel.minimumScaleFactor = 0.8
+        brandLabel.minimumScaleFactor = 0.55
+        brandLabel.numberOfLines = 1
+        brandLabel.lineBreakMode = .byClipping
         brandLabel.translatesAutoresizingMaskIntoConstraints = false
 
         connectionStatusView.translatesAutoresizingMaskIntoConstraints = false
@@ -146,8 +143,6 @@ final class MainViewController: UIViewController {
         contentView.addSubview(instructionsCard)
 
         let safeArea = view.safeAreaLayoutGuide
-        let contentGuide = scrollView.contentLayoutGuide
-        let frameGuide = scrollView.frameLayoutGuide
         let hapticVerticalPosition = NSLayoutConstraint(
             item: hapticControl,
             attribute: .centerY,
@@ -159,26 +154,19 @@ final class MainViewController: UIViewController {
         )
 
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: safeArea.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-
-            contentView.topAnchor.constraint(equalTo: contentGuide.topAnchor),
-            contentView.leadingAnchor.constraint(equalTo: contentGuide.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: contentGuide.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalTo: contentGuide.bottomAnchor),
-            contentView.widthAnchor.constraint(equalTo: frameGuide.widthAnchor),
-            contentView.heightAnchor.constraint(greaterThanOrEqualTo: frameGuide.heightAnchor),
+            contentView.topAnchor.constraint(equalTo: safeArea.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             connectionStatusView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
             connectionStatusView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             connectionStatusView.widthAnchor.constraint(equalToConstant: 144),
             connectionStatusView.heightAnchor.constraint(equalToConstant: 44),
 
-            brandLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 78),
             brandLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 22),
-            brandLabel.trailingAnchor.constraint(lessThanOrEqualTo: contentView.trailingAnchor, constant: -22),
+            brandLabel.trailingAnchor.constraint(lessThanOrEqualTo: connectionStatusView.leadingAnchor, constant: -12),
+            brandLabel.centerYAnchor.constraint(equalTo: connectionStatusView.centerYAnchor),
 
             hapticControl.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             hapticVerticalPosition,
@@ -252,8 +240,19 @@ final class MainViewController: UIViewController {
         }
 
         if let sheet = instructionsViewController.sheetPresentationController {
-            sheet.detents = [.large()]
-            sheet.selectedDetentIdentifier = .large
+            if #available(iOS 16.0, *) {
+                let pairingDetentIdentifier = UISheetPresentationController.Detent.Identifier("pairing")
+                let pairingDetent = UISheetPresentationController.Detent.custom(
+                    identifier: pairingDetentIdentifier
+                ) { context in
+                    min(context.maximumDetentValue, 540)
+                }
+                sheet.detents = [pairingDetent]
+                sheet.selectedDetentIdentifier = pairingDetentIdentifier
+            } else {
+                sheet.detents = [.large()]
+                sheet.selectedDetentIdentifier = .large
+            }
             sheet.prefersGrabberVisible = true
             sheet.preferredCornerRadius = 30
         }
@@ -665,6 +664,7 @@ private final class InstructionsCardView: UIControl {
         addSubview(blurView)
 
         iconContainer.backgroundColor = MainViewController.Palette.accent.withAlphaComponent(0.14)
+        iconContainer.isUserInteractionEnabled = false
         iconContainer.translatesAutoresizingMaskIntoConstraints = false
 
         iconView.tintColor = MainViewController.Palette.accent
@@ -684,11 +684,13 @@ private final class InstructionsCardView: UIControl {
         let labels = UIStackView(arrangedSubviews: [titleLabel, detailLabel])
         labels.axis = .vertical
         labels.spacing = 3
+        labels.isUserInteractionEnabled = false
         labels.translatesAutoresizingMaskIntoConstraints = false
 
         let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
         chevron.tintColor = MainViewController.Palette.accent
         chevron.contentMode = .scaleAspectFit
+        chevron.isUserInteractionEnabled = false
         chevron.translatesAutoresizingMaskIntoConstraints = false
 
         addSubview(iconContainer)
@@ -818,30 +820,52 @@ private final class PairingInstructionsViewController: UIViewController {
         let closeButton = UIButton(configuration: closeConfiguration)
         closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
-        let stack = UIStackView(arrangedSubviews: [
-            titleLabel,
-            subtitleLabel,
-            firstStep,
-            secondStep,
-            thirdStep,
-            compatibilityLabel,
-            closeButton,
-        ])
-        stack.axis = .vertical
-        stack.alignment = .fill
-        stack.spacing = 13
-        stack.setCustomSpacing(20, after: subtitleLabel)
-        stack.setCustomSpacing(18, after: thirdStep)
-        stack.setCustomSpacing(18, after: compatibilityLabel)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(stack)
+        let headerStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        headerStack.axis = .vertical
+        headerStack.alignment = .fill
+        headerStack.spacing = 8
+        headerStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let stepsStack = UIStackView(arrangedSubviews: [firstStep, secondStep, thirdStep])
+        stepsStack.axis = .vertical
+        stepsStack.alignment = .fill
+        stepsStack.spacing = 12
+        stepsStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let footerStack = UIStackView(arrangedSubviews: [compatibilityLabel, closeButton])
+        footerStack.axis = .vertical
+        footerStack.alignment = .fill
+        footerStack.spacing = 14
+        footerStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let stepsArea = UIView()
+        stepsArea.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(headerStack)
+        view.addSubview(stepsArea)
+        stepsArea.addSubview(stepsStack)
+        view.addSubview(footerStack)
 
         NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 22),
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
-            closeButton.heightAnchor.constraint(greaterThanOrEqualToConstant: 50),
+            headerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 22),
+            headerStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            headerStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+
+            stepsArea.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 14),
+            stepsArea.leadingAnchor.constraint(equalTo: headerStack.leadingAnchor),
+            stepsArea.trailingAnchor.constraint(equalTo: headerStack.trailingAnchor),
+            stepsArea.bottomAnchor.constraint(equalTo: footerStack.topAnchor, constant: -14),
+
+            stepsStack.leadingAnchor.constraint(equalTo: stepsArea.leadingAnchor),
+            stepsStack.trailingAnchor.constraint(equalTo: stepsArea.trailingAnchor),
+            stepsStack.centerYAnchor.constraint(equalTo: stepsArea.centerYAnchor),
+            stepsStack.topAnchor.constraint(greaterThanOrEqualTo: stepsArea.topAnchor),
+            stepsStack.bottomAnchor.constraint(lessThanOrEqualTo: stepsArea.bottomAnchor),
+
+            footerStack.leadingAnchor.constraint(equalTo: headerStack.leadingAnchor),
+            footerStack.trailingAnchor.constraint(equalTo: headerStack.trailingAnchor),
+            footerStack.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            closeButton.heightAnchor.constraint(equalToConstant: 52),
         ])
     }
 
@@ -873,14 +897,26 @@ private final class PairingInstructionsViewController: UIViewController {
 
         let row = UIStackView(arrangedSubviews: [badge, labels])
         row.axis = .horizontal
-        row.alignment = .top
+        row.alignment = .center
         row.spacing = 12
+        row.translatesAutoresizingMaskIntoConstraints = false
+
+        let card = UIView()
+        card.backgroundColor = UIColor.white.withAlphaComponent(0.045)
+        card.layer.cornerRadius = 18
+        card.layer.borderWidth = 1
+        card.layer.borderColor = MainViewController.Palette.border.withAlphaComponent(0.55).cgColor
+        card.addSubview(row)
 
         NSLayoutConstraint.activate([
             badge.widthAnchor.constraint(equalToConstant: 30),
             badge.heightAnchor.constraint(equalTo: badge.widthAnchor),
+            row.topAnchor.constraint(equalTo: card.topAnchor, constant: 12),
+            row.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
+            row.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
+            row.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -12),
         ])
-        return row
+        return card
     }
 
     @objc private func close() {
