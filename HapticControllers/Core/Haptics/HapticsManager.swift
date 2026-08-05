@@ -1,6 +1,7 @@
 import CoreHaptics
 import Foundation
 import GameController
+import os
 
 enum HapticsPlaybackState: Equatable {
     case idle
@@ -35,12 +36,15 @@ protocol HapticsManagerDelegate: AnyObject {
 final class HapticsManager {
     weak var delegate: HapticsManagerDelegate?
 
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.ZoonZoon",
+                                category: "Haptics")
+
     private(set) var connectedController: GCController?
     private(set) var playbackState: HapticsPlaybackState = .idle
 
     private var isMonitoring = false
     private var engine: CHHapticEngine?
-    private var player: CHHapticAdvancedPatternPlayer?
+    private var player: CHHapticPatternPlayer?
     private var engineIdentifier: UUID?
 
     var isControllerConnected: Bool {
@@ -100,15 +104,22 @@ final class HapticsManager {
         guard let controller = connectedController else {
             return .failure(.noController)
         }
-        guard controller.haptics != nil else {
+        guard let controllerHaptics = controller.haptics else {
             return .failure(.hapticsUnsupported)
         }
+
+        let supportedLocalities = controllerHaptics.supportedLocalities
+            .map(\.rawValue)
+            .sorted()
+            .joined(separator: ", ")
+        logger.info("Starting controller haptics for \(controller.productCategory, privacy: .public); localities: \(supportedLocalities, privacy: .public)")
 
         stopHaptics()
         updatePlaybackState(.starting)
 
-        guard let newEngine = controller.haptics?.createEngine(withLocality: .default) else {
+        guard let newEngine = controllerHaptics.createEngine(withLocality: .default) else {
             updatePlaybackState(.idle)
+            logger.error("Unable to create a haptic engine for the default locality")
             return .failure(.hapticsUnsupported)
         }
 
@@ -116,18 +127,26 @@ final class HapticsManager {
         engineIdentifier = identifier
         configure(newEngine, identifier: identifier)
 
+        var stage = "creating the pattern"
         do {
             let hapticPattern = try makeDefaultPattern()
-            let newPlayer = try newEngine.makeAdvancedPlayer(with: hapticPattern)
+
+            stage = "starting the engine"
+            try newEngine.start()
+
+            stage = "creating the player"
+            let newPlayer = try newEngine.makePlayer(with: hapticPattern)
             engine = newEngine
             player = newPlayer
 
-            try newEngine.start()
+            stage = "starting the player"
             try newPlayer.start(atTime: CHHapticTimeImmediate)
 
             updatePlaybackState(.playing)
             return .success(())
         } catch {
+            let nsError = error as NSError
+            logger.error("Controller haptics failed while \(stage, privacy: .public): domain=\(nsError.domain, privacy: .public) code=\(nsError.code) description=\(nsError.localizedDescription, privacy: .public)")
             newEngine.stop(completionHandler: nil)
             clearPlaybackObjects()
             updatePlaybackState(.idle)
