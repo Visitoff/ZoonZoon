@@ -17,6 +17,12 @@ static const float kSharpnessFlushEpsilon = 0.04f;
     __weak GCController *_controller;
     float _activeSharpness;
     BOOL _hasActiveSharpness;
+
+    // Phone (device) continuous rumble — separate from gamepad engines.
+    CHHapticEngine *_phoneEngine;
+    id<CHHapticAdvancedPatternPlayer> _phonePlayer;
+    BOOL _phoneEngineStopped;
+    float _phoneLastIntensity;
 }
 
 + (void)startWirelessDiscovery {
@@ -33,6 +39,8 @@ static const float kSharpnessFlushEpsilon = 0.04f;
         _engines = [NSMutableDictionary dictionary];
         _activeSharpness = 0.5f;
         _hasActiveSharpness = NO;
+        _phoneEngineStopped = YES;
+        _phoneLastIntensity = -1.0f;
     }
     return self;
 }
@@ -271,6 +279,187 @@ static const float kSharpnessFlushEpsilon = 0.04f;
     [_engines removeAllObjects];
     _controller = nil;
     _hasActiveSharpness = NO;
+}
+
+#pragma mark - Phone (device Taptic) continuous rumble
+
+- (BOOL)preparePhoneEngine {
+    if (_phoneEngine && _phonePlayer && !_phoneEngineStopped) {
+        return YES;
+    }
+
+    [self stopPhone];
+
+    if (![CHHapticEngine capabilitiesForHardware].supportsHaptics) {
+        NSLog(@"[PhoneHaptics] Hardware does not support Core Haptics");
+        return NO;
+    }
+
+    NSError *engineError = nil;
+    CHHapticEngine *engine = [[CHHapticEngine alloc] initAndReturnError:&engineError];
+    if (!engine) {
+        NSLog(@"[PhoneHaptics] Engine create error: %@", engineError);
+        return NO;
+    }
+
+    engine.playsHapticsOnly = YES;
+    engine.autoShutdownEnabled = NO;
+
+    __weak typeof(self) weakSelf = self;
+    engine.stoppedHandler = ^(CHHapticEngineStoppedReason reason) {
+        NSLog(@"[PhoneHaptics] Engine stopped: %ld", (long)reason);
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (strongSelf) {
+            strongSelf->_phoneEngineStopped = YES;
+        }
+    };
+    engine.resetHandler = ^{
+        NSLog(@"[PhoneHaptics] Engine reset — restarting");
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) return;
+        NSError *restartError = nil;
+        [strongSelf->_phoneEngine startAndReturnError:&restartError];
+        if (!restartError) {
+            strongSelf->_phoneEngineStopped = NO;
+        }
+    };
+
+    NSError *startError = nil;
+    if (![engine startAndReturnError:&startError]) {
+        NSLog(@"[PhoneHaptics] Engine start error: %@", startError);
+        return NO;
+    }
+
+    // Base intensity 1.0 — dynamic IntensityControl multiplies against it.
+    CHHapticEventParameter *intensityParam =
+        [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticIntensity
+                                                      value:1.0f];
+    CHHapticEventParameter *sharpnessParam =
+        [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticSharpness
+                                                      value:0.4f];
+    CHHapticEvent *event =
+        [[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticContinuous
+                                      parameters:@[intensityParam, sharpnessParam]
+                                    relativeTime:0
+                                        duration:30.0];
+
+    NSError *patternError = nil;
+    CHHapticPattern *pattern =
+        [[CHHapticPattern alloc] initWithEvents:@[event] parameters:@[] error:&patternError];
+    if (!pattern) {
+        NSLog(@"[PhoneHaptics] Pattern error: %@", patternError);
+        return NO;
+    }
+
+    NSError *playerError = nil;
+    id<CHHapticAdvancedPatternPlayer> player =
+        [engine createAdvancedPlayerWithPattern:pattern error:&playerError];
+    if (!player) {
+        // Fall back to regular player with finite looping duration.
+        id<CHHapticPatternPlayer> basic =
+            [engine createPlayerWithPattern:pattern error:&playerError];
+        if (!basic) {
+            NSLog(@"[PhoneHaptics] Player error: %@", playerError);
+            return NO;
+        }
+        NSError *playError = nil;
+        if (![basic startAtTime:CHHapticTimeImmediate error:&playError]) {
+            NSLog(@"[PhoneHaptics] Play error: %@", playError);
+            return NO;
+        }
+        // Can't dynamically modulate basic as well — store as advanced if possible.
+        // Re-try advanced is already failed; keep basic via cast won't work for sendParameters well.
+        // Create finite pattern with advanced path failed - try duration 30 loop via advanced only.
+        NSLog(@"[PhoneHaptics] Advanced player unavailable");
+        return NO;
+    }
+
+    player.loopEnabled = YES;
+
+    NSError *playError = nil;
+    if (![player startAtTime:CHHapticTimeImmediate error:&playError]) {
+        NSLog(@"[PhoneHaptics] Play error: %@", playError);
+        return NO;
+    }
+
+    // Start muted.
+    CHHapticDynamicParameter *mute =
+        [[CHHapticDynamicParameter alloc] initWithParameterID:CHHapticDynamicParameterIDHapticIntensityControl
+                                                         value:0.0f
+                                                  relativeTime:0];
+    [player sendParameters:@[mute] atTime:CHHapticTimeImmediate error:nil];
+
+    _phoneEngine = engine;
+    _phonePlayer = player;
+    _phoneEngineStopped = NO;
+    _phoneLastIntensity = 0.0f;
+    NSLog(@"[PhoneHaptics] Continuous phone engine ready");
+    return YES;
+}
+
+- (BOOL)startPhoneEngineIfNeeded {
+    if (!_phoneEngine) {
+        return [self preparePhoneEngine];
+    }
+    if (!_phoneEngineStopped) {
+        return YES;
+    }
+    NSError *startError = nil;
+    if (![_phoneEngine startAndReturnError:&startError]) {
+        NSLog(@"[PhoneHaptics] Restart error: %@", startError);
+        return [self preparePhoneEngine];
+    }
+    _phoneEngineStopped = NO;
+    return YES;
+}
+
+- (BOOL)updatePhoneIntensity:(float)intensity {
+    float clamped = fmaxf(0.0f, fminf(1.0f, intensity));
+    if (clamped < 0.01f) {
+        if (_phonePlayer && fabsf(_phoneLastIntensity) > 0.01f) {
+            CHHapticDynamicParameter *mute =
+                [[CHHapticDynamicParameter alloc] initWithParameterID:CHHapticDynamicParameterIDHapticIntensityControl
+                                                                 value:0.0f
+                                                          relativeTime:0];
+            [_phonePlayer sendParameters:@[mute] atTime:CHHapticTimeImmediate error:nil];
+            _phoneLastIntensity = 0.0f;
+        }
+        return YES;
+    }
+
+    if (![self startPhoneEngineIfNeeded] || !_phonePlayer) {
+        return NO;
+    }
+
+    if (fabsf(clamped - _phoneLastIntensity) < 0.02f) {
+        return YES;
+    }
+
+    CHHapticDynamicParameter *param =
+        [[CHHapticDynamicParameter alloc] initWithParameterID:CHHapticDynamicParameterIDHapticIntensityControl
+                                                         value:clamped
+                                                  relativeTime:0];
+    NSError *error = nil;
+    if (![_phonePlayer sendParameters:@[param] atTime:CHHapticTimeImmediate error:&error]) {
+        NSLog(@"[PhoneHaptics] sendParameters error: %@", error);
+        _phoneEngineStopped = YES;
+        return NO;
+    }
+    _phoneLastIntensity = clamped;
+    return YES;
+}
+
+- (void)stopPhone {
+    if (_phonePlayer) {
+        [_phonePlayer cancelAndReturnError:nil];
+        _phonePlayer = nil;
+    }
+    if (_phoneEngine) {
+        [_phoneEngine stopWithCompletionHandler:nil];
+        _phoneEngine = nil;
+    }
+    _phoneEngineStopped = YES;
+    _phoneLastIntensity = -1.0f;
 }
 
 @end

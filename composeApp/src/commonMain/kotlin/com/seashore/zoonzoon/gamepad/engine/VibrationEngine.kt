@@ -188,16 +188,18 @@ class VibrationEngine(
                 val (left, right) = state.activePattern.calculateFrame(elapsed, state.intensity)
                 val motorLevel = maxOf(left, right)
 
+                // Drive phone first so gamepad Core Haptics work doesn't delay /
+                // starve phone updates in Gamepad+Phone mode.
+                if (usePhone) {
+                    phoneVibrator.vibrate(motorLevel)
+                }
+
                 if (useGamepad) {
                     controller.sendVibrationCommand(
                         leftMotor = left,
                         rightMotor = right,
                         sharpness = state.sharpness
                     )
-                }
-
-                if (usePhone) {
-                    phoneVibrator.vibrate(motorLevel)
                 }
 
                 delay(FRAME_INTERVAL_MS)

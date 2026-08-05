@@ -72,7 +72,7 @@ android {
         applicationId = "com.ZoonZoon"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 19
+        versionCode = 20
         versionName = "1.4"
         
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

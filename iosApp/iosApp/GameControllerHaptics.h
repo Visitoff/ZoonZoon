@@ -22,8 +22,17 @@ NS_ASSUME_NONNULL_BEGIN
                        rightIntensity:(float)right
                             sharpness:(float)sharpness;
 
-/// Stop all haptic engines. Call on disconnect.
+/// Stop gamepad haptic engines. Call on disconnect.
 - (void)stopAll;
+
+/// Prepare continuous Core Haptics engine for the *phone* Taptic Engine.
+- (BOOL)preparePhoneEngine;
+
+/// Update phone rumble intensity (0.0–1.0). Safe to call every frame.
+- (BOOL)updatePhoneIntensity:(float)intensity;
+
+/// Stop phone rumble engine.
+- (void)stopPhone;
 
 @end
 
