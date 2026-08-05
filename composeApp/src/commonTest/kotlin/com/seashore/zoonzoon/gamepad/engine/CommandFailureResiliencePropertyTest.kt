@@ -36,7 +36,7 @@ class CommandFailureResiliencePropertyTest {
         override suspend fun stopDiscovery()  {}
         override suspend fun disconnect()     { _connectionState.value = ConnectionState.Disconnected }
 
-        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float): Result<Unit> {
+        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float, sharpness: Float): Result<Unit> {
             failureCount++
             return Result.failure(Exception("Simulated command failure #$failureCount"))
         }
@@ -55,7 +55,7 @@ class CommandFailureResiliencePropertyTest {
         override suspend fun stopDiscovery()  {}
         override suspend fun disconnect()     { _connectionState.value = ConnectionState.Disconnected }
 
-        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float): Result<Unit> {
+        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float, sharpness: Float): Result<Unit> {
             callCount++
             return if (callCount <= failCount) {
                 Result.failure(Exception("Simulated failure $callCount"))

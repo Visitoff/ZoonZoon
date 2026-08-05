@@ -454,7 +454,8 @@ actual class PlatformGamepadController(
      */
     actual override suspend fun sendVibrationCommand(
         leftMotor: Float,
-        rightMotor: Float
+        rightMotor: Float,
+        sharpness: Float
     ): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             // Validate motor values

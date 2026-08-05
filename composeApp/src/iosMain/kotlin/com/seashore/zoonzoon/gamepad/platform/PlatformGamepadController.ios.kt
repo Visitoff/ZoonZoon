@@ -35,7 +35,6 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     private var disconnectObserver: Any? = null
     private var becomeCurrentObserver: Any? = null
     private var hapticsPrepared = false
-    private var hapticSharpness = 0.5f
 
     private val haptics = GameControllerHaptics()
 
@@ -99,10 +98,11 @@ actual class PlatformGamepadController : GamepadControllerWithState {
 
     actual override suspend fun sendVibrationCommand(
         leftMotor: Float,
-        rightMotor: Float
+        rightMotor: Float,
+        sharpness: Float
     ): Result<Unit> = withContext(Dispatchers.Main) {
-        if (leftMotor !in 0f..1f || rightMotor !in 0f..1f) {
-            return@withContext Result.failure(IllegalArgumentException("Motor values must be in [0.0, 1.0]"))
+        if (leftMotor !in 0f..1f || rightMotor !in 0f..1f || sharpness !in 0f..1f) {
+            return@withContext Result.failure(IllegalArgumentException("Motor/sharpness values must be in [0.0, 1.0]"))
         }
 
         val controller = resolveActiveController()
@@ -116,23 +116,22 @@ actual class PlatformGamepadController : GamepadControllerWithState {
         var ok = haptics.updateRumbleWithLeftIntensity(
             leftMotor,
             rightIntensity = rightMotor,
-            sharpness = hapticSharpness
+            sharpness = sharpness
         )
         if (!ok) {
-            // Engine may have been stopped by the system — full re-prepare once.
             invalidateHaptics()
             if (ensureHapticsPrepared(controller)) {
                 ok = haptics.updateRumbleWithLeftIntensity(
                     leftMotor,
                     rightIntensity = rightMotor,
-                    sharpness = hapticSharpness
+                    sharpness = sharpness
                 )
             }
         }
 
         if (ok) Result.success(Unit)
         else {
-            println("[iOS] Rumble update failed left=$leftMotor right=$rightMotor")
+            println("[iOS] Rumble update failed left=$leftMotor right=$rightMotor sharpness=$sharpness")
             Result.failure(IllegalStateException("Failed to update controller haptics"))
         }
     }
@@ -196,9 +195,5 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     private fun invalidateHaptics() {
         haptics.stopAll()
         hapticsPrepared = false
-    }
-
-    override fun setHapticSharpness(sharpness: Float) {
-        hapticSharpness = sharpness.coerceIn(0f, 1f)
     }
 }

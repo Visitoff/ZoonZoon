@@ -4,19 +4,19 @@
 #import <math.h>
 
 /*
- * Restored from the working Swift ZoonZoon rumble path (commit 04fb695 + origin/main Steady):
- *
- * - Keep separate engines for LeftHandle / RightHandle / Default (DualShock has 2 motors).
- * - Each frame fire a short continuous burst with intensity BAKED into the event.
- * - Do NOT cancel the previous player — overlapping bursts stack and feel ~25%+ stronger.
- * - Sharpness 0.5 matches Steady.ahap from the old Swift app.
+ * DualShock rumble:
+ * - Left+Right engines, overlapping bursts (no cancel) for strength.
+ * - Sharpness is mapped to burst duration + transient punch because DualShock
+ *   rumble motors barely respond to HapticSharpness alone.
  */
 
-static const NSTimeInterval kBurstDurationSec = 0.10;
+static const float kSharpnessFlushEpsilon = 0.04f;
 
 @implementation GameControllerHaptics {
     NSMutableDictionary<GCHapticsLocality, CHHapticEngine *> *_engines;
     __weak GCController *_controller;
+    float _activeSharpness;
+    BOOL _hasActiveSharpness;
 }
 
 + (void)startWirelessDiscovery {
@@ -31,6 +31,8 @@ static const NSTimeInterval kBurstDurationSec = 0.10;
     self = [super init];
     if (self) {
         _engines = [NSMutableDictionary dictionary];
+        _activeSharpness = 0.5f;
+        _hasActiveSharpness = NO;
     }
     return self;
 }
@@ -118,7 +120,6 @@ static const NSTimeInterval kBurstDurationSec = 0.10;
           controller.vendorName,
           controller.haptics.supportedLocalities);
 
-    // DualShock: prepare both motors + default fallback (same as old Swift bridge).
     BOOL leftOk = [self ensureEngineForLocality:GCHapticsLocalityLeftHandle];
     BOOL rightOk = [self ensureEngineForLocality:GCHapticsLocalityRightHandle];
     BOOL defaultOk = [self ensureEngineForLocality:GCHapticsLocalityDefault];
@@ -130,8 +131,23 @@ static const NSTimeInterval kBurstDurationSec = 0.10;
     return ok;
 }
 
-/// Fire a short continuous burst. Previous players are intentionally NOT cancelled —
-/// overlapping bursts are what made the old Swift ZoonZoon feel stronger on DualShock.
+/// Clear in-flight overlapping players so a new sharpness takes effect immediately.
+- (void)flushOverlappingPlayers {
+    GCController *controller = _controller;
+    if (!controller) {
+        return;
+    }
+    for (CHHapticEngine *engine in _engines.allValues) {
+        [engine stopWithCompletionHandler:nil];
+    }
+    [_engines removeAllObjects];
+    _controller = controller;
+    [self ensureEngineForLocality:GCHapticsLocalityLeftHandle];
+    [self ensureEngineForLocality:GCHapticsLocalityRightHandle];
+    [self ensureEngineForLocality:GCHapticsLocalityDefault];
+    [self ensureEngineForLocality:GCHapticsLocalityHandles];
+}
+
 - (BOOL)playRumbleWithIntensity:(float)intensity
                       sharpness:(float)sharpness
                        locality:(GCHapticsLocality)locality {
@@ -147,12 +163,16 @@ static const NSTimeInterval kBurstDurationSec = 0.10;
         return NO;
     }
 
-    // Keep engine alive if the system stopped it.
     NSError *startError = nil;
     [engine startAndReturnError:&startError];
 
     float clampedIntensity = fmaxf(0.0f, fminf(1.0f, intensity));
     float clampedSharpness = fmaxf(0.0f, fminf(1.0f, sharpness));
+
+    // DualShock barely reacts to HapticSharpness alone — also map it to duration:
+    // sharpness 0 → long heavy rumble (0.16s), sharpness 1 → short tick (0.035s).
+    NSTimeInterval burstDuration = 0.16 - (0.125 * (double)clampedSharpness);
+
     CHHapticEventParameter *intensityParam =
         [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticIntensity
                                                       value:clampedIntensity];
@@ -160,15 +180,30 @@ static const NSTimeInterval kBurstDurationSec = 0.10;
         [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticSharpness
                                                       value:clampedSharpness];
 
-    CHHapticEvent *event =
-        [[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticContinuous
-                                      parameters:@[intensityParam, sharpnessParam]
-                                    relativeTime:0
-                                        duration:kBurstDurationSec];
+    NSMutableArray<CHHapticEvent *> *events = [NSMutableArray array];
+
+    // High sharpness: lead with a transient "click" so DualShock feels the change.
+    if (clampedSharpness >= 0.25f) {
+        float transientIntensity = fminf(1.0f, clampedIntensity * (0.55f + 0.45f * clampedSharpness));
+        CHHapticEventParameter *tIntensity =
+            [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticIntensity
+                                                          value:transientIntensity];
+        CHHapticEventParameter *tSharpness =
+            [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticSharpness
+                                                          value:fmaxf(0.6f, clampedSharpness)];
+        [events addObject:[[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticTransient
+                                                        parameters:@[tIntensity, tSharpness]
+                                                      relativeTime:0]];
+    }
+
+    [events addObject:[[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticContinuous
+                                                    parameters:@[intensityParam, sharpnessParam]
+                                                  relativeTime:0
+                                                      duration:burstDuration]];
 
     NSError *patternError = nil;
     CHHapticPattern *pattern =
-        [[CHHapticPattern alloc] initWithEvents:@[event] parameters:@[] error:&patternError];
+        [[CHHapticPattern alloc] initWithEvents:events parameters:@[] error:&patternError];
     if (!pattern) {
         NSLog(@"[Haptics] Pattern error: %@", patternError);
         return NO;
@@ -187,8 +222,6 @@ static const NSTimeInterval kBurstDurationSec = 0.10;
         return NO;
     }
 
-    // Player is intentionally leaked until the 100ms burst ends — Core Haptics
-    // retains it while playing. No cancel = overlap stacking.
     return YES;
 }
 
@@ -199,27 +232,36 @@ static const NSTimeInterval kBurstDurationSec = 0.10;
         return YES;
     }
 
+    float clampedSharpness = fmaxf(0.0f, fminf(1.0f, sharpness));
+    if (!_hasActiveSharpness || fabsf(clampedSharpness - _activeSharpness) >= kSharpnessFlushEpsilon) {
+        // Drop old overlapping bursts that still carry the previous sharpness.
+        [self flushOverlappingPlayers];
+        _activeSharpness = clampedSharpness;
+        _hasActiveSharpness = YES;
+        NSLog(@"[Haptics] Sharpness applied: %.2f (duration=%.0fms)",
+              clampedSharpness,
+              (0.16 - 0.125 * clampedSharpness) * 1000.0);
+    }
+
     BOOL leftOk = NO;
     BOOL rightOk = NO;
 
-    // DualShock strong path: drive BOTH handle motors every frame (old Swift bridge).
     if (left > 0.01f) {
-        leftOk = [self playRumbleWithIntensity:left sharpness:sharpness locality:GCHapticsLocalityLeftHandle];
+        leftOk = [self playRumbleWithIntensity:left sharpness:clampedSharpness locality:GCHapticsLocalityLeftHandle];
     }
     if (right > 0.01f) {
-        rightOk = [self playRumbleWithIntensity:right sharpness:sharpness locality:GCHapticsLocalityRightHandle];
+        rightOk = [self playRumbleWithIntensity:right sharpness:clampedSharpness locality:GCHapticsLocalityRightHandle];
     }
 
     if (leftOk || rightOk) {
         return YES;
     }
 
-    // Fallback chain if handle localities are unavailable on this pad.
     float combined = fmaxf(left, right);
-    if ([self playRumbleWithIntensity:combined sharpness:sharpness locality:GCHapticsLocalityHandles]) {
+    if ([self playRumbleWithIntensity:combined sharpness:clampedSharpness locality:GCHapticsLocalityHandles]) {
         return YES;
     }
-    return [self playRumbleWithIntensity:combined sharpness:sharpness locality:GCHapticsLocalityDefault];
+    return [self playRumbleWithIntensity:combined sharpness:clampedSharpness locality:GCHapticsLocalityDefault];
 }
 
 - (void)stopAll {
@@ -228,6 +270,7 @@ static const NSTimeInterval kBurstDurationSec = 0.10;
     }
     [_engines removeAllObjects];
     _controller = nil;
+    _hasActiveSharpness = NO;
 }
 
 @end

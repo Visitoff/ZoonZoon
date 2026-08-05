@@ -16,13 +16,12 @@ interface GamepadController {
      *
      * @param leftMotor  Left motor intensity in range [0.0, 1.0].
      * @param rightMotor Right motor intensity in range [0.0, 1.0].
+     * @param sharpness  Haptic sharpness in range [0.0, 1.0] (iOS Core Haptics; ignored on Android).
      * @return [Result.success] on success, [Result.failure] with an error on failure.
      */
-    suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float): Result<Unit>
-
-    /**
-     * Haptic sharpness for platforms that support it (iOS Core Haptics). Range [0.0, 1.0].
-     * Default no-op for Android / fakes.
-     */
-    fun setHapticSharpness(sharpness: Float) = Unit
+    suspend fun sendVibrationCommand(
+        leftMotor: Float,
+        rightMotor: Float,
+        sharpness: Float = 0.5f
+    ): Result<Unit>
 }

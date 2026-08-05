@@ -138,7 +138,6 @@ class VibrationEngine(
             "Sharpness must be in range [0.0, 1.0], got $sharpness"
         }
         _vibrationState.value = _vibrationState.value.copy(sharpness = sharpness)
-        controller.setHapticSharpness(sharpness)
     }
 
     // -------------------------------------------------------------------------
@@ -190,7 +189,11 @@ class VibrationEngine(
                 val motorLevel = maxOf(left, right)
 
                 if (useGamepad) {
-                    controller.sendVibrationCommand(leftMotor = left, rightMotor = right)
+                    controller.sendVibrationCommand(
+                        leftMotor = left,
+                        rightMotor = right,
+                        sharpness = state.sharpness
+                    )
                 }
 
                 if (usePhone) {

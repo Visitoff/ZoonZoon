@@ -45,7 +45,7 @@ class FakePlatformGamepadController : GamepadControllerWithState {
      */
     fun getStopCommands(): List<Command> = commands.filter { it.leftMotor == 0f && it.rightMotor == 0f }
     
-    override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float): Result<Unit> {
+    override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float, sharpness: Float): Result<Unit> {
         commands.add(Command(leftMotor, rightMotor))
         return Result.success(Unit)
     }

@@ -33,7 +33,7 @@ class PlatformErrorTranslationPropertyTest {
         override suspend fun stopDiscovery()  {}
         override suspend fun disconnect()     { _connectionState.value = ConnectionState.Disconnected }
 
-        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float): Result<Unit> {
+        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float, sharpness: Float): Result<Unit> {
             return try {
                 throw platformError
             } catch (e: Exception) {

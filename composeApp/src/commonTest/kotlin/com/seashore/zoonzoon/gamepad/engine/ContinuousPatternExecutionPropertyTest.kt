@@ -22,7 +22,7 @@ class ContinuousPatternExecutionPropertyTest {
     private class FakeGamepadController : GamepadController {
         data class Command(val leftMotor: Float, val rightMotor: Float)
         val commands = mutableListOf<Command>()
-        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float): Result<Unit> {
+        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float, sharpness: Float): Result<Unit> {
             commands.add(Command(leftMotor, rightMotor))
             return Result.success(Unit)
         }

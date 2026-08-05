@@ -20,7 +20,7 @@ import kotlin.test.assertEquals
 class IntensityPersistencePropertyTest {
 
     private class FakeGamepadController : GamepadController {
-        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float) = Result.success(Unit)
+        override suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float, sharpness: Float) = Result.success(Unit)
     }
 
     /**
