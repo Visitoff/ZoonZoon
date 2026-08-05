@@ -4,8 +4,8 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// ObjC bridge for game controller haptics (GCController.haptics + CoreHaptics).
-/// Single Handles engine; continuous rumble with intensity baked into the event
-/// (not 1.0 × dynamic multiply, which stays soft on many controllers).
+/// DualShock-strong path: Left+Right engines, overlapping 100ms bursts (no cancel),
+/// matching the old Swift ZoonZoon rumble recipe.
 @interface GameControllerHaptics : NSObject
 
 /// Start scanning for nearby wireless controllers.
