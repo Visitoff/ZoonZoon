@@ -123,6 +123,12 @@ fun HomeScreen(
                 intensity = vibrationState.intensity,
                 onIntensityChanged = viewModel::setIntensity,
                 label = strings.intensity,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            HomeIntensitySlider(
+                intensity = vibrationState.sharpness,
+                onIntensityChanged = viewModel::setSharpness,
+                label = strings.sharpness,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
         }

@@ -19,4 +19,10 @@ interface GamepadController {
      * @return [Result.success] on success, [Result.failure] with an error on failure.
      */
     suspend fun sendVibrationCommand(leftMotor: Float, rightMotor: Float): Result<Unit>
+
+    /**
+     * Haptic sharpness for platforms that support it (iOS Core Haptics). Range [0.0, 1.0].
+     * Default no-op for Android / fakes.
+     */
+    fun setHapticSharpness(sharpness: Float) = Unit
 }

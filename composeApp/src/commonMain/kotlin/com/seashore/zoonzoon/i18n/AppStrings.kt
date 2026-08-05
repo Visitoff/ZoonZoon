@@ -10,6 +10,7 @@ data class AppStrings(
     val vibrate: String,
     val on: String,
     val intensity: String,
+    val sharpness: String,
     val connectGamepadTitle: String,
     val connectGamepadBody: String,
     val gotIt: String,
@@ -58,6 +59,7 @@ fun stringsFor(language: AppLanguage): AppStrings = when (language) {
         vibrate = "VIBRATE",
         on = "ON",
         intensity = "Intensity",
+        sharpness = "Sharpness",
         connectGamepadTitle = "Connect a gamepad",
         connectGamepadBody = "1. Turn on Bluetooth on your phone.\n" +
             "2. Put your controller in pairing mode (PS: Share+PS, Xbox: pairing button).\n" +
@@ -108,6 +110,7 @@ fun stringsFor(language: AppLanguage): AppStrings = when (language) {
         vibrate = "バイブ",
         on = "ON",
         intensity = "強さ",
+        sharpness = "シャープネス",
         connectGamepadTitle = "ゲームパッドを接続",
         connectGamepadBody = "1. スマホのBluetoothをオンにします。\n" +
             "2. コントローラーをペアリングモードにします（PS: Share+PS、Xbox: ペアリングボタン）。\n" +

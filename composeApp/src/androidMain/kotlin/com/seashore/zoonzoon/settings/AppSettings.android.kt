@@ -40,6 +40,13 @@ private class AndroidAppSettings : AppSettings {
         prefs.edit().putFloat(KEY_INTENSITY, value.coerceIn(0f, 1f)).apply()
     }
 
+    override fun getSharpness(): Float =
+        prefs.getFloat(KEY_SHARPNESS, DEFAULT_SHARPNESS).coerceIn(0f, 1f)
+
+    override fun setSharpness(value: Float) {
+        prefs.edit().putFloat(KEY_SHARPNESS, value.coerceIn(0f, 1f)).apply()
+    }
+
     override fun getLanguage(): AppLanguage {
         val tag = prefs.getString(KEY_LANGUAGE, AppLanguage.EN_US.tag)
         return AppLanguage.entries.find { it.tag == tag } ?: AppLanguage.EN_US
@@ -87,6 +94,7 @@ private class AndroidAppSettings : AppSettings {
         private const val KEY_TARGET = "vibration_target"
         private const val KEY_CHOSEN = "vibration_target_chosen"
         private const val KEY_INTENSITY = "intensity"
+        private const val KEY_SHARPNESS = "sharpness"
         private const val KEY_LANGUAGE = "language"
         private const val KEY_THEME = "theme_mode"
         private const val KEY_CUSTOM = "custom_patterns"
@@ -95,5 +103,6 @@ private class AndroidAppSettings : AppSettings {
         private const val KEY_PLAY_MODE = "pattern_play_mode"
         private const val KEY_ACTIVE_PRESET = "active_preset_key"
         private const val DEFAULT_INTENSITY = 0.7f
+        private const val DEFAULT_SHARPNESS = 0.5f
     }
 }

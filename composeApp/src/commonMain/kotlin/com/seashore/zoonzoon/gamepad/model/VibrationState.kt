@@ -13,11 +13,15 @@ package com.seashore.zoonzoon.gamepad.model
 data class VibrationState(
     val enabled: Boolean = false,
     val activePattern: VibrationPattern = VibrationPattern.Constant,
-    val intensity: Float = 0.7f
+    val intensity: Float = 0.7f,
+    val sharpness: Float = 0.5f
 ) {
     init {
         require(intensity in 0.0f..1.0f) {
             "Intensity must be in range [0.0, 1.0], got $intensity"
+        }
+        require(sharpness in 0.0f..1.0f) {
+            "Sharpness must be in range [0.0, 1.0], got $sharpness"
         }
     }
 }

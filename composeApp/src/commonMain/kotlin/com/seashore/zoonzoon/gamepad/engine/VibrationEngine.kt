@@ -129,6 +129,18 @@ class VibrationEngine(
         _vibrationState.value = _vibrationState.value.copy(intensity = intensity)
     }
 
+    /**
+     * Set haptic sharpness (Core Haptics character). Range [0.0, 1.0].
+     * Applied on the next vibration frame on platforms that support it.
+     */
+    fun setSharpness(sharpness: Float) {
+        require(sharpness in 0.0f..1.0f) {
+            "Sharpness must be in range [0.0, 1.0], got $sharpness"
+        }
+        _vibrationState.value = _vibrationState.value.copy(sharpness = sharpness)
+        controller.setHapticSharpness(sharpness)
+    }
+
     // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------

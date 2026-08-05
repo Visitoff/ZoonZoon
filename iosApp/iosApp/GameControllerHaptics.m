@@ -13,7 +13,6 @@
  */
 
 static const NSTimeInterval kBurstDurationSec = 0.10;
-static const float kBurstSharpness = 0.5f;
 
 @implementation GameControllerHaptics {
     NSMutableDictionary<GCHapticsLocality, CHHapticEngine *> *_engines;
@@ -133,7 +132,9 @@ static const float kBurstSharpness = 0.5f;
 
 /// Fire a short continuous burst. Previous players are intentionally NOT cancelled —
 /// overlapping bursts are what made the old Swift ZoonZoon feel stronger on DualShock.
-- (BOOL)playRumbleWithIntensity:(float)intensity locality:(GCHapticsLocality)locality {
+- (BOOL)playRumbleWithIntensity:(float)intensity
+                      sharpness:(float)sharpness
+                       locality:(GCHapticsLocality)locality {
     if (intensity < 0.01f) {
         return YES;
     }
@@ -150,13 +151,14 @@ static const float kBurstSharpness = 0.5f;
     NSError *startError = nil;
     [engine startAndReturnError:&startError];
 
-    float clamped = fmaxf(0.0f, fminf(1.0f, intensity));
+    float clampedIntensity = fmaxf(0.0f, fminf(1.0f, intensity));
+    float clampedSharpness = fmaxf(0.0f, fminf(1.0f, sharpness));
     CHHapticEventParameter *intensityParam =
         [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticIntensity
-                                                      value:clamped];
+                                                      value:clampedIntensity];
     CHHapticEventParameter *sharpnessParam =
         [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticSharpness
-                                                      value:kBurstSharpness];
+                                                      value:clampedSharpness];
 
     CHHapticEvent *event =
         [[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticContinuous
@@ -190,7 +192,9 @@ static const float kBurstSharpness = 0.5f;
     return YES;
 }
 
-- (BOOL)updateRumbleWithLeftIntensity:(float)left rightIntensity:(float)right {
+- (BOOL)updateRumbleWithLeftIntensity:(float)left
+                       rightIntensity:(float)right
+                            sharpness:(float)sharpness {
     if (left <= 0.01f && right <= 0.01f) {
         return YES;
     }
@@ -200,10 +204,10 @@ static const float kBurstSharpness = 0.5f;
 
     // DualShock strong path: drive BOTH handle motors every frame (old Swift bridge).
     if (left > 0.01f) {
-        leftOk = [self playRumbleWithIntensity:left locality:GCHapticsLocalityLeftHandle];
+        leftOk = [self playRumbleWithIntensity:left sharpness:sharpness locality:GCHapticsLocalityLeftHandle];
     }
     if (right > 0.01f) {
-        rightOk = [self playRumbleWithIntensity:right locality:GCHapticsLocalityRightHandle];
+        rightOk = [self playRumbleWithIntensity:right sharpness:sharpness locality:GCHapticsLocalityRightHandle];
     }
 
     if (leftOk || rightOk) {
@@ -212,10 +216,10 @@ static const float kBurstSharpness = 0.5f;
 
     // Fallback chain if handle localities are unavailable on this pad.
     float combined = fmaxf(left, right);
-    if ([self playRumbleWithIntensity:combined locality:GCHapticsLocalityHandles]) {
+    if ([self playRumbleWithIntensity:combined sharpness:sharpness locality:GCHapticsLocalityHandles]) {
         return YES;
     }
-    return [self playRumbleWithIntensity:combined locality:GCHapticsLocalityDefault];
+    return [self playRumbleWithIntensity:combined sharpness:sharpness locality:GCHapticsLocalityDefault];
 }
 
 - (void)stopAll {

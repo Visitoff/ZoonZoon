@@ -34,6 +34,15 @@ private class IosAppSettings : AppSettings {
         defaults.setFloat(value.coerceIn(0f, 1f), KEY_INTENSITY)
     }
 
+    override fun getSharpness(): Float {
+        if (defaults.objectForKey(KEY_SHARPNESS) == null) return DEFAULT_SHARPNESS
+        return defaults.floatForKey(KEY_SHARPNESS).coerceIn(0f, 1f)
+    }
+
+    override fun setSharpness(value: Float) {
+        defaults.setFloat(value.coerceIn(0f, 1f), KEY_SHARPNESS)
+    }
+
     override fun getLanguage(): AppLanguage {
         val tag = defaults.stringForKey(KEY_LANGUAGE) ?: return AppLanguage.EN_US
         return AppLanguage.entries.find { it.tag == tag } ?: AppLanguage.EN_US
@@ -81,6 +90,7 @@ private class IosAppSettings : AppSettings {
         private const val KEY_TARGET = "vibration_target"
         private const val KEY_CHOSEN = "vibration_target_chosen"
         private const val KEY_INTENSITY = "intensity"
+        private const val KEY_SHARPNESS = "sharpness"
         private const val KEY_LANGUAGE = "language"
         private const val KEY_THEME = "theme_mode"
         private const val KEY_CUSTOM = "custom_patterns"
@@ -89,5 +99,6 @@ private class IosAppSettings : AppSettings {
         private const val KEY_PLAY_MODE = "pattern_play_mode"
         private const val KEY_ACTIVE_PRESET = "active_preset_key"
         private const val DEFAULT_INTENSITY = 0.7f
+        private const val DEFAULT_SHARPNESS = 0.5f
     }
 }

@@ -9,7 +9,9 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)stopWirelessDiscovery;
 
 - (BOOL)prepareForController:(GCController *)controller;
-- (BOOL)updateRumbleWithLeftIntensity:(float)left rightIntensity:(float)right;
+- (BOOL)updateRumbleWithLeftIntensity:(float)left
+                       rightIntensity:(float)right
+                            sharpness:(float)sharpness;
 - (void)stopAll;
 
 @end

@@ -114,6 +114,7 @@ class GamepadViewModel(
     init {
         observeEngineStateChanges()
         vibrationEngine.setIntensity(appSettings.getIntensity())
+        vibrationEngine.setSharpness(appSettings.getSharpness())
         applyActivePatternToEngine()
     }
 
@@ -208,6 +209,14 @@ class GamepadViewModel(
         }
         vibrationEngine.setIntensity(intensity)
         appSettings.setIntensity(intensity)
+    }
+
+    fun setSharpness(sharpness: Float) {
+        require(sharpness in 0.0f..1.0f) {
+            "Sharpness must be in range [0.0, 1.0], got $sharpness"
+        }
+        vibrationEngine.setSharpness(sharpness)
+        appSettings.setSharpness(sharpness)
     }
 
     fun setLanguage(language: AppLanguage) {

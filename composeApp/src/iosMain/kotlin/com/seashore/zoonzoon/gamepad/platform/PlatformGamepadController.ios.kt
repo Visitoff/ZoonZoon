@@ -35,6 +35,7 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     private var disconnectObserver: Any? = null
     private var becomeCurrentObserver: Any? = null
     private var hapticsPrepared = false
+    private var hapticSharpness = 0.5f
 
     private val haptics = GameControllerHaptics()
 
@@ -112,12 +113,20 @@ actual class PlatformGamepadController : GamepadControllerWithState {
             return@withContext Result.failure(IllegalStateException("Controller does not support haptics"))
         }
 
-        var ok = haptics.updateRumbleWithLeftIntensity(leftMotor, rightIntensity = rightMotor)
+        var ok = haptics.updateRumbleWithLeftIntensity(
+            leftMotor,
+            rightIntensity = rightMotor,
+            sharpness = hapticSharpness
+        )
         if (!ok) {
             // Engine may have been stopped by the system — full re-prepare once.
             invalidateHaptics()
             if (ensureHapticsPrepared(controller)) {
-                ok = haptics.updateRumbleWithLeftIntensity(leftMotor, rightIntensity = rightMotor)
+                ok = haptics.updateRumbleWithLeftIntensity(
+                    leftMotor,
+                    rightIntensity = rightMotor,
+                    sharpness = hapticSharpness
+                )
             }
         }
 
@@ -187,5 +196,9 @@ actual class PlatformGamepadController : GamepadControllerWithState {
     private fun invalidateHaptics() {
         haptics.stopAll()
         hapticsPrepared = false
+    }
+
+    override fun setHapticSharpness(sharpness: Float) {
+        hapticSharpness = sharpness.coerceIn(0f, 1f)
     }
 }

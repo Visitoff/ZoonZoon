@@ -9,6 +9,8 @@ interface AppSettings {
     fun setHasChosenVibrationTarget(value: Boolean)
     fun getIntensity(): Float
     fun setIntensity(value: Float)
+    fun getSharpness(): Float
+    fun setSharpness(value: Float)
     fun getLanguage(): AppLanguage
     fun setLanguage(language: AppLanguage)
     fun getThemeMode(): AppThemeMode
@@ -30,12 +32,14 @@ class MemoryAppSettings(
     initialTarget: VibrationTarget = VibrationTarget.GAMEPAD_ONLY,
     initialHasChosen: Boolean = false,
     initialIntensity: Float = 0.7f,
+    initialSharpness: Float = 0.5f,
     initialLanguage: AppLanguage = AppLanguage.EN_US,
     initialTheme: AppThemeMode = AppThemeMode.SYSTEM
 ) : AppSettings {
     private var target = initialTarget
     private var hasChosen = initialHasChosen
     private var intensity = initialIntensity
+    private var sharpness = initialSharpness
     private var language = initialLanguage
     private var theme = initialTheme
     private var customPatterns = ""
@@ -50,6 +54,8 @@ class MemoryAppSettings(
     override fun setHasChosenVibrationTarget(value: Boolean) { hasChosen = value }
     override fun getIntensity(): Float = intensity
     override fun setIntensity(value: Float) { intensity = value.coerceIn(0f, 1f) }
+    override fun getSharpness(): Float = sharpness
+    override fun setSharpness(value: Float) { sharpness = value.coerceIn(0f, 1f) }
     override fun getLanguage(): AppLanguage = language
     override fun setLanguage(language: AppLanguage) { this.language = language }
     override fun getThemeMode(): AppThemeMode = theme
