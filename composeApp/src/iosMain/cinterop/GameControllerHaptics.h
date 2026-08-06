@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)stopAll;
 
 - (BOOL)preparePhoneEngine;
-- (BOOL)updatePhoneIntensity:(float)intensity;
+- (BOOL)updatePhoneIntensity:(float)intensity sharpness:(float)sharpness;
 - (void)stopPhone;
 
 @end

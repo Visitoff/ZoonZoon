@@ -6,11 +6,13 @@
 /*
  * DualShock rumble:
  * - Left+Right engines, overlapping bursts (no cancel) for strength.
- * - Sharpness is mapped to burst duration + transient punch because DualShock
- *   rumble motors barely respond to HapticSharpness alone.
+ * - Fixed burst length (~140ms) so stack depth stays high at any sharpness.
+ * - Sharpness only affects HapticSharpness + optional transient punch.
  */
 
 static const float kSharpnessFlushEpsilon = 0.04f;
+/// Overlapping continuous burst length. Longer = more stacked layers = stronger rumble.
+static const NSTimeInterval kBurstDuration = 0.14;
 
 @implementation GameControllerHaptics {
     NSMutableDictionary<GCHapticsLocality, CHHapticEngine *> *_engines;
@@ -23,6 +25,7 @@ static const float kSharpnessFlushEpsilon = 0.04f;
     id<CHHapticAdvancedPatternPlayer> _phonePlayer;
     BOOL _phoneEngineStopped;
     float _phoneLastIntensity;
+    float _phoneLastSharpness;
 }
 
 + (void)startWirelessDiscovery {
@@ -41,6 +44,7 @@ static const float kSharpnessFlushEpsilon = 0.04f;
         _hasActiveSharpness = NO;
         _phoneEngineStopped = YES;
         _phoneLastIntensity = -1.0f;
+        _phoneLastSharpness = -1.0f;
     }
     return self;
 }
@@ -177,10 +181,6 @@ static const float kSharpnessFlushEpsilon = 0.04f;
     float clampedIntensity = fmaxf(0.0f, fminf(1.0f, intensity));
     float clampedSharpness = fmaxf(0.0f, fminf(1.0f, sharpness));
 
-    // DualShock barely reacts to HapticSharpness alone — also map it to duration:
-    // sharpness 0 → long heavy rumble (0.16s), sharpness 1 → short tick (0.035s).
-    NSTimeInterval burstDuration = 0.16 - (0.125 * (double)clampedSharpness);
-
     CHHapticEventParameter *intensityParam =
         [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticIntensity
                                                       value:clampedIntensity];
@@ -207,7 +207,7 @@ static const float kSharpnessFlushEpsilon = 0.04f;
     [events addObject:[[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticContinuous
                                                     parameters:@[intensityParam, sharpnessParam]
                                                   relativeTime:0
-                                                      duration:burstDuration]];
+                                                      duration:kBurstDuration]];
 
     NSError *patternError = nil;
     CHHapticPattern *pattern =
@@ -246,9 +246,9 @@ static const float kSharpnessFlushEpsilon = 0.04f;
         [self flushOverlappingPlayers];
         _activeSharpness = clampedSharpness;
         _hasActiveSharpness = YES;
-        NSLog(@"[Haptics] Sharpness applied: %.2f (duration=%.0fms)",
+        NSLog(@"[Haptics] Sharpness applied: %.2f (burst=%.0fms fixed)",
               clampedSharpness,
-              (0.16 - 0.125 * clampedSharpness) * 1000.0);
+              kBurstDuration * 1000.0);
     }
 
     BOOL leftOk = NO;
@@ -330,13 +330,14 @@ static const float kSharpnessFlushEpsilon = 0.04f;
         return NO;
     }
 
-    // Base intensity 1.0 — dynamic IntensityControl multiplies against it.
+    // Base intensity 1.0 — IntensityControl multiplies against it each frame.
+    // Base sharpness 0.0 — SharpnessControl is additive, so slider value maps 1:1.
     CHHapticEventParameter *intensityParam =
         [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticIntensity
                                                       value:1.0f];
     CHHapticEventParameter *sharpnessParam =
         [[CHHapticEventParameter alloc] initWithParameterID:CHHapticEventParameterIDHapticSharpness
-                                                      value:0.4f];
+                                                      value:0.0f];
     CHHapticEvent *event =
         [[CHHapticEvent alloc] initWithEventType:CHHapticEventTypeHapticContinuous
                                       parameters:@[intensityParam, sharpnessParam]
@@ -393,6 +394,7 @@ static const float kSharpnessFlushEpsilon = 0.04f;
     _phonePlayer = player;
     _phoneEngineStopped = NO;
     _phoneLastIntensity = 0.0f;
+    _phoneLastSharpness = -1.0f;
     NSLog(@"[PhoneHaptics] Continuous phone engine ready");
     return YES;
 }
@@ -413,9 +415,10 @@ static const float kSharpnessFlushEpsilon = 0.04f;
     return YES;
 }
 
-- (BOOL)updatePhoneIntensity:(float)intensity {
-    float clamped = fmaxf(0.0f, fminf(1.0f, intensity));
-    if (clamped < 0.01f) {
+- (BOOL)updatePhoneIntensity:(float)intensity sharpness:(float)sharpness {
+    float clampedIntensity = fmaxf(0.0f, fminf(1.0f, intensity));
+    float clampedSharpness = fmaxf(0.0f, fminf(1.0f, sharpness));
+    if (clampedIntensity < 0.01f) {
         if (_phonePlayer && fabsf(_phoneLastIntensity) > 0.01f) {
             CHHapticDynamicParameter *mute =
                 [[CHHapticDynamicParameter alloc] initWithParameterID:CHHapticDynamicParameterIDHapticIntensityControl
@@ -431,21 +434,39 @@ static const float kSharpnessFlushEpsilon = 0.04f;
         return NO;
     }
 
-    if (fabsf(clamped - _phoneLastIntensity) < 0.02f) {
+    BOOL intensityChanged = fabsf(clampedIntensity - _phoneLastIntensity) >= 0.02f;
+    BOOL sharpnessChanged = fabsf(clampedSharpness - _phoneLastSharpness) >= 0.02f;
+    if (!intensityChanged && !sharpnessChanged) {
         return YES;
     }
 
-    CHHapticDynamicParameter *param =
-        [[CHHapticDynamicParameter alloc] initWithParameterID:CHHapticDynamicParameterIDHapticIntensityControl
-                                                         value:clamped
-                                                  relativeTime:0];
+    NSMutableArray<CHHapticDynamicParameter *> *params = [NSMutableArray array];
+    if (intensityChanged) {
+        [params addObject:[[CHHapticDynamicParameter alloc]
+                           initWithParameterID:CHHapticDynamicParameterIDHapticIntensityControl
+                                         value:clampedIntensity
+                                  relativeTime:0]];
+    }
+    if (sharpnessChanged) {
+        // Additive against base sharpness 0 → effective sharpness == slider.
+        [params addObject:[[CHHapticDynamicParameter alloc]
+                           initWithParameterID:CHHapticDynamicParameterIDHapticSharpnessControl
+                                         value:clampedSharpness
+                                  relativeTime:0]];
+    }
+
     NSError *error = nil;
-    if (![_phonePlayer sendParameters:@[param] atTime:CHHapticTimeImmediate error:&error]) {
+    if (![_phonePlayer sendParameters:params atTime:CHHapticTimeImmediate error:&error]) {
         NSLog(@"[PhoneHaptics] sendParameters error: %@", error);
         _phoneEngineStopped = YES;
         return NO;
     }
-    _phoneLastIntensity = clamped;
+    if (intensityChanged) {
+        _phoneLastIntensity = clampedIntensity;
+    }
+    if (sharpnessChanged) {
+        _phoneLastSharpness = clampedSharpness;
+    }
     return YES;
 }
 
@@ -460,6 +481,7 @@ static const float kSharpnessFlushEpsilon = 0.04f;
     }
     _phoneEngineStopped = YES;
     _phoneLastIntensity = -1.0f;
+    _phoneLastSharpness = -1.0f;
 }
 
 @end

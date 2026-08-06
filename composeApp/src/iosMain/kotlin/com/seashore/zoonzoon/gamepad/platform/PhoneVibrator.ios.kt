@@ -20,12 +20,12 @@ private class IosPhoneVibrator : PhoneVibrator {
 
     override val isAvailable: Boolean = true
 
-    override fun vibrate(intensity: Float) {
+    override fun vibrate(intensity: Float, sharpness: Float) {
         if (!prepared) {
             prepared = haptics.preparePhoneEngine()
             if (!prepared) return
         }
-        haptics.updatePhoneIntensity(intensity)
+        haptics.updatePhoneIntensity(intensity, sharpness = sharpness)
     }
 
     override fun stop() {

@@ -28,8 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// Prepare continuous Core Haptics engine for the *phone* Taptic Engine.
 - (BOOL)preparePhoneEngine;
 
-/// Update phone rumble intensity (0.0–1.0). Safe to call every frame.
-- (BOOL)updatePhoneIntensity:(float)intensity;
+/// Update phone rumble intensity + sharpness (0.0–1.0). Safe to call every frame.
+- (BOOL)updatePhoneIntensity:(float)intensity sharpness:(float)sharpness;
 
 /// Stop phone rumble engine.
 - (void)stopPhone;

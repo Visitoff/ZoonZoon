@@ -5,13 +5,14 @@ package com.seashore.zoonzoon.gamepad.platform
  */
 interface PhoneVibrator {
     val isAvailable: Boolean
-    fun vibrate(intensity: Float)
+    /** @param sharpness Core Haptics character [0,1]; ignored on Android. */
+    fun vibrate(intensity: Float, sharpness: Float = 0.5f)
     fun stop()
 }
 
 object NoOpPhoneVibrator : PhoneVibrator {
     override val isAvailable: Boolean = false
-    override fun vibrate(intensity: Float) = Unit
+    override fun vibrate(intensity: Float, sharpness: Float) = Unit
     override fun stop() = Unit
 }
 

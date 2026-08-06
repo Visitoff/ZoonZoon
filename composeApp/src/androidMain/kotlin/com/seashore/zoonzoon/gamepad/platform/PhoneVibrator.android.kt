@@ -28,7 +28,7 @@ private class AndroidPhoneVibrator : PhoneVibrator {
     override val isAvailable: Boolean
         get() = vibrator?.hasVibrator() == true
 
-    override fun vibrate(intensity: Float) {
+    override fun vibrate(intensity: Float, sharpness: Float) {
         val v = vibrator ?: return
         if (!v.hasVibrator()) return
         val clamped = intensity.coerceIn(0f, 1f)

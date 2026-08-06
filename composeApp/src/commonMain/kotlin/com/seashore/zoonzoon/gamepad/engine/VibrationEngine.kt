@@ -191,7 +191,7 @@ class VibrationEngine(
                 // Drive phone first so gamepad Core Haptics work doesn't delay /
                 // starve phone updates in Gamepad+Phone mode.
                 if (usePhone) {
-                    phoneVibrator.vibrate(motorLevel)
+                    phoneVibrator.vibrate(motorLevel, sharpness = state.sharpness)
                 }
 
                 if (useGamepad) {
