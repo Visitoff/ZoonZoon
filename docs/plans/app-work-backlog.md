@@ -4,7 +4,7 @@
 > **Design:** [design-references.md](./design-references.md)  
 > Индекс: [docs/README.md](../README.md)
 
-**Обновлено:** 2026-06-29
+**Обновлено:** 2026-08-07
 
 ---
 
@@ -44,13 +44,26 @@
 ## Фаза UI-3 — Stubs
 
 - [x] AI screen placeholder
-- [x] Multiplayer screen placeholder (UI без backend)
+- [x] Multiplayer screen placeholder (UI без backend) — **позже заменим на Browser**
 
 ---
 
-## Фаза UI-4 — Multiplayer backend
+## Фаза UI-4 — In-app Browser (вместо Multiplayer)
 
-- [ ] Host + 1 guest, private/public rooms, chat, remote vibration sync
+Заменяет вкладку Multiplayer. Цель: смотреть веб + параллельно вибрировать (геймпад/телефон).
+
+- [ ] Экран Browser вместо Multiplayer tab (placeholder → WebView)
+- [ ] Старт: Google Search (`https://www.google.com`)
+- [ ] URL bar + назад / вперёд / reload
+- [ ] Sticky native vibrate controls на экране (on/off, intensity; без JS-bridge к сайтам — App Store 4.7.2)
+- [ ] iOS: `WKWebView` / Android: WebView
+- [ ] Age rating / Review Notes: companion browser + native haptics (не thin Safari wrapper)
+
+---
+
+## Фаза UI-5 — Multiplayer backend
+
+- [-] Host + 1 guest, private/public rooms, chat, remote vibration sync — **отложено** (Browser приоритетнее)
 
 ---
 
@@ -64,6 +77,7 @@
 ## iOS / платформа
 
 - [ ] TestFlight: Apple agreement в ASC
+- [x] Fix Leave a review (iOS 18+ `openURL:options:completionHandler:`)
 
 ---
 
@@ -77,4 +91,5 @@
 
 | Дата | Изменение |
 |------|-----------|
+| 2026-08-07 | Multiplayer backend отложен; вместо него In-app Browser (Google + vibrate) |
 | 2026-06-29 | v1.3: 12 patterns, pad recorder, playlist, en+ja, design v1 |

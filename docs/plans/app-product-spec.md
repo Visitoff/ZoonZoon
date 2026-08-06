@@ -66,7 +66,7 @@ ZoonZoon 2 — Kotlin Multiplatform (Compose Multiplatform), iOS + Android.
 
 | # | Tab | Route | Приоритет v1 |
 |---|-----|-------|--------------|
-| 1 | Multiplayer | `multiplayer` | v1.1+ (сложная фича) |
+| 1 | Browser (ex-Multiplayer) | `browser` | v1.1 — WebView + vibrate; Multiplayer отложен |
 | 2 | AI | `ai` | UI-заглушка в v1 |
 | 3 | **Home** | `home` | **v1 MUST** |
 | 4 | Patterns | `patterns` | v1 MUST |
