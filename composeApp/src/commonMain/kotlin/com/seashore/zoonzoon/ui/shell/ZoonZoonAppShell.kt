@@ -1,27 +1,18 @@
 package com.seashore.zoonzoon.ui.shell
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.dp
 import com.seashore.zoonzoon.gamepad.viewmodel.GamepadViewModel
-import com.seashore.zoonzoon.ui.figma.FigmaCanvas
-import com.seashore.zoonzoon.ui.figma.FigmaHomeIndicator
-import com.seashore.zoonzoon.ui.figma.FigmaScreenGlow
-import com.seashore.zoonzoon.ui.figma.FigmaStatusBar
-import com.seashore.zoonzoon.ui.home.HomeFrameHeight
-import com.seashore.zoonzoon.ui.home.HomeFrameWidth
 import com.seashore.zoonzoon.ui.home.HomeScreen
 import com.seashore.zoonzoon.ui.patterns.PatternsScreen
 import com.seashore.zoonzoon.ui.placeholder.AiScreen
@@ -35,45 +26,40 @@ fun ZoonZoonAppShell(
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Home) }
 
-    FigmaCanvas(modifier = modifier.fillMaxSize()) {
-        BoxWithConstraints(Modifier.fillMaxSize()) {
-            val scale = maxWidth / HomeFrameWidth
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        transformOrigin = TransformOrigin(0.5f, 0f)
-                    }
-                    .requiredSize(HomeFrameWidth, HomeFrameHeight)
-            ) {
-                FigmaScreenGlow()
-                FigmaStatusBar(Modifier.align(Alignment.TopStart))
-                when (selectedTab) {
-                    AppTab.Home -> HomeScreen(viewModel = viewModel)
-                    AppTab.Multiplayer -> MultiplayerScreen(Modifier.fillMaxSize())
-                    AppTab.Ai -> AiScreen(Modifier.fillMaxSize())
-                    AppTab.Patterns -> PatternsScreen(
-                        viewModel = viewModel,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    AppTab.Settings -> SettingsScreen(
-                        viewModel = viewModel,
-                        modifier = Modifier.fillMaxSize()
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        bottomBar = {
+            NavigationBar {
+                AppTab.entries.forEach { tab ->
+                    NavigationBarItem(
+                        selected = selectedTab == tab,
+                        onClick = { selectedTab = tab },
+                        icon = { Text(tab.emoji) },
+                        label = { Text(tab.label) }
                     )
                 }
-                BottomBar(
-                    selectedTab = selectedTab,
-                    onTabSelected = { selectedTab = it },
-                    modifier = Modifier.offset(x = 22.dp, y = 702.dp)
-                )
-                FigmaHomeIndicator(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .offset(y = 778.dp)
-                )
             }
+        }
+    ) { padding ->
+        when (selectedTab) {
+            AppTab.Home -> HomeScreen(
+                viewModel = viewModel,
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
+            AppTab.Multiplayer -> MultiplayerScreen(
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
+            AppTab.Ai -> AiScreen(
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
+            AppTab.Patterns -> PatternsScreen(
+                viewModel = viewModel,
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
+            AppTab.Settings -> SettingsScreen(
+                viewModel = viewModel,
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
         }
     }
 }

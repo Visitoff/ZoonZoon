@@ -1,8 +1,20 @@
 package com.seashore.zoonzoon.ui.home
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -10,95 +22,111 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.seashore.zoonzoon.gamepad.model.PatternPlayMode
-import com.seashore.zoonzoon.gamepad.model.PatternReference
+import com.seashore.zoonzoon.gamepad.model.ConnectionState
 import com.seashore.zoonzoon.gamepad.model.PresetPatterns
-import com.seashore.zoonzoon.ui.components.ErrorDisplay
 import com.seashore.zoonzoon.gamepad.viewmodel.GamepadViewModel
-import com.seashore.zoonzoon.i18n.AppLanguage
-import com.seashore.zoonzoon.i18n.AppStrings
 import com.seashore.zoonzoon.i18n.stringsFor
-import com.seashore.zoonzoon.ui.figma.FigmaTokens
+import com.seashore.zoonzoon.ui.components.ErrorDisplay
 
 @Composable
 fun HomeScreen(
     viewModel: GamepadViewModel,
     modifier: Modifier = Modifier
 ) {
+    val connectionState by viewModel.connectionState.collectAsState()
     val vibrationState by viewModel.vibrationState.collectAsState()
     val errorState by viewModel.errorState.collectAsState()
     val showGamepadHelp by viewModel.showGamepadHelp.collectAsState()
-    val showTargetPrompt by viewModel.showVibrationTargetPrompt.collectAsState()
+    val showVibrationTargetPrompt by viewModel.showVibrationTargetPrompt.collectAsState()
     val language by viewModel.language.collectAsState()
+    val activePatternKey by viewModel.activePatternKey.collectAsState()
     val strings = remember(language) { stringsFor(language) }
-    val activeKey by viewModel.activePatternKey.collectAsState()
-    val playMode by viewModel.playMode.collectAsState()
-    val patternCopy = remember(activeKey, playMode, language, strings) {
-        homePatternCopy(activeKey, playMode, language, strings)
+
+    val patternLabel = remember(activePatternKey, language) {
+        PresetPatterns.labelForKey(activePatternKey, language)
     }
 
-    Box(modifier = modifier.requiredSize(HomeFrameWidth, HomeFrameHeight)) {
-        TopBar(
-            onLockClick = viewModel::openGamepadHelp,
-            modifier = Modifier.offset(x = FigmaTokens.Spacing.s15, y = 54.dp)
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(strings.appName, style = MaterialTheme.typography.headlineMedium)
+
+        Text(
+            text = connectionLabel(connectionState),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Player(
-            patternName = patternCopy.name,
-            patternDescription = patternCopy.description,
-            vibrationEnabled = vibrationState.enabled,
-            onToggleVibration = viewModel::toggleVibration,
-            modifier = Modifier.offset(x = FigmaTokens.Spacing.s15, y = 135.dp)
-        )
-        IntensitySlider(
-            intensity = vibrationState.intensity,
-            label = strings.intensity,
-            onIntensityChanged = viewModel::setIntensity,
-            modifier = Modifier.offset(x = FigmaTokens.Spacing.s15, y = 599.dp)
-        )
-        Box(Modifier.align(Alignment.TopCenter).offset(y = FigmaTokens.Spacing.s10)) {
-            ErrorDisplay(error = errorState)
+
+        ErrorDisplay(error = errorState)
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(strings.vibrate, style = MaterialTheme.typography.titleMedium)
+            Switch(
+                checked = vibrationState.enabled,
+                onCheckedChange = { viewModel.setVibrationEnabled(it) }
+            )
         }
+
+        Text(
+            text = patternLabel,
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Text(strings.intensity, style = MaterialTheme.typography.titleSmall)
+        Slider(
+            value = vibrationState.intensity,
+            onValueChange = { viewModel.setIntensity(it) },
+            valueRange = 0f..1f
+        )
+
+        Text(strings.sharpness, style = MaterialTheme.typography.titleSmall)
+        Slider(
+            value = vibrationState.sharpness,
+            onValueChange = { viewModel.setSharpness(it) },
+            valueRange = 0f..1f
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            OutlinedButton(onClick = { viewModel.openGamepadHelp() }) {
+                Text("Gamepad")
+            }
+            OutlinedButton(onClick = { viewModel.disconnect() }) {
+                Text("Disconnect")
+            }
+        }
+
+        Spacer(Modifier.height(8.dp))
     }
 
     if (showGamepadHelp) {
-        GamepadConnectDialog(strings = strings, onDismiss = viewModel::dismissGamepadHelp)
+        GamepadConnectDialog(
+            strings = strings,
+            onDismiss = { viewModel.dismissGamepadHelp() }
+        )
     }
 
-    if (showTargetPrompt) {
+    if (showVibrationTargetPrompt) {
         VibrationTargetDialog(
             strings = strings,
-            onSelect = viewModel::setVibrationTarget,
-            onDismiss = viewModel::dismissVibrationTargetPrompt
+            onSelect = { viewModel.setVibrationTarget(it) },
+            onDismiss = { viewModel.dismissVibrationTargetPrompt() }
         )
     }
 }
 
-private data class HomePatternCopy(
-    val name: String,
-    val description: String
-)
-
-private fun homePatternCopy(
-    activeKey: String,
-    playMode: PatternPlayMode,
-    language: AppLanguage,
-    strings: AppStrings
-): HomePatternCopy {
-    if (playMode == PatternPlayMode.PLAYLIST) {
-        return HomePatternCopy(strings.playlist, strings.playlistMode)
-    }
-    return when (val reference = PatternReference.fromKey(activeKey)) {
-        is PatternReference.Preset -> {
-            val def = PresetPatterns.definitionFor(reference.id)
-            HomePatternCopy(
-                name = if (language == AppLanguage.JA) def.nameJa else def.nameEn,
-                description = def.descriptionEn
-            )
-        }
-        is PatternReference.Custom -> HomePatternCopy(
-            name = reference.name.ifBlank { strings.customRecorder },
-            description = strings.customRecorder
-        )
-        null -> HomePatternCopy(strings.steady, strings.constantVibration)
-    }
+private fun connectionLabel(state: ConnectionState): String = when (state) {
+    ConnectionState.Disconnected -> "Controller: disconnected"
+    ConnectionState.Scanning -> "Controller: scanning…"
+    is ConnectionState.Connected -> "Controller: ${state.controllerType}"
 }

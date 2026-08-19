@@ -1,5 +1,7 @@
 package com.seashore.zoonzoon.gamepad.model
 
+import com.seashore.zoonzoon.i18n.AppLanguage
+
 enum class PresetPatternId(val key: String) {
     STEADY("steady"),
     PULSE("pulse"),
@@ -49,6 +51,17 @@ object PresetPatterns {
 
     fun definitionFor(id: PresetPatternId): PresetDefinition =
         all.first { it.id == id }
+
+    fun labelForKey(key: String, language: AppLanguage = AppLanguage.EN_US): String {
+        return when (val ref = PatternReference.fromKey(key)) {
+            is PatternReference.Preset -> {
+                val def = definitionFor(ref.id)
+                if (language == AppLanguage.JA) def.nameJa else def.nameEn
+            }
+            is PatternReference.Custom -> ref.name
+            null -> key
+        }
+    }
 
     fun matchPreset(pattern: VibrationPattern): PresetPatternId? = when (pattern) {
         is VibrationPattern.Constant -> PresetPatternId.STEADY

@@ -3,7 +3,6 @@ package com.seashore.zoonzoon.gamepad.theme
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import com.seashore.zoonzoon.settings.AppThemeMode
 
 @Composable
@@ -21,17 +20,11 @@ fun GamepadVibratorTheme(
     } else {
         GamepadVibratorLightColorScheme
     }
-    val glassTokens = if (darkTheme) DarkGlassTokens else LightGlassTokens
 
-    CompositionLocalProvider(
-        LocalGlassTokens provides glassTokens,
-        LocalAppDarkTheme provides darkTheme
-    ) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = ZoonZoonTypography,
-            shapes = ZoonZoonShapes,
-            content = content
-        )
-    }
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = ZoonZoonTypography,
+        shapes = ZoonZoonShapes,
+        content = content
+    )
 }
