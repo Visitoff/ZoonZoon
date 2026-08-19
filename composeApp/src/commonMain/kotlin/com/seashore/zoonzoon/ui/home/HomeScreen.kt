@@ -52,7 +52,7 @@ fun HomeScreen(
             intensity = vibrationState.intensity,
             label = strings.intensity,
             onIntensityChanged = viewModel::setIntensity,
-            modifier = Modifier.offset(x = FrameCenterX, y = 599.dp)
+            modifier = Modifier.offset(x = FrameCenterX - 4.dp, y = 599.dp)
         )
     }
 

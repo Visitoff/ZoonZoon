@@ -1,0 +1,1717 @@
+{
+  "id": "2097:12468",
+  "name": "Screen 23",
+  "kind": "overlay",
+  "sizing": {
+    "width": "fixed",
+    "height": "fixed",
+    "w": 375,
+    "h": 812
+  },
+  "warnings": [],
+  "children": [
+    {
+      "id": "2097:12469",
+      "name": "Vector",
+      "kind": "leaf",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 554,
+        "h": 433
+      },
+      "warnings": [],
+      "semanticRole": "icon"
+    },
+    {
+      "id": "2097:12470",
+      "name": "Vector",
+      "kind": "leaf",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 554,
+        "h": 433
+      },
+      "warnings": [],
+      "semanticRole": "icon"
+    },
+    {
+      "id": "2097:12471",
+      "name": "Frame 2043688315",
+      "kind": "stack",
+      "axis": "vertical",
+      "justify": "start",
+      "align": "start",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 51,
+        "h": 50
+      },
+      "warnings": [
+        "layout-mode-none-inferred"
+      ],
+      "children": [
+        {
+          "id": "2097:12472",
+          "name": "Vector",
+          "kind": "leaf",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 51,
+            "h": 49
+          },
+          "warnings": [],
+          "semanticRole": "icon",
+          "background": {
+            "value": "#FFFFFF",
+            "tokenType": "color"
+          }
+        },
+        {
+          "id": "2097:12473",
+          "name": "™",
+          "kind": "leaf",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 9,
+            "h": 13
+          },
+          "warnings": [],
+          "semanticRole": "text",
+          "stringRef": {
+            "value": "™"
+          },
+          "typography": {
+            "family": "Gilroy",
+            "size": 18,
+            "weight": 600,
+            "lineHeight": 24,
+            "letterSpacing": -0.6000000238418579
+          },
+          "color": {
+            "value": "#000000",
+            "tokenType": "color"
+          }
+        }
+      ]
+    },
+    {
+      "id": "2097:12474",
+      "name": "Frame 2043688328",
+      "kind": "stack",
+      "axis": "vertical",
+      "justify": "start",
+      "align": "start",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 60,
+        "h": 60
+      },
+      "warnings": [
+        "layout-mode-none-inferred"
+      ],
+      "cornerRadius": {
+        "value": 53,
+        "tokenType": "radius"
+      },
+      "background": {
+        "value": "#000000",
+        "tokenType": "color"
+      },
+      "children": [
+        {
+          "id": "2097:12475",
+          "name": "💗",
+          "kind": "leaf",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 24,
+            "h": 17
+          },
+          "warnings": [],
+          "semanticRole": "text",
+          "stringRef": {
+            "value": "💗"
+          },
+          "typography": {
+            "family": "Gilroy",
+            "size": 24,
+            "weight": 600,
+            "lineHeight": 24,
+            "letterSpacing": -0.6000000238418579
+          },
+          "color": {
+            "value": "#000000",
+            "tokenType": "color"
+          }
+        }
+      ]
+    },
+    {
+      "id": "2097:12476",
+      "name": "Frame 2043688331",
+      "kind": "stack",
+      "axis": "vertical",
+      "justify": "start",
+      "align": "start",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 60,
+        "h": 60
+      },
+      "warnings": [
+        "layout-mode-none-inferred"
+      ],
+      "cornerRadius": {
+        "value": 53,
+        "tokenType": "radius"
+      },
+      "background": {
+        "value": "#000000",
+        "tokenType": "color"
+      },
+      "children": [
+        {
+          "id": "2097:12477",
+          "name": "💗",
+          "kind": "leaf",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 24,
+            "h": 17
+          },
+          "warnings": [],
+          "semanticRole": "text",
+          "stringRef": {
+            "value": "💗"
+          },
+          "typography": {
+            "family": "Gilroy",
+            "size": 24,
+            "weight": 600,
+            "lineHeight": 24,
+            "letterSpacing": -0.6000000238418579
+          },
+          "color": {
+            "value": "#000000",
+            "tokenType": "color"
+          }
+        }
+      ]
+    },
+    {
+      "id": "2097:12478",
+      "name": "Group 2043684749",
+      "kind": "overlay",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 344,
+        "h": 529
+      },
+      "warnings": [],
+      "children": [
+        {
+          "id": "2097:12479",
+          "name": "Frame 2043688317",
+          "kind": "overlay",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 344,
+            "h": 410
+          },
+          "warnings": [],
+          "children": [
+            {
+              "id": "2097:12480",
+              "name": "Subtract",
+              "kind": "overlay",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 215,
+                "h": 107
+              },
+              "warnings": [],
+              "children": [
+                {
+                  "id": "2097:12481",
+                  "name": "Subtract",
+                  "kind": "overlay",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 344,
+                    "h": 107
+                  },
+                  "warnings": [],
+                  "children": [
+                    {
+                      "id": "2097:12482",
+                      "name": "Rectangle 9785",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 344,
+                        "h": 348
+                      },
+                      "warnings": [],
+                      "background": {
+                        "value": "#D9D9D9",
+                        "tokenType": "color"
+                      }
+                    },
+                    {
+                      "id": "2097:12483",
+                      "name": "Rectangle 9786",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 344,
+                        "h": 348
+                      },
+                      "warnings": [],
+                      "background": {
+                        "value": "#1E1E1E",
+                        "tokenType": "color"
+                      }
+                    }
+                  ],
+                  "background": {
+                    "value": "#D9D9D9",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "2097:12484",
+                  "name": "Subtract",
+                  "kind": "overlay",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 129,
+                    "h": 171
+                  },
+                  "warnings": [],
+                  "children": [
+                    {
+                      "id": "2097:12485",
+                      "name": "Rectangle 9787",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 258,
+                        "h": 171
+                      },
+                      "warnings": [],
+                      "background": {
+                        "value": "#D9D9D9",
+                        "tokenType": "color"
+                      }
+                    },
+                    {
+                      "id": "2097:12486",
+                      "name": "Rectangle 9788",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 129,
+                        "h": 171
+                      },
+                      "warnings": [],
+                      "background": {
+                        "value": "#D9D9D9",
+                        "tokenType": "color"
+                      }
+                    }
+                  ],
+                  "background": {
+                    "value": "#D9D9D9",
+                    "tokenType": "color"
+                  }
+                }
+              ],
+              "background": {
+                "value": "#101010",
+                "tokenType": "color"
+              }
+            },
+            {
+              "id": "2097:12487",
+              "name": "Vector",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 156,
+                "h": 62
+              },
+              "warnings": [],
+              "semanticRole": "icon",
+              "background": {
+                "value": "#1D1D1D",
+                "tokenType": "color"
+              }
+            },
+            {
+              "id": "2097:12488",
+              "name": "Subtract",
+              "kind": "overlay",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 194,
+                "h": 107
+              },
+              "warnings": [],
+              "children": [
+                {
+                  "id": "2097:12489",
+                  "name": "Subtract",
+                  "kind": "overlay",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 344,
+                    "h": 107
+                  },
+                  "warnings": [],
+                  "children": [
+                    {
+                      "id": "2097:12490",
+                      "name": "Rectangle 9785",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 344,
+                        "h": 348
+                      },
+                      "warnings": [],
+                      "background": {
+                        "value": "#D9D9D9",
+                        "tokenType": "color"
+                      }
+                    },
+                    {
+                      "id": "2097:12491",
+                      "name": "Rectangle 9786",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 344,
+                        "h": 348
+                      },
+                      "warnings": [],
+                      "background": {
+                        "value": "#1E1E1E",
+                        "tokenType": "color"
+                      }
+                    }
+                  ],
+                  "background": {
+                    "value": "#D9D9D9",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "2097:12492",
+                  "name": "Subtract",
+                  "kind": "overlay",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 150,
+                    "h": 171
+                  },
+                  "warnings": [],
+                  "children": [
+                    {
+                      "id": "2097:12493",
+                      "name": "Rectangle 9787",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 300,
+                        "h": 171
+                      },
+                      "warnings": [],
+                      "background": {
+                        "value": "#D9D9D9",
+                        "tokenType": "color"
+                      }
+                    },
+                    {
+                      "id": "2097:12494",
+                      "name": "Rectangle 9788",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 150,
+                        "h": 171
+                      },
+                      "warnings": [],
+                      "background": {
+                        "value": "#D9D9D9",
+                        "tokenType": "color"
+                      }
+                    }
+                  ],
+                  "background": {
+                    "value": "#D9D9D9",
+                    "tokenType": "color"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "2097:12495",
+              "name": "Frame 2043688324",
+              "kind": "stack",
+              "axis": "vertical",
+              "justify": "start",
+              "align": "start",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 51,
+                "h": 51
+              },
+              "warnings": [
+                "layout-mode-none-inferred"
+              ],
+              "cornerRadius": {
+                "value": 100,
+                "tokenType": "radius"
+              },
+              "background": {
+                "value": "#FFFFFF",
+                "tokenType": "color"
+              },
+              "children": [
+                {
+                  "id": "2097:12496",
+                  "name": "Group 2043684742",
+                  "kind": "stack",
+                  "axis": "vertical",
+                  "justify": "start",
+                  "align": "start",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 20,
+                    "h": 9
+                  },
+                  "warnings": [
+                    "layout-mode-none-inferred"
+                  ],
+                  "children": [
+                    {
+                      "id": "2097:12497",
+                      "name": "Vector 734",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 4,
+                        "h": 9
+                      },
+                      "warnings": [],
+                      "semanticRole": "icon"
+                    },
+                    {
+                      "id": "2097:12498",
+                      "name": "Vector 735",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 4,
+                        "h": 9
+                      },
+                      "warnings": [],
+                      "semanticRole": "icon"
+                    },
+                    {
+                      "id": "2097:12499",
+                      "name": "Vector 736",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 4,
+                        "h": 9
+                      },
+                      "warnings": [],
+                      "semanticRole": "icon"
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "background": {
+            "value": "#151515",
+            "tokenType": "color"
+          }
+        },
+        {
+          "id": "2097:12500",
+          "name": "Frame 2043688318",
+          "kind": "overlay",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 344,
+            "h": 445
+          },
+          "warnings": [],
+          "children": [
+            {
+              "id": "2097:12501",
+              "name": "Vector",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 474,
+                "h": 433
+              },
+              "warnings": [],
+              "semanticRole": "icon"
+            },
+            {
+              "id": "2097:12502",
+              "name": "Vector",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 510,
+                "h": 433
+              },
+              "warnings": [],
+              "semanticRole": "icon"
+            },
+            {
+              "id": "2097:12503",
+              "name": "Frame 2043688287",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 452,
+                "h": 118
+              },
+              "warnings": [],
+              "background": {
+                "value": "#000000",
+                "tokenType": "color"
+              }
+            },
+            {
+              "id": "2097:12504",
+              "name": "Steady",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 50,
+                "h": 11
+              },
+              "warnings": [],
+              "semanticRole": "text",
+              "stringRef": {
+                "key": "steady",
+                "value": "Steady"
+              },
+              "typography": {
+                "family": "Gilroy",
+                "size": 16,
+                "weight": 600,
+                "lineHeight": 24,
+                "letterSpacing": -0.6000000238418579
+              },
+              "color": {
+                "value": "#000000",
+                "tokenType": "color"
+              }
+            },
+            {
+              "id": "2097:12505",
+              "name": "Constant vibration",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 111,
+                "h": 10
+              },
+              "warnings": [],
+              "semanticRole": "text",
+              "stringRef": {
+                "key": "constant.vibration",
+                "value": "Constant vibration"
+              },
+              "typography": {
+                "family": "Gilroy",
+                "size": 14,
+                "weight": 600,
+                "lineHeight": 24,
+                "letterSpacing": -0.6000000238418579
+              },
+              "color": {
+                "value": "#000000",
+                "tokenType": "color"
+              }
+            },
+            {
+              "id": "2097:12506",
+              "name": "Frame 2043688312",
+              "kind": "stack",
+              "axis": "vertical",
+              "justify": "start",
+              "align": "start",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 60,
+                "h": 60
+              },
+              "warnings": [
+                "layout-mode-none-inferred"
+              ],
+              "cornerRadius": {
+                "value": 53,
+                "tokenType": "radius"
+              },
+              "background": {
+                "value": "#FFFFFF",
+                "tokenType": "color"
+              },
+              "children": [
+                {
+                  "id": "2097:12507",
+                  "name": "power",
+                  "kind": "stack",
+                  "axis": "vertical",
+                  "justify": "start",
+                  "align": "start",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 24,
+                    "h": 24
+                  },
+                  "warnings": [
+                    "layout-mode-none-inferred"
+                  ],
+                  "children": [
+                    {
+                      "id": "I2097:12507;340:7472",
+                      "name": "Vector",
+                      "kind": "leaf",
+                      "sizing": {
+                        "width": "fixed",
+                        "height": "fixed",
+                        "w": 16,
+                        "h": 17
+                      },
+                      "warnings": [],
+                      "semanticRole": "icon",
+                      "background": {
+                        "value": "#FFFFFF",
+                        "tokenType": "color"
+                      }
+                    }
+                  ],
+                  "componentId": "311:1522",
+                  "componentName": "power"
+                }
+              ]
+            },
+            {
+              "id": "2097:12508",
+              "name": "Frame 2043688313",
+              "kind": "stack",
+              "axis": "vertical",
+              "justify": "start",
+              "align": "start",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 60,
+                "h": 60
+              },
+              "warnings": [
+                "layout-mode-none-inferred"
+              ],
+              "cornerRadius": {
+                "value": 53,
+                "tokenType": "radius"
+              },
+              "background": {
+                "value": "#000000",
+                "tokenType": "color"
+              },
+              "children": [
+                {
+                  "id": "2097:12509",
+                  "name": "💗",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 24,
+                    "h": 17
+                  },
+                  "warnings": [],
+                  "semanticRole": "text",
+                  "stringRef": {
+                    "value": "💗"
+                  },
+                  "typography": {
+                    "family": "Gilroy",
+                    "size": 24,
+                    "weight": 600,
+                    "lineHeight": 24,
+                    "letterSpacing": -0.6000000238418579
+                  },
+                  "color": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                }
+              ]
+            }
+          ],
+          "background": {
+            "value": "#FFFFFF",
+            "tokenType": "color"
+          }
+        },
+        {
+          "id": "2097:12510",
+          "name": "Frame 2043688334",
+          "kind": "overlay",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 130,
+            "h": 33
+          },
+          "warnings": [],
+          "children": [
+            {
+              "id": "2097:12511",
+              "name": "Union",
+              "kind": "overlay",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 189,
+                "h": 233
+              },
+              "warnings": [],
+              "children": [
+                {
+                  "id": "2097:12512",
+                  "name": "Polygon 1",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 198,
+                    "h": 233
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "2097:12513",
+                  "name": "Vector 667",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 14,
+                    "h": 10
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "2097:12514",
+                  "name": "Vector 668",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 14,
+                    "h": 10
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                }
+              ],
+              "background": {
+                "value": "#0E0E0E",
+                "tokenType": "color"
+              }
+            },
+            {
+              "id": "2097:12515",
+              "name": "Intensity",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 51,
+                "h": 10
+              },
+              "warnings": [],
+              "semanticRole": "text",
+              "stringRef": {
+                "key": "intensity",
+                "value": "Intensity"
+              },
+              "typography": {
+                "family": "Gilroy",
+                "size": 14,
+                "weight": 600,
+                "lineHeight": 24,
+                "letterSpacing": -0.6000000238418579
+              },
+              "color": {
+                "value": "#000000",
+                "tokenType": "color"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2097:12516",
+      "name": "Frame 2043688336",
+      "kind": "stack",
+      "axis": "horizontal",
+      "justify": "center",
+      "align": "center",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 45,
+        "h": 45
+      },
+      "warnings": [],
+      "padding": {
+        "horizontal": {
+          "value": 20,
+          "tokenType": "spacing"
+        },
+        "vertical": {
+          "value": 10,
+          "tokenType": "spacing"
+        }
+      },
+      "gap": {
+        "value": 10,
+        "tokenType": "spacing"
+      },
+      "cornerRadius": {
+        "value": 100,
+        "tokenType": "radius"
+      },
+      "background": {
+        "value": "#1A1A1B",
+        "tokenType": "color"
+      },
+      "children": [
+        {
+          "id": "2097:12517",
+          "name": "unlock",
+          "kind": "stack",
+          "axis": "vertical",
+          "justify": "start",
+          "align": "start",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 20,
+            "h": 20
+          },
+          "warnings": [
+            "layout-mode-none-inferred"
+          ],
+          "children": [
+            {
+              "id": "2097:12518",
+              "name": "Vector",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 12,
+                "h": 15
+              },
+              "warnings": [],
+              "semanticRole": "icon",
+              "background": {
+                "value": "#8E8E8E",
+                "tokenType": "color"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2097:12519",
+      "name": "Group 2043684748",
+      "kind": "overlay",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 330,
+        "h": 70
+      },
+      "warnings": [],
+      "children": [
+        {
+          "id": "2097:12520",
+          "name": "Subtract",
+          "kind": "overlay",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 330,
+            "h": 70
+          },
+          "warnings": [],
+          "children": [
+            {
+              "id": "2097:12521",
+              "name": "Rectangle 9784",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 330,
+                "h": 70
+              },
+              "warnings": [],
+              "background": {
+                "value": "#D9D9D9",
+                "tokenType": "color"
+              }
+            },
+            {
+              "id": "2097:12522",
+              "name": "Vector",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 256,
+                "h": 176
+              },
+              "warnings": [],
+              "semanticRole": "icon",
+              "background": {
+                "value": "#000000",
+                "tokenType": "color"
+              }
+            }
+          ],
+          "background": {
+            "value": "#151515",
+            "tokenType": "color"
+          }
+        },
+        {
+          "id": "2097:12523",
+          "name": "Frame 2043688321",
+          "kind": "stack",
+          "axis": "vertical",
+          "justify": "start",
+          "align": "start",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 60,
+            "h": 60
+          },
+          "warnings": [
+            "layout-mode-none-inferred"
+          ],
+          "cornerRadius": {
+            "value": 100,
+            "tokenType": "radius"
+          },
+          "background": {
+            "value": "#333035",
+            "tokenType": "color"
+          },
+          "children": [
+            {
+              "id": "2097:12524",
+              "name": "Vector",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 18,
+                "h": 18
+              },
+              "warnings": [],
+              "semanticRole": "icon",
+              "background": {
+                "value": "#6C6C6C",
+                "tokenType": "color"
+              }
+            }
+          ]
+        },
+        {
+          "id": "2097:12525",
+          "name": "Frame 2043688324",
+          "kind": "stack",
+          "axis": "vertical",
+          "justify": "start",
+          "align": "start",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 60,
+            "h": 60
+          },
+          "warnings": [
+            "layout-mode-none-inferred"
+          ],
+          "cornerRadius": {
+            "value": 100,
+            "tokenType": "radius"
+          },
+          "background": {
+            "value": "#333035",
+            "tokenType": "color"
+          },
+          "children": [
+            {
+              "id": "2097:12526",
+              "name": "Database",
+              "kind": "overlay",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 18,
+                "h": 18
+              },
+              "warnings": [],
+              "children": [
+                {
+                  "id": "2097:12527",
+                  "name": "Ellipse 109",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 14,
+                    "h": 6
+                  },
+                  "warnings": []
+                },
+                {
+                  "id": "2097:12528",
+                  "name": "Ellipse 110",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 14,
+                    "h": 7
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon"
+                },
+                {
+                  "id": "2097:12529",
+                  "name": "Ellipse 111",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 14,
+                    "h": 8
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "2097:12530",
+          "name": "Frame 2043688322",
+          "kind": "stack",
+          "axis": "vertical",
+          "justify": "start",
+          "align": "start",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 60,
+            "h": 60
+          },
+          "warnings": [
+            "layout-mode-none-inferred"
+          ],
+          "cornerRadius": {
+            "value": 100,
+            "tokenType": "radius"
+          },
+          "children": [
+            {
+              "id": "2097:12531",
+              "name": "home_outline",
+              "kind": "stack",
+              "axis": "vertical",
+              "justify": "start",
+              "align": "start",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 24,
+                "h": 24
+              },
+              "warnings": [
+                "layout-mode-none-inferred"
+              ],
+              "children": [
+                {
+                  "id": "2097:12532",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 16,
+                    "h": 16
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "2097:12533",
+          "name": "Frame 2043688323",
+          "kind": "stack",
+          "axis": "vertical",
+          "justify": "start",
+          "align": "start",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 60,
+            "h": 60
+          },
+          "warnings": [
+            "layout-mode-none-inferred"
+          ],
+          "cornerRadius": {
+            "value": 100,
+            "tokenType": "radius"
+          },
+          "background": {
+            "value": "#333035",
+            "tokenType": "color"
+          },
+          "children": [
+            {
+              "id": "2097:12534",
+              "name": "home_outline",
+              "kind": "stack",
+              "axis": "vertical",
+              "justify": "start",
+              "align": "start",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 24,
+                "h": 24
+              },
+              "warnings": [
+                "layout-mode-none-inferred"
+              ],
+              "children": [
+                {
+                  "id": "2097:12535",
+                  "name": "icon",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 20,
+                    "h": 15
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#6C6C6C",
+                    "tokenType": "color"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "2097:12536",
+          "name": "Frame 2043688325",
+          "kind": "stack",
+          "axis": "vertical",
+          "justify": "start",
+          "align": "start",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 60,
+            "h": 60
+          },
+          "warnings": [
+            "layout-mode-none-inferred"
+          ],
+          "cornerRadius": {
+            "value": 100,
+            "tokenType": "radius"
+          },
+          "background": {
+            "value": "#333035",
+            "tokenType": "color"
+          },
+          "children": [
+            {
+              "id": "2097:12537",
+              "name": "Interface / Settings_Future",
+              "kind": "overlay",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 22,
+                "h": 22
+              },
+              "warnings": [],
+              "children": [
+                {
+                  "id": "2097:12538",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 16,
+                    "h": 18
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon"
+                },
+                {
+                  "id": "2097:12539",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 6,
+                    "h": 6
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2097:12540",
+      "name": "Screen Components / Home Indicator",
+      "kind": "stack",
+      "axis": "vertical",
+      "justify": "start",
+      "align": "start",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 375,
+        "h": 34
+      },
+      "warnings": [
+        "layout-mode-none-inferred"
+      ],
+      "children": [
+        {
+          "id": "I2097:12540;114:7142",
+          "name": "Home Indicator",
+          "kind": "leaf",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 134,
+            "h": 5
+          },
+          "warnings": [],
+          "background": {
+            "value": "#FFFFFF",
+            "tokenType": "color"
+          }
+        }
+      ],
+      "componentId": "158:2455",
+      "componentName": "Variant=Dark"
+    },
+    {
+      "id": "2097:12541",
+      "name": "Screen Components / Status Bar",
+      "kind": "stack",
+      "axis": "vertical",
+      "justify": "start",
+      "align": "start",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 375,
+        "h": 44
+      },
+      "warnings": [
+        "layout-mode-none-inferred"
+      ],
+      "children": [
+        {
+          "id": "I2097:12541;114:7094",
+          "name": "Right",
+          "kind": "stack",
+          "axis": "vertical",
+          "justify": "start",
+          "align": "start",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 67,
+            "h": 11
+          },
+          "warnings": [
+            "layout-mode-none-inferred"
+          ],
+          "children": [
+            {
+              "id": "I2097:12541;114:7095",
+              "name": "Battery",
+              "kind": "overlay",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 24,
+                "h": 11
+              },
+              "warnings": [],
+              "children": [
+                {
+                  "id": "I2097:12541;114:7096",
+                  "name": "Border",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 22,
+                    "h": 11
+                  },
+                  "warnings": []
+                },
+                {
+                  "id": "I2097:12541;114:7097",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 1,
+                    "h": 4
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#FFFFFF",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "I2097:12541;114:7098",
+                  "name": "Capacity",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 18,
+                    "h": 7
+                  },
+                  "warnings": [],
+                  "background": {
+                    "value": "#FFFFFF",
+                    "tokenType": "color"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "I2097:12541;114:7099",
+              "name": "Wifi",
+              "kind": "overlay",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 15,
+                "h": 11
+              },
+              "warnings": [],
+              "children": [
+                {
+                  "id": "I2097:12541;114:7100",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 15,
+                    "h": 5
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "I2097:12541;114:7101",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 10,
+                    "h": 4
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "I2097:12541;114:7102",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 5,
+                    "h": 3
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                }
+              ],
+              "background": {
+                "value": "#FFFFFF",
+                "tokenType": "color"
+              }
+            },
+            {
+              "id": "I2097:12541;114:7103",
+              "name": "Signal",
+              "kind": "stack",
+              "axis": "vertical",
+              "justify": "start",
+              "align": "start",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 17,
+                "h": 11
+              },
+              "warnings": [
+                "layout-mode-none-inferred"
+              ],
+              "background": {
+                "value": "#FFFFFF",
+                "tokenType": "color"
+              },
+              "children": [
+                {
+                  "id": "I2097:12541;114:7104",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 3,
+                    "h": 4
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "I2097:12541;114:7105",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 3,
+                    "h": 6
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "I2097:12541;114:7106",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 3,
+                    "h": 8
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                },
+                {
+                  "id": "I2097:12541;114:7107",
+                  "name": "Vector",
+                  "kind": "leaf",
+                  "sizing": {
+                    "width": "fixed",
+                    "height": "fixed",
+                    "w": 3,
+                    "h": 11
+                  },
+                  "warnings": [],
+                  "semanticRole": "icon",
+                  "background": {
+                    "value": "#000000",
+                    "tokenType": "color"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "I2097:12541;114:7108",
+          "name": "Clock",
+          "kind": "stack",
+          "axis": "vertical",
+          "justify": "start",
+          "align": "start",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 54,
+            "h": 21
+          },
+          "warnings": [
+            "layout-mode-none-inferred"
+          ],
+          "children": [
+            {
+              "id": "I2097:12541;114:7109",
+              "name": "Text",
+              "kind": "leaf",
+              "sizing": {
+                "width": "fixed",
+                "height": "fixed",
+                "w": 54,
+                "h": 18
+              },
+              "warnings": [],
+              "semanticRole": "text",
+              "stringRef": {
+                "value": "9:41"
+              },
+              "typography": {
+                "family": "SF Pro Text",
+                "size": 15,
+                "weight": 600,
+                "lineHeight": 18,
+                "letterSpacing": -0.30000001192092896
+              },
+              "color": {
+                "value": "#000000",
+                "tokenType": "color"
+              }
+            }
+          ]
+        }
+      ],
+      "componentId": "158:2415",
+      "componentName": "Variant=Dark"
+    }
+  ],
+  "background": {
+    "value": "#000000",
+    "tokenType": "color"
+  }
+}

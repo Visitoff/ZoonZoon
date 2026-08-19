@@ -1,0 +1,65 @@
+{
+  "id": "2097:12600",
+  "name": "Frame 2043688312",
+  "kind": "stack",
+  "axis": "vertical",
+  "justify": "start",
+  "align": "start",
+  "sizing": {
+    "width": "fixed",
+    "height": "fixed",
+    "w": 60,
+    "h": 60
+  },
+  "warnings": [
+    "layout-mode-none-inferred"
+  ],
+  "cornerRadius": {
+    "value": 53,
+    "tokenType": "radius"
+  },
+  "background": {
+    "value": "#FFFFFF",
+    "tokenType": "color"
+  },
+  "children": [
+    {
+      "id": "2097:12601",
+      "name": "power",
+      "kind": "stack",
+      "axis": "vertical",
+      "justify": "start",
+      "align": "start",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 24,
+        "h": 24
+      },
+      "warnings": [
+        "layout-mode-none-inferred"
+      ],
+      "children": [
+        {
+          "id": "I2097:12601;340:7472",
+          "name": "Vector",
+          "kind": "leaf",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 16,
+            "h": 17
+          },
+          "warnings": [],
+          "semanticRole": "icon",
+          "background": {
+            "value": "#FFFFFF",
+            "tokenType": "color"
+          }
+        }
+      ],
+      "componentId": "311:1522",
+      "componentName": "power"
+    }
+  ]
+}

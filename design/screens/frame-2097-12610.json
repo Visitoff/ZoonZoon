@@ -1,0 +1,75 @@
+{
+  "id": "2097:12610",
+  "name": "Frame 2043688359",
+  "kind": "stack",
+  "axis": "horizontal",
+  "justify": "center",
+  "align": "center",
+  "sizing": {
+    "width": "fixed",
+    "height": "fixed",
+    "w": 45,
+    "h": 45
+  },
+  "warnings": [],
+  "padding": {
+    "horizontal": {
+      "value": 20,
+      "tokenType": "spacing"
+    },
+    "vertical": {
+      "value": 10,
+      "tokenType": "spacing"
+    }
+  },
+  "gap": {
+    "value": 10,
+    "tokenType": "spacing"
+  },
+  "cornerRadius": {
+    "value": 100,
+    "tokenType": "radius"
+  },
+  "background": {
+    "value": "#1A1A1B",
+    "tokenType": "color"
+  },
+  "children": [
+    {
+      "id": "2097:12611",
+      "name": "unlock",
+      "kind": "stack",
+      "axis": "vertical",
+      "justify": "start",
+      "align": "start",
+      "sizing": {
+        "width": "fixed",
+        "height": "fixed",
+        "w": 20,
+        "h": 20
+      },
+      "warnings": [
+        "layout-mode-none-inferred"
+      ],
+      "children": [
+        {
+          "id": "2097:12612",
+          "name": "Vector",
+          "kind": "leaf",
+          "sizing": {
+            "width": "fixed",
+            "height": "fixed",
+            "w": 12,
+            "h": 15
+          },
+          "warnings": [],
+          "semanticRole": "icon",
+          "background": {
+            "value": "#8E8E8E",
+            "tokenType": "color"
+          }
+        }
+      ]
+    }
+  ]
+}

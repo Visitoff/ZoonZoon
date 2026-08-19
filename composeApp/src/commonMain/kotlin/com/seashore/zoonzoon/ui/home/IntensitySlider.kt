@@ -117,14 +117,16 @@ fun IntensitySlider(
             }
         }
         Box(
-            modifier = Modifier.requiredSize(129.321.dp, 32.692.dp),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.requiredSize(129.321.dp, 32.692.dp)
         ) {
             FigmaIntensityNotch(Modifier.fillMaxSize())
             Text(
                 text = label,
                 color = FigmaTokens.Color.white.copy(alpha = 0.20f),
-                style = figmaGilroy(size = 14, lineHeight = 24)
+                style = figmaGilroy(size = 14, lineHeight = 24),
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = 11.dp)
             )
         }
     }
