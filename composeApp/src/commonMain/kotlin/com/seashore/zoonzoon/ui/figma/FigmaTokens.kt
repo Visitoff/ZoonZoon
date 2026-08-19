@@ -1,9 +1,15 @@
 package com.seashore.zoonzoon.ui.figma
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.seashore.zoonzoon.generated.resources.Gilroy_Regular
+import com.seashore.zoonzoon.generated.resources.Gilroy_Semibold
+import com.seashore.zoonzoon.generated.resources.Res
+import org.jetbrains.compose.resources.Font
 
 /** Values from `design/tokens.json` (inferred-from-frequency). */
 object FigmaTokens {
@@ -44,13 +50,23 @@ object FigmaTokens {
     }
 }
 
-/** Leaf typography from Screen 23 IR (`tokens.json.typography` is empty in v0.4). */
+/** Gilroy from project fonts (Figma: Gilroy SemiBold). */
+val GilroyFontFamily: FontFamily
+    @Composable
+    get() = FontFamily(
+        Font(Res.font.Gilroy_Regular, FontWeight.Normal),
+        Font(Res.font.Gilroy_Semibold, FontWeight.SemiBold)
+    )
+
+/** Typography from Figma tokens — Gilroy SemiBold. */
+@Composable
 fun figmaGilroy(
     size: Int,
     weight: FontWeight = FontWeight.SemiBold,
     lineHeight: Int = 24,
     letterSpacing: Float = -0.6f
 ): TextStyle = TextStyle(
+    fontFamily = GilroyFontFamily,
     fontSize = size.sp,
     fontWeight = weight,
     lineHeight = lineHeight.sp,

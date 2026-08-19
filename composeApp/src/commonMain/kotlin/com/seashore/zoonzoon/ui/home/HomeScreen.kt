@@ -46,11 +46,14 @@ fun HomeScreen(
             patternName = patternCopy.name,
             patternDescription = patternCopy.description,
             vibrationEnabled = vibrationState.enabled,
-            intensity = vibrationState.intensity,
-            intensityLabel = strings.intensity,
             onToggleVibration = viewModel::toggleVibration,
-            onIntensityChanged = viewModel::setIntensity,
             modifier = Modifier.offset(x = FigmaTokens.Spacing.s15, y = 135.dp)
+        )
+        IntensitySlider(
+            intensity = vibrationState.intensity,
+            label = strings.intensity,
+            onIntensityChanged = viewModel::setIntensity,
+            modifier = Modifier.offset(x = FigmaTokens.Spacing.s15, y = 599.dp)
         )
         Box(Modifier.align(Alignment.TopCenter).offset(y = FigmaTokens.Spacing.s10)) {
             ErrorDisplay(error = errorState)
