@@ -5,7 +5,8 @@ import com.seashore.zoonzoon.gamepad.model.ConnectionState
 import com.seashore.zoonzoon.gamepad.model.VibrationPattern
 import com.seashore.zoonzoon.gamepad.model.VibrationState
 import com.seashore.zoonzoon.gamepad.model.PatternManager
-import com.seashore.zoonzoon.gamepad.ui.DisplayError
+import com.seashore.zoonzoon.gamepad.model.DisplayError
+import com.seashore.zoonzoon.gamepad.model.ErrorSeverity
 import kotlinx.coroutines.CoroutineScope
 import com.seashore.zoonzoon.settings.AppSettings
 import com.seashore.zoonzoon.settings.MemoryAppSettings
@@ -441,9 +442,9 @@ class GamepadViewModel(
             try {
                 vibrationEngine.controller.startDiscovery()
             } catch (e: Exception) {
-                _errorState.value = com.seashore.zoonzoon.gamepad.ui.DisplayError(
+                _errorState.value = DisplayError(
                     message = "Failed to start discovery: ${e.message}",
-                    severity = com.seashore.zoonzoon.gamepad.ui.ErrorSeverity.ERROR
+                    severity = ErrorSeverity.ERROR
                 )
             }
         }

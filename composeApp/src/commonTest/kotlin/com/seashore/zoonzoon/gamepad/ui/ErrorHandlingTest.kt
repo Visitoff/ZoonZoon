@@ -1,4 +1,8 @@
-package com.seashore.zoonzoon.gamepad.ui
+package com.seashore.zoonzoon.gamepad.model
+
+import com.seashore.zoonzoon.gamepad.model.CommonErrors
+import com.seashore.zoonzoon.gamepad.model.DisplayError
+import com.seashore.zoonzoon.gamepad.model.ErrorSeverity
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
