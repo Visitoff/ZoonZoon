@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -18,7 +17,7 @@ import androidx.compose.ui.unit.dp
 actual fun supportsNativeLiquidGlass(): Boolean = true
 
 /**
- * Android approximation of Figma liquid glass (blur + tint + specular highlight).
+ * Android approximation of Figma liquid glass (tint + specular highlight, no child blur).
  * Not system UIGlassEffect — allowed per project spec on Android only.
  */
 @Composable
@@ -32,31 +31,35 @@ actual fun NativeLiquidGlass(
     Box(
         modifier = modifier
             .clip(shape)
-            .blur(12.dp)
-            .background(tint.copy(alpha = tint.alpha.coerceAtLeast(0.18f)), shape)
             .drawBehind {
-                val r = size.minDimension * 0.55f
-                val center = Offset(size.width * 0.32f, size.height * 0.22f)
+                drawRect(tint.copy(alpha = tint.alpha.coerceAtLeast(0.22f)))
+                val r = size.minDimension * 0.58f
+                val highlight = Offset(size.width * 0.30f, size.height * 0.18f)
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color.White.copy(alpha = 0.42f), Color.Transparent),
-                        center = center,
+                        colors = listOf(Color.White.copy(alpha = 0.50f), Color.Transparent),
+                        center = highlight,
                         radius = r
                     ),
                     radius = r,
-                    center = center
+                    center = highlight
+                )
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color.White.copy(alpha = 0.08f), Color.Transparent),
+                        center = Offset(size.width * 0.72f, size.height * 0.78f),
+                        radius = size.minDimension * 0.45f
+                    ),
+                    radius = size.minDimension * 0.45f,
+                    center = Offset(size.width * 0.72f, size.height * 0.78f)
                 )
             }
-    ) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        0f to Color.White.copy(alpha = 0.14f),
-                        1f to Color.Transparent
-                    )
+            .background(
+                Brush.verticalGradient(
+                    0f to Color.White.copy(alpha = 0.16f),
+                    0.35f to Color.Transparent,
+                    1f to Color.Black.copy(alpha = 0.12f)
                 )
-        )
-    }
+            )
+    )
 }

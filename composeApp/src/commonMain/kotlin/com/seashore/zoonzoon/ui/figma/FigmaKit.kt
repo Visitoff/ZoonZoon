@@ -92,7 +92,7 @@ private fun FigmaFillButton(
     }
     Box(
         modifier = modifier
-            .then(if (nativeGlass) Modifier else Modifier.clip(shape).then(fillMod))
+            .clip(shape)
             .then(
                 if (stroke == FigmaStroke.Heart) Modifier.border(1.dp, FigmaGradients.HeartStroke, shape)
                 else Modifier
@@ -112,6 +112,8 @@ private fun FigmaFillButton(
                 tint = tint,
                 interactive = enabled
             )
+        } else {
+            Box(Modifier.fillMaxSize().then(fillMod))
         }
         content()
     }

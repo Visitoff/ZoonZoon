@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.seashore.zoonzoon.generated.resources.Res
-import com.seashore.zoonzoon.generated.resources.nav_bb_bg
+import com.seashore.zoonzoon.generated.resources.fig_bb_bg
 import com.seashore.zoonzoon.generated.resources.nav_ic_ai
 import com.seashore.zoonzoon.generated.resources.nav_ic_duo
 import com.seashore.zoonzoon.generated.resources.nav_ic_home
@@ -37,7 +37,7 @@ fun BottomBar(
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(Res.drawable.nav_bb_bg),
+            painter = painterResource(Res.drawable.fig_bb_bg),
             contentDescription = null,
             contentScale = ContentScale.FillBounds,
             modifier = Modifier.size(330.dp, 70.dp)
