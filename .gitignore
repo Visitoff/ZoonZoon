@@ -53,6 +53,14 @@ GoogleService-Info.plist
 # Temp output files
 *.txt
 
+# Temp Figma exports
+tmp_figma_layers/
+_extract/
+_fig_extract/
+
+# Design reference screenshots (Figma refs + emulator captures)
+_design_ref/
+
 # Personal notes (not for repo)
 docs/plans/atomic-habits-6-months.md
 docs/plans/my-6-month-plan.md

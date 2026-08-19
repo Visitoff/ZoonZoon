@@ -1,0 +1,57 @@
+---
+description: Как собрать, запустить на эмуляторе и снять скриншот этого проекта на Windows
+alwaysApply: true
+---
+
+# Сборка и визуальная проверка (Windows + PowerShell)
+
+Все команды проверены на этой машине и работают.
+
+## Окружение
+
+- JDK 17: `C:\Program Files\Microsoft\jdk-17.0.18.8-hotspot` (уже в `JAVA_HOME`).
+- Android SDK: `$env:LOCALAPPDATA\Android\Sdk`. **`adb` НЕ в PATH** — только полный путь.
+- AVD: `Pixel_10_Pro_XL`, экран `1344x2992`.
+- applicationId: `com.ZoonZoon`, активити `com.seashore.zoonzoon.MainActivity`.
+
+## Запуск
+
+```powershell
+$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+
+# 1. Эмулятор. Если список пуст — поднять и подождать загрузки.
+& $adb devices
+& "$env:LOCALAPPDATA\Android\Sdk\emulator\emulator.exe" -avd Pixel_10_Pro_XL
+& $adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 1; done'
+
+# 2. Сборка и установка.
+.\gradlew.bat :composeApp:installDebug --console=plain
+
+# 3. Запуск.
+& $adb shell am force-stop com.ZoonZoon
+& $adb shell monkey -p com.ZoonZoon -c android.intent.category.LAUNCHER 1
+Start-Sleep -Seconds 6
+
+# 4. Скриншот. Только через pull — PowerShell портит бинарь при `>`.
+& $adb shell screencap -p /sdcard/_shot.png
+& $adb pull /sdcard/_shot.png _design_ref/<screen>_actual.png
+& $adb shell rm /sdcard/_shot.png
+```
+
+Проверить, что на экране именно приложение:
+`& $adb shell dumpsys window displays | Select-String "mCurrentFocus"`
+
+Навигация по вкладкам — `& $adb shell input tap <x> <y>` в координатах 1344x2992.
+
+## Сравнение с Figma
+
+Скриншот приходит в 1344x2992, а фрейм Figma — в логических точках (~393x852).
+Перед наложением привести оба к одному размеру, иначе расхождения будут ложными.
+
+Полученный PNG нужно ОТКРЫТЬ и посмотреть. Вывод «совпало» без просмотра
+картинки не считается проверкой.
+
+## iOS
+
+Хост — Windows, cinterop `GameControllerHaptics` под iOS здесь не собирается.
+iOS-экраны проверить нечем: помечай их как непроверенные, не пиши «1 в 1».

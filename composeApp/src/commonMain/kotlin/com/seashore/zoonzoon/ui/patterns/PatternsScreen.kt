@@ -1,48 +1,60 @@
 package com.seashore.zoonzoon.ui.patterns
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.seashore.zoonzoon.gamepad.model.PatternPlayMode
 import com.seashore.zoonzoon.gamepad.model.PatternReference
 import com.seashore.zoonzoon.gamepad.model.PresetPatterns
-import com.seashore.zoonzoon.gamepad.theme.ZoonZoonAccentEnd
-import com.seashore.zoonzoon.gamepad.theme.ZoonZoonAccentStart
 import com.seashore.zoonzoon.gamepad.viewmodel.GamepadViewModel
+import com.seashore.zoonzoon.generated.resources.Res
+import com.seashore.zoonzoon.generated.resources.fig_ic_plus
+import com.seashore.zoonzoon.generated.resources.fig_ic_rec
+import com.seashore.zoonzoon.generated.resources.fig_touch_area
 import com.seashore.zoonzoon.i18n.AppLanguage
-import com.seashore.zoonzoon.i18n.AppStrings
 import com.seashore.zoonzoon.i18n.stringsFor
-import com.seashore.zoonzoon.ui.components.IosAccentButton
-import com.seashore.zoonzoon.ui.components.IosDestructiveTextButton
-import com.seashore.zoonzoon.ui.components.IosGroupedCard
-import com.seashore.zoonzoon.ui.components.IosGroupedDivider
-import com.seashore.zoonzoon.ui.components.IosLargeTitle
-import com.seashore.zoonzoon.ui.components.IosListRow
-import com.seashore.zoonzoon.ui.components.IosScreenBackground
-import com.seashore.zoonzoon.ui.components.IosSecondaryButton
-import com.seashore.zoonzoon.ui.components.IosSectionHeader
-import com.seashore.zoonzoon.ui.components.IosSegmentedControl
-import kotlin.math.roundToInt
+import com.seashore.zoonzoon.ui.figma.FigmaCircleButton
+import com.seashore.zoonzoon.ui.figma.FigmaCoralStart
+import com.seashore.zoonzoon.ui.figma.FigmaFill
+import com.seashore.zoonzoon.ui.figma.FigmaPillButton
+import com.seashore.zoonzoon.ui.figma.FigmaNestedSelectableItem
+import com.seashore.zoonzoon.ui.figma.FigmaPlaylistCard
+import com.seashore.zoonzoon.ui.figma.FigmaSelectableItem
+import com.seashore.zoonzoon.ui.figma.FigmaSelector
+import com.seashore.zoonzoon.ui.figma.FigmaTokens
+import com.seashore.zoonzoon.ui.figma.figmaGilroy
+import com.seashore.zoonzoon.ui.home.HomeFrameHeight
+import com.seashore.zoonzoon.ui.home.HomeFrameWidth
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun PatternsScreen(
@@ -57,251 +69,241 @@ fun PatternsScreen(
     val playlistQueue by viewModel.playlistQueue.collectAsState()
     val savedPlaylists by viewModel.savedPlaylists.collectAsState()
     val recorderState by viewModel.recorderState.collectAsState()
+    var tab by remember { mutableIntStateOf(0) }
     var showSavePlaylistDialog by remember { mutableStateOf(false) }
+    var expandedPlaylist by remember { mutableStateOf<String?>(null) }
 
-    IosScreenBackground(modifier = modifier) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
+    Box(modifier = modifier.requiredSize(HomeFrameWidth, HomeFrameHeight)) {
+        Column(
+            modifier = Modifier
+                .offset(x = FigmaTokens.Spacing.s15, y = 54.dp)
+                .size(345.dp, 648.dp)
         ) {
-            item {
-                IosLargeTitle(text = strings.patterns)
-            }
-
-            item {
-                IosGroupedCard(modifier = Modifier.padding(top = 8.dp)) {
-                    IosSegmentedControl(
-                        options = listOf(strings.singleMode, strings.playlistMode),
-                        selectedIndex = if (playMode == PatternPlayMode.SINGLE) 0 else 1,
-                        onSelected = { index ->
-                            viewModel.setPlayMode(
-                                if (index == 0) PatternPlayMode.SINGLE else PatternPlayMode.PLAYLIST
-                            )
-                        },
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-            }
-
-            item { IosSectionHeader(text = strings.presets) }
-
-            item {
-                IosGroupedCard {
-                    PresetPatterns.all.forEachIndexed { index, preset ->
+            FigmaSelector(
+                options = if (language == AppLanguage.JA) {
+                    listOf(strings.patterns, strings.customRecorder, strings.playlist)
+                } else {
+                    listOf("Patterns", "Custom", "Playlists")
+                },
+                selectedIndex = tab,
+                onSelected = { tab = it }
+            )
+            Box(Modifier.height(30.dp))
+            when (tab) {
+                0 -> LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 12.dp)
+                ) {
+                    items(PresetPatterns.all, key = { it.id.key }) { preset ->
                         val key = PatternReference.Preset(preset.id).key
-                        val title = if (language == AppLanguage.JA) preset.nameJa else preset.nameEn
-                        val subtitle = "${preset.emoji} · ${preset.descriptionEn}"
-                        IosListRow(
-                            title = title,
-                            subtitle = subtitle,
+                        FigmaSelectableItem(
+                            emoji = preset.emoji,
+                            title = if (language == AppLanguage.JA) preset.nameJa else preset.nameEn,
+                            subtitle = preset.descriptionEn,
                             selected = playMode == PatternPlayMode.SINGLE && activeKey == key,
                             onClick = { viewModel.selectPreset(preset.id) },
-                            trailing = {
-                                IosSecondaryButton(
-                                    text = "+",
-                                    onClick = { viewModel.addToPlaylist(key) },
-                                    modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
+                            onLongPress = { viewModel.addToPlaylist(key) }
                         )
-                        if (index < PresetPatterns.all.lastIndex) {
-                            IosGroupedDivider()
-                        }
                     }
-                }
-            }
-
-            item { IosSectionHeader(text = strings.customRecorder) }
-
-            item {
-                IosGroupedCard {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        if (!recorderState.isRecording) {
-                            IosAccentButton(
-                                text = strings.startRecording,
-                                onClick = viewModel::startRecorder,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        } else {
-                            IosSecondaryButton(
-                                text = strings.finishRecording,
-                                onClick = viewModel::finishRecorder,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                        PatternRecorderPad(
-                            isRecording = recorderState.isRecording,
-                            onSample = viewModel::addRecorderSample,
-                            onFinish = viewModel::finishRecorder,
-                            hint = strings.recorderHint
+                    items(customPatterns, key = { it.name }) { entry ->
+                        val key = PatternReference.Custom(entry.name).key
+                        FigmaSelectableItem(
+                            emoji = "💗",
+                            title = entry.name,
+                            subtitle = strings.customRecorder,
+                            selected = playMode == PatternPlayMode.SINGLE && activeKey == key,
+                            onClick = { viewModel.selectCustomPattern(entry.name) },
+                            onLongPress = { viewModel.deleteCustomPattern(entry.name) }
                         )
                     }
                 }
-            }
-
-            if (customPatterns.isNotEmpty()) {
-                item { IosSectionHeader(text = strings.myPatterns) }
-                item {
-                    IosGroupedCard {
-                        customPatterns.forEachIndexed { index, entry ->
-                            val key = PatternReference.Custom(entry.name).key
-                            IosListRow(
-                                title = entry.name,
-                                subtitle = "${entry.pattern.samples.size} samples",
-                                selected = playMode == PatternPlayMode.SINGLE && activeKey == key,
-                                onClick = { viewModel.selectCustomPattern(entry.name) },
-                                trailing = {
-                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                        IosSecondaryButton(
-                                            text = "+",
-                                            onClick = { viewModel.addToPlaylist(key) }
-                                        )
-                                        IosSecondaryButton(
-                                            text = strings.delete,
-                                            onClick = { viewModel.deleteCustomPattern(entry.name) }
-                                        )
-                                    }
-                                }
-                            )
-                            if (index < customPatterns.lastIndex) {
-                                IosGroupedDivider()
-                            }
-                        }
-                    }
-                }
-            }
-
-            item { IosSectionHeader(text = strings.playlist) }
-
-            if (playlistQueue.isEmpty()) {
-                item {
-                    IosGroupedCard {
-                        Text(
-                            text = strings.clearQueue,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
-                }
-            } else {
-                itemsIndexed(playlistQueue) { index, item ->
-                    IosGroupedCard(modifier = Modifier.padding(bottom = 8.dp)) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                text = patternLabel(item.key, language),
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                text = "${strings.durationSeconds}: ${(item.durationMs / 1000f).roundToInt()}s",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Slider(
-                                value = (item.durationMs / 1000f).coerceIn(1f, 60f),
-                                onValueChange = { sec ->
-                                    viewModel.setPlaylistItemDuration(index, (sec * 1000).roundToInt().toLong())
-                                },
-                                valueRange = 1f..60f,
-                                steps = 58,
-                                colors = SliderDefaults.colors(
-                                    thumbColor = ZoonZoonAccentStart,
-                                    activeTrackColor = ZoonZoonAccentStart,
-                                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-                                )
-                            )
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                IosSecondaryButton(text = strings.moveUp, onClick = { viewModel.movePlaylistItem(index, -1) }, modifier = Modifier.weight(1f))
-                                IosSecondaryButton(text = strings.moveDown, onClick = { viewModel.movePlaylistItem(index, 1) }, modifier = Modifier.weight(1f))
-                                IosSecondaryButton(text = strings.remove, onClick = { viewModel.removeFromPlaylistAt(index) }, modifier = Modifier.weight(1f))
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                IosGroupedCard(modifier = Modifier.padding(top = 8.dp)) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                            IosAccentButton(
-                                text = strings.playPlaylist,
-                                onClick = {
+                1 -> FigmaCustomTab(
+                    isRecording = recorderState.isRecording,
+                    hint = strings.recorderHint,
+                    startLabel = strings.startRecording,
+                    finishLabel = strings.finishRecording,
+                    onToggle = {
+                        if (recorderState.isRecording) viewModel.finishRecorder()
+                        else viewModel.startRecorder()
+                    },
+                    onSample = viewModel::addRecorderSample
+                )
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(15.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
+                    if (playlistQueue.isNotEmpty()) {
+                        item(key = "queue-card") {
+                            FigmaPlaylistCard(
+                                title = strings.playlist,
+                                subtitle = strings.playlistMode,
+                                expanded = expandedPlaylist == "__queue__",
+                                onHeaderClick = {
+                                    expandedPlaylist = if (expandedPlaylist == "__queue__") null else "__queue__"
                                     viewModel.setPlayMode(PatternPlayMode.PLAYLIST)
                                     viewModel.setVibrationEnabled(true)
-                                },
-                                modifier = Modifier.weight(1f),
-                                enabled = playlistQueue.isNotEmpty()
-                            )
-                            IosSecondaryButton(
-                                text = strings.savePlaylist,
-                                onClick = { showSavePlaylistDialog = true },
-                                modifier = Modifier.weight(1f),
-                                enabled = playlistQueue.isNotEmpty()
-                            )
-                        }
-                        IosDestructiveTextButton(
-                            text = strings.clearQueue,
-                            onClick = viewModel::clearPlaylist
-                        )
-                    }
-                }
-            }
-
-            if (savedPlaylists.isNotEmpty()) {
-                item { IosSectionHeader(text = strings.savePlaylist) }
-                item {
-                    IosGroupedCard {
-                        savedPlaylists.forEachIndexed { index, playlist ->
-                            IosListRow(
-                                title = playlist.name,
-                                subtitle = "${playlist.items.size} items",
-                                onClick = { viewModel.loadPlaylist(playlist.name) },
-                                trailing = {
-                                    IosSecondaryButton(
-                                        text = strings.delete,
-                                        onClick = { viewModel.deleteSavedPlaylist(playlist.name) }
+                                }
+                            ) {
+                                playlistQueue.forEachIndexed { index, item ->
+                                    FigmaNestedSelectableItem(
+                                        emoji = "💗",
+                                        title = patternLabel(item.key, language),
+                                        subtitle = strings.playlist,
+                                        onClick = {
+                                            viewModel.setPlayMode(PatternPlayMode.PLAYLIST)
+                                            viewModel.setVibrationEnabled(true)
+                                        },
+                                        onLongPress = { viewModel.removeFromPlaylistAt(index) }
                                     )
                                 }
-                            )
-                            if (index < savedPlaylists.lastIndex) {
-                                IosGroupedDivider()
+                            }
+                        }
+                    }
+                    items(savedPlaylists, key = { "saved-${it.name}" }) { playlist ->
+                        FigmaPlaylistCard(
+                            title = playlist.name,
+                            subtitle = strings.playlist,
+                            expanded = expandedPlaylist == playlist.name,
+                            onHeaderClick = {
+                                expandedPlaylist = if (expandedPlaylist == playlist.name) null else playlist.name
+                                viewModel.loadPlaylist(playlist.name)
+                            },
+                            onHeaderLongPress = { viewModel.deleteSavedPlaylist(playlist.name) }
+                        ) {
+                            playlist.items.forEach { item ->
+                                FigmaNestedSelectableItem(
+                                    emoji = "💗",
+                                    title = patternLabel(item.key, language),
+                                    subtitle = strings.playlist,
+                                    onClick = { viewModel.loadPlaylist(playlist.name) }
+                                )
                             }
                         }
                     }
                 }
             }
         }
-    }
 
-    if (recorderState.showSaveDialog) {
-        SavePatternDialog(
-            title = strings.savePatternTitle,
-            nameHint = strings.patternNameHint,
-            saveLabel = strings.save,
-            cancelLabel = strings.cancel,
-            onSave = viewModel::saveRecordedPattern,
-            onDismiss = viewModel::dismissRecorderSaveDialog
-        )
-    }
+        if (tab == 2) {
+            FigmaCircleButton(
+                onClick = { showSavePlaylistDialog = true },
+                size = 60.dp,
+                fill = FigmaFill.Coral,
+                enabled = playlistQueue.isNotEmpty(),
+                modifier = Modifier.offset(x = 300.dp, y = 627.dp)
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.fig_ic_plus),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    colorFilter = ColorFilter.tint(androidx.compose.ui.graphics.Color.White)
+                )
+            }
+        }
 
-    if (showSavePlaylistDialog) {
-        SavePlaylistDialog(
-            title = strings.savePlaylist,
-            nameHint = strings.patternNameHint,
-            saveLabel = strings.save,
-            cancelLabel = strings.cancel,
-            onSave = { name ->
-                viewModel.saveCurrentQueueAsPlaylist(name)
-                showSavePlaylistDialog = false
-            },
-            onDismiss = { showSavePlaylistDialog = false }
-        )
+        if (recorderState.showSaveDialog) {
+            SavePatternDialog(
+                title = strings.savePatternTitle,
+                nameHint = strings.patternNameHint,
+                saveLabel = strings.save,
+                cancelLabel = strings.cancel,
+                onSave = viewModel::saveRecordedPattern,
+                onDismiss = viewModel::dismissRecorderSaveDialog
+            )
+        }
+        if (showSavePlaylistDialog) {
+            SavePlaylistDialog(
+                title = strings.savePlaylist,
+                nameHint = strings.patternNameHint,
+                saveLabel = strings.save,
+                cancelLabel = strings.cancel,
+                onSave = { name ->
+                    viewModel.saveCurrentQueueAsPlaylist(name)
+                    showSavePlaylistDialog = false
+                },
+                onDismiss = { showSavePlaylistDialog = false }
+            )
+        }
+    }
+}
+
+@Composable
+private fun FigmaCustomTab(
+    isRecording: Boolean,
+    hint: String,
+    startLabel: String,
+    finishLabel: String,
+    onToggle: () -> Unit,
+    onSample: (Float, Float) -> Unit
+) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(30.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(444.dp)
+                .clip(RoundedCornerShape(FigmaTokens.Radius.r38))
+                .then(
+                    if (isRecording) {
+                        Modifier.pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragStart = { offset ->
+                                    onSample(
+                                        (offset.x / size.width).coerceIn(0f, 1f),
+                                        (1f - offset.y / size.height).coerceIn(0f, 1f)
+                                    )
+                                },
+                                onDrag = { change, _ ->
+                                    change.consume()
+                                    onSample(
+                                        (change.position.x / size.width).coerceIn(0f, 1f),
+                                        (1f - change.position.y / size.height).coerceIn(0f, 1f)
+                                    )
+                                }
+                            )
+                        }
+                    } else Modifier
+                ),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Image(
+                painter = painterResource(Res.drawable.fig_touch_area),
+                contentDescription = null,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier.fillMaxSize()
+            )
+            Text(
+                text = hint,
+                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.5f),
+                style = figmaGilroy(size = 14),
+                modifier = Modifier.padding(bottom = 20.dp)
+            )
+        }
+        FigmaPillButton(
+            onClick = onToggle,
+            fill = if (isRecording) FigmaFill.Coral else FigmaFill.Dark,
+            modifier = Modifier.fillMaxWidth().height(60.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Image(
+                    painter = painterResource(Res.drawable.fig_ic_rec),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    colorFilter = ColorFilter.tint(
+                        if (isRecording) androidx.compose.ui.graphics.Color.White else FigmaCoralStart
+                    )
+                )
+                Text(
+                    text = if (isRecording) finishLabel else startLabel,
+                    color = androidx.compose.ui.graphics.Color.White,
+                    style = figmaGilroy(size = 16)
+                )
+            }
+        }
     }
 }
 

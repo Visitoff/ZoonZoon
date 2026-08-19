@@ -1,132 +1,80 @@
 package com.seashore.zoonzoon.ui.shell
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.seashore.zoonzoon.gamepad.theme.LocalGlassTokens
-import com.seashore.zoonzoon.gamepad.theme.ZoonZoonAccentEnd
-import com.seashore.zoonzoon.gamepad.theme.ZoonZoonAccentStart
-import com.seashore.zoonzoon.gamepad.theme.glassSurface
+import com.seashore.zoonzoon.generated.resources.Res
+import com.seashore.zoonzoon.generated.resources.nav_bb_bg
+import com.seashore.zoonzoon.generated.resources.nav_ic_ai
+import com.seashore.zoonzoon.generated.resources.nav_ic_duo
+import com.seashore.zoonzoon.generated.resources.nav_ic_home
+import com.seashore.zoonzoon.generated.resources.nav_ic_patterns
+import com.seashore.zoonzoon.generated.resources.nav_ic_settings
+import com.seashore.zoonzoon.ui.figma.FigmaCircleButton
+import com.seashore.zoonzoon.ui.figma.FigmaFill
+import com.seashore.zoonzoon.ui.figma.FigmaIconIdle
+import com.seashore.zoonzoon.ui.figma.FigmaTokens
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 
-/**
- * Floating "Liquid Glass" tab bar — a frosted pill hovering above the gradient,
- * with the centered Home tab elevated into an accent-gradient orb.
- */
+/** Figma `-bottom-bar`: 330×70 at (23, 703), buttons 60×60 with 5dp inset/gap. */
 @Composable
-fun ZoonZoonBottomBar(
+fun BottomBar(
     selectedTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LocalGlassTokens.current
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+        modifier = modifier.size(330.dp, 70.dp),
+        contentAlignment = Alignment.Center
     ) {
+        Image(
+            painter = painterResource(Res.drawable.nav_bb_bg),
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.size(330.dp, 70.dp)
+        )
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .glassSurface(
-                    shape = RoundedCornerShape(30.dp),
-                    tokens = tokens,
-                    strong = true,
-                    elevation = 22.dp
-                )
-                .padding(horizontal = 6.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier.size(320.dp, 60.dp),
+            horizontalArrangement = Arrangement.spacedBy(FigmaTokens.Spacing.s5),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AppTab.entries.forEach { tab ->
-                IosTabItem(
-                    tab = tab,
-                    selected = tab == selectedTab,
-                    enlarged = tab == AppTab.Home,
-                    onClick = { onTabSelected(tab) }
-                )
+                val selected = tab == selectedTab
+                FigmaCircleButton(
+                    onClick = { onTabSelected(tab) },
+                    size = 60.dp,
+                    fill = if (selected) FigmaFill.Coral else FigmaFill.Dark
+                ) {
+                    Image(
+                        painter = painterResource(tab.icon()),
+                        contentDescription = tab.label,
+                        modifier = Modifier.size(
+                            width = if (tab == AppTab.Home) 16.dp else 18.dp,
+                            height = if (tab == AppTab.Home) 16.dp else 18.dp
+                        ),
+                        colorFilter = ColorFilter.tint(
+                            if (selected) FigmaTokens.Color.white else FigmaIconIdle
+                        )
+                    )
+                }
             }
         }
     }
 }
 
-@Composable
-private fun IosTabItem(
-    tab: AppTab,
-    selected: Boolean,
-    enlarged: Boolean,
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val accentBrush = Brush.linearGradient(listOf(ZoonZoonAccentStart, ZoonZoonAccentEnd))
-    val inactive = MaterialTheme.colorScheme.onSurfaceVariant
-    val tint = if (selected) ZoonZoonAccentStart else inactive
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-        modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 4.dp)
-    ) {
-        if (enlarged) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .then(
-                        if (selected) {
-                            Modifier.shadow(10.dp, CircleShape, clip = false, spotColor = ZoonZoonAccentEnd)
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .clip(CircleShape)
-                    .then(
-                        if (selected) {
-                            Modifier.background(accentBrush)
-                        } else {
-                            Modifier.background(inactive.copy(alpha = 0.18f))
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = tab.emoji,
-                    fontSize = 18.sp,
-                    color = if (selected) androidx.compose.ui.graphics.Color.White else inactive
-                )
-            }
-        } else {
-            Text(text = tab.emoji, fontSize = 20.sp, color = tint)
-        }
-        Text(
-            text = tab.label,
-            fontSize = 10.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = tint
-        )
-    }
+private fun AppTab.icon(): DrawableResource = when (this) {
+    AppTab.Multiplayer -> Res.drawable.nav_ic_duo
+    AppTab.Ai -> Res.drawable.nav_ic_ai
+    AppTab.Home -> Res.drawable.nav_ic_home
+    AppTab.Patterns -> Res.drawable.nav_ic_patterns
+    AppTab.Settings -> Res.drawable.nav_ic_settings
 }

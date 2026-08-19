@@ -93,6 +93,11 @@ android {
     }
 }
 
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "com.seashore.zoonzoon.generated.resources"
+}
+
 dependencies {
     debugImplementation(libs.compose.uiTooling)
     
