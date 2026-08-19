@@ -35,6 +35,13 @@ internal val HomeFrameHeight = 812.dp
 private val PlayerWidth = 345.dp
 private val PlayerHeight = 445.dp
 
+private val BottomOverlayShape = RoundedCornerShape(
+    topStart = 16.dp,
+    topEnd = 16.dp,
+    bottomStart = 56.dp,
+    bottomEnd = 56.dp
+)
+
 /** Figma `-Player` @ (15, 135): 345×445, shell #151515 r56. */
 @Composable
 fun Player(
@@ -58,7 +65,17 @@ fun Player(
                 painter = painterResource(Res.drawable.fig_eq),
                 contentDescription = null,
                 contentScale = ContentScale.FillBounds,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .offset(x = (-59).dp)
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(x = 0.5.dp)
+                    .requiredSize(402.dp, 118.dp)
+                    .clip(BottomOverlayShape)
+                    .background(FigmaTokens.Color.black.copy(alpha = 0.75f))
             )
             Box(
                 modifier = Modifier

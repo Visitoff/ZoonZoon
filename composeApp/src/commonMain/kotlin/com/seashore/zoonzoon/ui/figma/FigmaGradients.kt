@@ -20,6 +20,30 @@ object FigmaGradients {
         )
     )
 
+    /** Bottom-nav active pill — Figma matrix on 140×60 master, bottom-centered radial. */
+    val NavActiveCoral = Brush.radialGradient(
+        colorStops = arrayOf(
+            0.00f to Color(0xFFF1535E),
+            0.25f to Color(0xFFEF5284),
+            0.50f to Color(0xFFED51A9),
+            1.00f to Color(0xFFE84FF4)
+        ),
+        center = Offset(0.5f, 1f),
+        radius = 1.167f
+    )
+
+    /** Intensity bar fill — per-bar radial (Figma `4023:2852`). */
+    fun intensityBarBrush(barHeightPx: Float): Brush = Brush.radialGradient(
+        colorStops = arrayOf(
+            0.00f to Color(0xFFF1535E),
+            0.25f to Color(0xFFEF5284),
+            0.50f to Color(0xFFED51A9),
+            1.00f to Color(0xFFE84FF4)
+        ),
+        center = Offset(0.5f, 1f),
+        radius = (barHeightPx / 44f).coerceAtLeast(0.5f)
+    )
+
     /** Coral linear (heart border, small swatches): `#F1535E` → `#E84FF4`. */
     val CoralLinear = Brush.linearGradient(
         0f to Color(0xFFF1535E),

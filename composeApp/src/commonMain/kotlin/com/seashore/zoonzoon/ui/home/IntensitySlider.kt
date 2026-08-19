@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.requiredSize
@@ -25,9 +25,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.seashore.zoonzoon.generated.resources.Res
+import com.seashore.zoonzoon.generated.resources.fig_intensity_notch
 import com.seashore.zoonzoon.generated.resources.fig_slider_thumb
-import com.seashore.zoonzoon.ui.figma.FigmaCoralEnd
-import com.seashore.zoonzoon.ui.figma.FigmaCoralStart
+import com.seashore.zoonzoon.ui.figma.FigmaGradients
 import com.seashore.zoonzoon.ui.figma.FigmaTokens
 import com.seashore.zoonzoon.ui.figma.figmaGilroy
 import org.jetbrains.compose.resources.painterResource
@@ -41,7 +41,6 @@ private val BarsAreaWidth = 339.dp
 private val BarsAreaHeight = 44.dp
 private val BarWidth = 4.dp
 private val BarRadius = 45.dp
-private val TrackPadding = 3.dp
 private val ThumbSize = 50.dp
 
 /** Figma Home `Slider` @ (15, 599): 345×82.692 — палочки + thumb + label. */
@@ -52,10 +51,22 @@ private val BarHeightsDp = intArrayOf(
     42, 36, 22
 )
 
-private val barGradient = Brush.verticalGradient(
-    0f to FigmaCoralStart,
-    1f to FigmaCoralEnd
-)
+@Composable
+private fun IntensityBar(heightDp: Int, filled: Boolean) {
+    Box(
+        modifier = Modifier
+            .width(BarWidth)
+            .height(heightDp.dp)
+            .clip(RoundedCornerShape(BarRadius))
+            .background(
+                if (filled) {
+                    FigmaGradients.intensityBarBrush(heightDp.toFloat())
+                } else {
+                    Brush.linearGradient(0f to BarInactive, 1f to BarInactive)
+                }
+            )
+    )
+}
 
 @Composable
 fun IntensitySlider(
@@ -97,18 +108,7 @@ fun IntensitySlider(
                 val filledCount = (BarHeightsDp.size * t).toInt().coerceIn(0, BarHeightsDp.size)
                 BarHeightsDp.forEachIndexed { index, height ->
                     val filled = index < filledCount
-                    Box(
-                        modifier = Modifier
-                            .width(BarWidth)
-                            .height(height.dp)
-                            .clip(RoundedCornerShape(BarRadius))
-                            .background(
-                                if (filled) barGradient else Brush.linearGradient(
-                                    0f to BarInactive,
-                                    1f to BarInactive
-                                )
-                            )
-                    )
+                    IntensityBar(height, filled)
                 }
             }
             Image(
@@ -123,14 +123,20 @@ fun IntensitySlider(
         }
         Box(
             modifier = Modifier
-                .width(129.321.dp)
-                .height(32.692.dp),
+                .requiredSize(129.321.dp, 32.692.dp),
             contentAlignment = Alignment.Center
         ) {
+            Image(
+                painter = painterResource(Res.drawable.fig_intensity_notch),
+                contentDescription = null,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier.fillMaxSize()
+            )
             Text(
                 text = label,
                 color = FigmaTokens.Color.white.copy(alpha = 0.20f),
-                style = figmaGilroy(size = 14, lineHeight = 10)
+                style = figmaGilroy(size = 14, lineHeight = 24),
+                modifier = Modifier.offset(y = 0.dp)
             )
         }
     }

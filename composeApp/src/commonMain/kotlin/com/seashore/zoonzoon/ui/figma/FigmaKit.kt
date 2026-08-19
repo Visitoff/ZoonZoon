@@ -82,7 +82,7 @@ private fun FigmaFillButton(
         FigmaFill.Dark -> Modifier.background(FigmaFillDark, shape)
         FigmaFill.Light -> Modifier.background(FigmaFillLight, shape)
         FigmaFill.Lock -> Modifier.background(FigmaFillLock, shape)
-        FigmaFill.Coral -> Modifier.background(FigmaGradients.CoralRadial, shape)
+        FigmaFill.Coral -> Modifier.background(FigmaGradients.NavActiveCoral, shape)
     }
     val tint = when (fill) {
         FigmaFill.Dark -> FigmaFillDark

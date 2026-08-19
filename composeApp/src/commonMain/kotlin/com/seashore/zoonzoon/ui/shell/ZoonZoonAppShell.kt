@@ -17,7 +17,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.seashore.zoonzoon.gamepad.viewmodel.GamepadViewModel
 import com.seashore.zoonzoon.ui.figma.FigmaCanvas
+import com.seashore.zoonzoon.ui.figma.FigmaHomeIndicator
 import com.seashore.zoonzoon.ui.figma.FigmaScreenGlow
+import com.seashore.zoonzoon.ui.figma.FigmaStatusBar
 import com.seashore.zoonzoon.ui.home.HomeFrameHeight
 import com.seashore.zoonzoon.ui.home.HomeFrameWidth
 import com.seashore.zoonzoon.ui.home.HomeScreen
@@ -47,6 +49,7 @@ fun ZoonZoonAppShell(
                     .requiredSize(HomeFrameWidth, HomeFrameHeight)
             ) {
                 FigmaScreenGlow()
+                FigmaStatusBar(Modifier.align(Alignment.TopStart))
                 when (selectedTab) {
                     AppTab.Home -> HomeScreen(viewModel = viewModel)
                     AppTab.Multiplayer -> MultiplayerScreen(Modifier.fillMaxSize())
@@ -64,6 +67,11 @@ fun ZoonZoonAppShell(
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
                     modifier = Modifier.offset(x = 22.dp, y = 702.dp)
+                )
+                FigmaHomeIndicator(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .offset(y = 778.dp)
                 )
             }
         }
