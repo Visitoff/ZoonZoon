@@ -52,6 +52,25 @@ GoogleService-Info.plist
 
 # Temp output files
 *.txt
+*.log
+*.apk
+*.aab
+*.hprof
+hs_err_pid*
+_shot.png
+
+# OS junk
+Thumbs.db
+desktop.ini
+*~
+
+# Local env / secrets
+.env
+.env.*
+_vless_verify.py
+
+# Cursor machine-local (keep .cursor/rules in git)
+.cursor/settings.json
 
 # Temp Figma exports
 tmp_figma_layers/

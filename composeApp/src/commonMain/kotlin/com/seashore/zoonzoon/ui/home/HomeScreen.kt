@@ -1,14 +1,13 @@
 package com.seashore.zoonzoon.ui.home
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.seashore.zoonzoon.gamepad.model.PatternPlayMode
 import com.seashore.zoonzoon.gamepad.model.PatternReference
 import com.seashore.zoonzoon.gamepad.model.PresetPatterns
@@ -17,12 +16,12 @@ import com.seashore.zoonzoon.i18n.AppLanguage
 import com.seashore.zoonzoon.i18n.AppStrings
 import com.seashore.zoonzoon.i18n.stringsFor
 
-private val FrameCenterX = (HomeFrameWidth - 345.dp) / 2
-
 @Composable
 fun HomeScreen(
     viewModel: GamepadViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showStage: Boolean = true,
+    showChrome: Boolean = true
 ) {
     val vibrationState by viewModel.vibrationState.collectAsState()
     val showGamepadHelp by viewModel.showGamepadHelp.collectAsState()
@@ -35,32 +34,37 @@ fun HomeScreen(
         homePatternCopy(activeKey, playMode, language, strings)
     }
 
-    Box(modifier = modifier.requiredSize(HomeFrameWidth, HomeFrameHeight)) {
+    if (showStage) {
+        Box(modifier = modifier.fillMaxSize()) {
+            Player(
+                patternName = patternCopy.name,
+                patternDescription = patternCopy.description,
+                patternEmoji = patternCopy.emoji,
+                onToggleVibration = viewModel::toggleVibration,
+                modifier = Modifier.offset(x = PlayerX, y = PlayerY)
+            )
+            IntensitySlider(
+                intensity = vibrationState.intensity,
+                label = strings.intensity,
+                onIntensityChanged = viewModel::setIntensity,
+                modifier = Modifier.offset(x = SliderX, y = SliderY)
+            )
+        }
+    }
+
+    if (showChrome) {
         TopBar(
             onLockClick = viewModel::openGamepadHelp,
-            modifier = Modifier.offset(x = FrameCenterX, y = 79.dp)
-        )
-        Player(
-            patternName = patternCopy.name,
-            patternDescription = patternCopy.description,
-            patternEmoji = patternCopy.emoji,
-            vibrationEnabled = vibrationState.enabled,
-            onToggleVibration = viewModel::toggleVibration,
-            modifier = Modifier.offset(x = FrameCenterX, y = 135.dp)
-        )
-        IntensitySlider(
-            intensity = vibrationState.intensity,
-            label = strings.intensity,
-            onIntensityChanged = viewModel::setIntensity,
-            modifier = Modifier.offset(x = FrameCenterX - 4.dp, y = 599.dp)
+            onAddClick = viewModel::openGamepadHelp,
+            modifier = Modifier.offset(x = TopBarX, y = TopBarY)
         )
     }
 
-    if (showGamepadHelp) {
+    if (showChrome && showGamepadHelp) {
         GamepadConnectDialog(strings = strings, onDismiss = viewModel::dismissGamepadHelp)
     }
 
-    if (showTargetPrompt) {
+    if (showChrome && showTargetPrompt) {
         VibrationTargetDialog(
             strings = strings,
             onSelect = viewModel::setVibrationTarget,

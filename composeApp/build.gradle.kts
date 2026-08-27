@@ -43,6 +43,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.backdrop)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -67,6 +68,7 @@ kotlin {
 android {
     namespace = "com.seashore.zoonzoon"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdkMinor = 0
 
     defaultConfig {
         applicationId = "com.ZoonZoon"

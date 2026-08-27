@@ -15,9 +15,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.seashore.zoonzoon.ui.fig.figCoralRadial
+import com.seashore.zoonzoon.ui.glass.GlassTintLight
+import com.seashore.zoonzoon.ui.glass.isLiquidGlassEnabled
+import com.seashore.zoonzoon.ui.glass.liquidGlass
 import dev.chrisbanes.haze.blur.blurEffect
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
 import dev.chrisbanes.haze.hazeEffect
@@ -81,8 +86,15 @@ private fun FigmaFillButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val nativeGlass = supportsNativeLiquidGlass()
+    val liquidGlass = isLiquidGlassEnabled()
     val hazeState = LocalHazeState.current
-    val blurStyle = if (hazeState != null && !nativeGlass && fill != FigmaFill.Coral && fill != FigmaFill.Power) {
+    val blurStyle = if (
+        hazeState != null &&
+        !nativeGlass &&
+        !liquidGlass &&
+        fill != FigmaFill.Coral &&
+        fill != FigmaFill.Power
+    ) {
         CupertinoMaterials.regular()
     } else {
         null
@@ -91,8 +103,8 @@ private fun FigmaFillButton(
         FigmaFill.Dark -> FigmaFillDark
         FigmaFill.Light -> FigmaFillLight
         FigmaFill.Lock -> FigmaFillLock
-        FigmaFill.Coral -> FigmaCoralStart
-        FigmaFill.Power -> FigmaTokens.Color.powerButton
+        FigmaFill.Coral -> Color.White.copy(alpha = 0.08f)
+        FigmaFill.Power -> GlassTintLight
     }
     val fillMod = when (fill) {
         FigmaFill.Dark -> Modifier.background(FigmaFillDark, shape)
@@ -104,7 +116,7 @@ private fun FigmaFillButton(
 
     Box(
         modifier = modifier
-            .clip(shape)
+            .then(if (liquidGlass) Modifier else Modifier.clip(shape))
             .then(
                 if (stroke == FigmaStroke.Heart) {
                     Modifier.border(1.dp, FigmaGradients.HeartStroke, shape)
@@ -121,6 +133,17 @@ private fun FigmaFillButton(
         contentAlignment = Alignment.Center
     ) {
         when {
+            liquidGlass -> {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .liquidGlass(shape, tint)
+                        .then(
+                            if (fill == FigmaFill.Coral) Modifier.figCoralRadial(alpha = 0.45f)
+                            else Modifier
+                        )
+                )
+            }
             nativeGlass -> {
                 NativeLiquidGlass(
                     modifier = Modifier.fillMaxSize(),
