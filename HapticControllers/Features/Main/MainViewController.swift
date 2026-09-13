@@ -23,6 +23,10 @@ final class MainViewController: UIViewController {
     private let intensitySlider = IntensitySliderView()
 
     private var isDiscoveringController = false
+    private weak var triggerController: GCController?
+    private var leftTriggerValue: Float = 0
+    private var rightTriggerValue: Float = 0
+    private var triggerDisplayLink: CADisplayLink?
 
     required init?(coder: NSCoder) {
         manager = HapticsManager()
@@ -30,6 +34,7 @@ final class MainViewController: UIViewController {
     }
 
     deinit {
+        stopTriggerControl()
         NotificationCenter.default.removeObserver(self)
         GCController.stopWirelessControllerDiscovery()
         UIApplication.shared.isIdleTimerDisabled = false
@@ -194,6 +199,7 @@ final class MainViewController: UIViewController {
 
     @objc private func intensityChanged() {
         manager.setIntensity(intensitySlider.value)
+        playerCard.setIntensity(intensitySlider.value)
     }
 
     private func toggleHaptics() {
@@ -248,6 +254,8 @@ final class MainViewController: UIViewController {
 
     @objc private func applicationWillLeaveForeground() {
         UIApplication.shared.isIdleTimerDisabled = false
+        leftTriggerValue = 0
+        rightTriggerValue = 0
         stopControllerDiscovery()
         manager.stopHaptics()
     }
@@ -284,12 +292,81 @@ final class MainViewController: UIViewController {
 
     private func updateInterface() {
         let isConnected = manager.isControllerConnected
+        configureTriggerControl(for: manager.connectedController)
         connectionButton.setControllerState(
             connected: isConnected,
-            controllerName: manager.connectedController?.productCategory
+            controller: manager.connectedController
         )
         playerCard.update(playbackState: manager.playbackState)
+        playerCard.setIntensity(manager.intensity)
         UIApplication.shared.isIdleTimerDisabled = manager.playbackState == .playing
+    }
+
+    private func configureTriggerControl(for controller: GCController?) {
+        if triggerController === controller {
+            leftTriggerValue = controller?.extendedGamepad?.leftTrigger.value ?? 0
+            rightTriggerValue = controller?.extendedGamepad?.rightTrigger.value ?? 0
+            return
+        }
+
+        triggerController?.extendedGamepad?.leftTrigger.valueChangedHandler = nil
+        triggerController?.extendedGamepad?.rightTrigger.valueChangedHandler = nil
+        triggerController = controller
+        leftTriggerValue = 0
+        rightTriggerValue = 0
+
+        guard let controller, let gamepad = controller.extendedGamepad else {
+            stopTriggerDisplayLink()
+            return
+        }
+
+        controller.handlerQueue = .main
+        leftTriggerValue = gamepad.leftTrigger.value
+        rightTriggerValue = gamepad.rightTrigger.value
+
+        gamepad.leftTrigger.valueChangedHandler = { [weak self] _, value, _ in
+            self?.leftTriggerValue = value
+        }
+        gamepad.rightTrigger.valueChangedHandler = { [weak self] _, value, _ in
+            self?.rightTriggerValue = value
+        }
+        startTriggerDisplayLink()
+    }
+
+    private func startTriggerDisplayLink() {
+        guard triggerDisplayLink == nil else { return }
+        let displayLink = CADisplayLink(target: self, selector: #selector(adjustIntensityFromTriggers(_:)))
+        displayLink.add(to: .main, forMode: .common)
+        triggerDisplayLink = displayLink
+    }
+
+    private func stopTriggerDisplayLink() {
+        triggerDisplayLink?.invalidate()
+        triggerDisplayLink = nil
+    }
+
+    private func stopTriggerControl() {
+        triggerController?.extendedGamepad?.leftTrigger.valueChangedHandler = nil
+        triggerController?.extendedGamepad?.rightTrigger.valueChangedHandler = nil
+        triggerController = nil
+        leftTriggerValue = 0
+        rightTriggerValue = 0
+        stopTriggerDisplayLink()
+    }
+
+    @objc private func adjustIntensityFromTriggers(_ displayLink: CADisplayLink) {
+        let signedPressure = rightTriggerValue - leftTriggerValue
+        let deadZone: Float = 0.08
+        guard abs(signedPressure) > deadZone else { return }
+
+        let direction: Float = signedPressure > 0 ? 1 : -1
+        let pressure = (abs(signedPressure) - deadZone) / (1 - deadZone)
+        let elapsed = Float(min(max(displayLink.targetTimestamp - displayLink.timestamp, 1.0 / 120.0), 1.0 / 15.0))
+        let nextValue = intensitySlider.value + direction * pressure * elapsed * 0.45
+
+        guard intensitySlider.setValue(nextValue, emitsFeedback: true) else { return }
+        manager.setIntensity(intensitySlider.value)
+        playerCard.setIntensity(intensitySlider.value)
     }
 }
 
@@ -350,9 +427,10 @@ private final class GlassCircleControl: UIControl {
         statusDot.layer.cornerRadius = statusDot.bounds.width / 2
     }
 
-    func setControllerState(connected: Bool, controllerName: String?) {
-        imageView.image = controllerGlyphImage(connected: connected)
+    func setControllerState(connected: Bool, controller: GCController?) {
+        imageView.image = UIImage(named: controllerAssetName(for: controller))
         imageView.tintColor = nil
+        imageView.alpha = connected ? 1 : 0.58
         iconWidthConstraint?.constant = 28
         iconHeightConstraint?.constant = 19
         statusDot.isHidden = false
@@ -438,60 +516,35 @@ private final class GlassCircleControl: UIControl {
         return UIImage(systemName: name, withConfiguration: configuration)
     }
 
-    private func controllerGlyphImage(connected: Bool) -> UIImage {
-        let size = CGSize(width: 56, height: 38)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { context in
-            let path = UIBezierPath()
-            path.move(to: CGPoint(x: 11, y: 6))
-            path.addCurve(to: CGPoint(x: 21, y: 3),
-                          controlPoint1: CGPoint(x: 13, y: 3),
-                          controlPoint2: CGPoint(x: 17, y: 3))
-            path.addLine(to: CGPoint(x: 35, y: 3))
-            path.addCurve(to: CGPoint(x: 45, y: 6),
-                          controlPoint1: CGPoint(x: 39, y: 3),
-                          controlPoint2: CGPoint(x: 43, y: 3))
-            path.addCurve(to: CGPoint(x: 54, y: 29),
-                          controlPoint1: CGPoint(x: 51, y: 11),
-                          controlPoint2: CGPoint(x: 56, y: 23))
-            path.addCurve(to: CGPoint(x: 46, y: 34),
-                          controlPoint1: CGPoint(x: 52, y: 34),
-                          controlPoint2: CGPoint(x: 49, y: 35))
-            path.addLine(to: CGPoint(x: 37, y: 25))
-            path.addCurve(to: CGPoint(x: 19, y: 25),
-                          controlPoint1: CGPoint(x: 32, y: 27),
-                          controlPoint2: CGPoint(x: 24, y: 27))
-            path.addLine(to: CGPoint(x: 10, y: 34))
-            path.addCurve(to: CGPoint(x: 2, y: 29),
-                          controlPoint1: CGPoint(x: 7, y: 35),
-                          controlPoint2: CGPoint(x: 4, y: 34))
-            path.addCurve(to: CGPoint(x: 11, y: 6),
-                          controlPoint1: CGPoint(x: 0, y: 23),
-                          controlPoint2: CGPoint(x: 5, y: 11))
-            path.close()
+    private func controllerAssetName(for controller: GCController?) -> String {
+        guard let controller else { return "controller-generic" }
 
-            UIColor.white.withAlphaComponent(connected ? 1 : 0.58).setFill()
-            path.fill()
+        switch controller.physicalInputProfile {
+        case is GCDualSenseGamepad:
+            return "controller-dualsense"
+        case is GCDualShockGamepad:
+            return "controller-dualshock4"
+        case is GCXboxGamepad:
+            return "controller-xbox"
+        default:
+            let identity = [controller.productCategory, controller.vendorName]
+                .compactMap { $0 }
+                .joined(separator: " ")
+                .lowercased()
 
-            let detailsColor = UIColor.black.withAlphaComponent(0.80)
-            detailsColor.setFill()
-            UIBezierPath(ovalIn: CGRect(x: 17, y: 20, width: 7, height: 7)).fill()
-            UIBezierPath(ovalIn: CGRect(x: 32, y: 20, width: 7, height: 7)).fill()
-
-            let dPad = UIBezierPath()
-            dPad.append(UIBezierPath(roundedRect: CGRect(x: 11, y: 10, width: 11, height: 4), cornerRadius: 1.5))
-            dPad.append(UIBezierPath(roundedRect: CGRect(x: 14.5, y: 6.5, width: 4, height: 11), cornerRadius: 1.5))
-            dPad.fill()
-
-            for point in [CGPoint(x: 43, y: 8), CGPoint(x: 48, y: 12), CGPoint(x: 38, y: 12), CGPoint(x: 43, y: 16)] {
-                UIBezierPath(ovalIn: CGRect(x: point.x - 2, y: point.y - 2, width: 4, height: 4)).fill()
+            if identity.contains("steam") {
+                return "controller-steam"
             }
-
-            context.cgContext.setStrokeColor(detailsColor.cgColor)
-            context.cgContext.setLineWidth(2)
-            context.cgContext.move(to: CGPoint(x: 25, y: 10))
-            context.cgContext.addLine(to: CGPoint(x: 31, y: 10))
-            context.cgContext.strokePath()
+            if identity.contains("dualsense") || identity.contains("playstation 5") {
+                return "controller-dualsense"
+            }
+            if identity.contains("dualshock") || identity.contains("playstation 4") {
+                return "controller-dualshock4"
+            }
+            if identity.contains("xbox") {
+                return "controller-xbox"
+            }
+            return "controller-generic"
         }
     }
 
@@ -584,6 +637,11 @@ private final class PlayerCardView: UIView {
         let active = playbackState == .playing || playbackState == .starting
         powerButton.setActive(active)
         powerButton.isEnabled = playbackState != .stopping
+        waveformView.setActive(active)
+    }
+
+    func setIntensity(_ intensity: Float) {
+        waveformView.setIntensity(intensity)
     }
 
     private func setup() {
@@ -662,43 +720,143 @@ private final class PlayerCardView: UIView {
 }
 
 private final class WaveformView: UIView {
+    private final class DisplayLinkTarget: NSObject {
+        weak var owner: WaveformView?
+
+        init(owner: WaveformView) {
+            self.owner = owner
+        }
+
+        @objc func frameDidChange(_ displayLink: CADisplayLink) {
+            owner?.updateFrame(displayLink)
+        }
+    }
+
+    private var displayLink: CADisplayLink?
+    private lazy var displayLinkTarget = DisplayLinkTarget(owner: self)
+    private var lastTimestamp: CFTimeInterval = 0
+    private var elapsedTime: CGFloat = 0
+    private var activity: CGFloat = 0
+    private var targetActivity: CGFloat = 0
+    private var intensity: CGFloat = 0.55
+
     override init(frame: CGRect) {
         super.init(frame: frame)
-        isOpaque = false
-        contentMode = .redraw
+        setup()
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
+        setup()
+    }
+
+    deinit {
+        stopAnimating()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window == nil {
+            stopAnimating()
+        } else {
+            startAnimating()
+        }
+    }
+
+    func setActive(_ active: Bool) {
+        targetActivity = active ? 1 : 0
+        startAnimating()
+    }
+
+    func setIntensity(_ value: Float) {
+        intensity = CGFloat(min(max(value, 0), 1))
+        setNeedsDisplay()
+    }
+
+    private func setup() {
         isOpaque = false
         contentMode = .redraw
+    }
+
+    private func startAnimating() {
+        guard displayLink == nil, window != nil else { return }
+        let displayLink = CADisplayLink(
+            target: displayLinkTarget,
+            selector: #selector(DisplayLinkTarget.frameDidChange(_:))
+        )
+        if #available(iOS 15.0, *) {
+            displayLink.preferredFrameRateRange = CAFrameRateRange(
+                minimum: 20,
+                maximum: 30,
+                preferred: 30
+            )
+        }
+        displayLink.add(to: .main, forMode: .common)
+        self.displayLink = displayLink
+    }
+
+    private func stopAnimating() {
+        displayLink?.invalidate()
+        displayLink = nil
+        lastTimestamp = 0
+    }
+
+    private func updateFrame(_ displayLink: CADisplayLink) {
+        let frameDuration: CFTimeInterval
+        if lastTimestamp == 0 {
+            frameDuration = 1.0 / 30.0
+        } else {
+            frameDuration = min(displayLink.timestamp - lastTimestamp, 1.0 / 15.0)
+        }
+        lastTimestamp = displayLink.timestamp
+
+        let delta = CGFloat(frameDuration)
+        elapsedTime += delta
+        let smoothing = 1 - exp(-delta * 5.5)
+        activity += (targetActivity - activity) * smoothing
+        setNeedsDisplay()
     }
 
     override func draw(_ rect: CGRect) {
         guard let context = UIGraphicsGetCurrentContext() else { return }
 
         let combinedPath = CGMutablePath()
-        let rowCount = 20
-        let topInset: CGFloat = 10
-        let bottomInset: CGFloat = 38
+        let rowCount = 18
+        let topInset: CGFloat = 8
+        let bottomInset: CGFloat = 26
         let spacing = (rect.height - topInset - bottomInset) / CGFloat(rowCount - 1)
-        let segments = 28
+        let segments = 72
+        let responsiveAmount = 0.12 + activity * 0.88
+        let speed = 0.14 + activity * (0.65 + intensity * 0.90)
+        let displacement = 1.2 + responsiveAmount * (2.5 + intensity * 8.5)
+        let thicknessResponse = responsiveAmount * (2.0 + intensity * 8.0)
+        let twoPi = CGFloat.pi * 2
 
         for row in 0..<rowCount {
             let centerY = topInset + CGFloat(row) * spacing
-            let amplitude = 3.0 + CGFloat((row * 7) % 12)
-            let thickness = 5.0 + CGFloat((row * 5) % 6)
-            let frequency = 1.05 + CGFloat(row % 4) * 0.18
-            let phase = CGFloat(row) * 0.72
+            let rowPosition = CGFloat(row) / CGFloat(rowCount - 1)
+            let rowPhase = rowPosition * 2.15
+            let baseThickness = 5.5 + 1.4 * sin(rowPosition * .pi * 3.2)
             var upper: [CGPoint] = []
             var lower: [CGPoint] = []
 
             for index in 0...segments {
                 let progress = CGFloat(index) / CGFloat(segments)
                 let x = progress * rect.width
-                let angle = Double(progress * .pi * 2 * frequency + phase)
-                let secondary = Double(progress * .pi * 4 + phase * 0.37)
-                let wave = CGFloat(sin(angle)) * amplitude + CGFloat(sin(secondary)) * amplitude * 0.34
+                let travelingPhase = progress * twoPi * 0.92 - elapsedTime * speed
+                let primaryWave = sin(travelingPhase + rowPhase)
+                let secondaryWave = sin(
+                    progress * twoPi * 1.75 + elapsedTime * speed * 0.52 - rowPhase * 0.58
+                )
+                let sharedFlow = primaryWave * 0.72 + secondaryWave * 0.28
+                let wave = sharedFlow * displacement
+
+                let widthPulse = 0.5 + 0.5 * sin(
+                    progress * twoPi * 1.16 - elapsedTime * speed * 0.78 + rowPhase * 0.82
+                )
+                let softPulse = widthPulse * widthPulse * (3 - 2 * widthPulse)
+                let thickness = baseThickness + softPulse * thicknessResponse
+
                 upper.append(CGPoint(x: x, y: centerY + wave - thickness / 2))
                 lower.append(CGPoint(x: x, y: centerY + wave + thickness / 2))
             }
@@ -745,7 +903,7 @@ private final class IntensitySliderView: UIControl {
         }
     }
 
-    private let trackView = UIView()
+    private let backingView = IntensityBackingView()
     private let barsView = IntensityBarsView()
     private let thumb = GlassCircleControl(symbolName: "arrow.left.and.right", diameter: 50)
     private let label = UILabel()
@@ -765,9 +923,8 @@ private final class IntensitySliderView: UIControl {
     override func layoutSubviews() {
         super.layoutSubviews()
         let trackHeight: CGFloat = 50
-        trackView.frame = CGRect(x: 0, y: 0, width: bounds.width, height: trackHeight)
-        trackView.layer.cornerRadius = trackHeight / 2
-        barsView.frame = trackView.bounds.insetBy(dx: 4, dy: 4)
+        backingView.frame = bounds
+        barsView.frame = CGRect(x: 4, y: 4, width: bounds.width - 8, height: trackHeight - 8)
 
         let thumbSize: CGFloat = 50
         let travel = max(0, bounds.width - thumbSize)
@@ -787,13 +944,26 @@ private final class IntensitySliderView: UIControl {
     }
 
     override func accessibilityIncrement() {
-        value += 0.05
-        sendActions(for: .valueChanged)
+        if setValue(value + 0.05, emitsFeedback: true) {
+            sendActions(for: .valueChanged)
+        }
     }
 
     override func accessibilityDecrement() {
-        value -= 0.05
-        sendActions(for: .valueChanged)
+        if setValue(value - 0.05, emitsFeedback: true) {
+            sendActions(for: .valueChanged)
+        }
+    }
+
+    @discardableResult
+    func setValue(_ newValue: Float, emitsFeedback: Bool) -> Bool {
+        let clampedValue = min(max(newValue, 0), 1)
+        guard abs(clampedValue - value) > 0.0001 else { return false }
+        value = clampedValue
+        if emitsFeedback {
+            emitFeedbackIfNeeded()
+        }
+        return true
     }
 
     private func setup() {
@@ -801,12 +971,7 @@ private final class IntensitySliderView: UIControl {
         accessibilityTraits = .adjustable
         accessibilityLabel = "Intensity"
 
-        trackView.backgroundColor = MainViewController.Palette.darkSurface
-        trackView.clipsToBounds = true
-        trackView.layer.borderWidth = 1
-        trackView.layer.borderColor = UIColor.white.withAlphaComponent(0.05).cgColor
-        trackView.isUserInteractionEnabled = false
-
+        backingView.isUserInteractionEnabled = false
         barsView.isUserInteractionEnabled = false
         thumb.isUserInteractionEnabled = false
 
@@ -815,8 +980,8 @@ private final class IntensitySliderView: UIControl {
         label.textColor = UIColor.white.withAlphaComponent(0.22)
         label.font = .systemFont(ofSize: 14, weight: .regular)
 
-        addSubview(trackView)
-        trackView.addSubview(barsView)
+        addSubview(backingView)
+        addSubview(barsView)
         addSubview(thumb)
         addSubview(label)
         value = 0.55
@@ -825,14 +990,94 @@ private final class IntensitySliderView: UIControl {
     private func updateValue(for x: CGFloat) {
         let thumbSize: CGFloat = 50
         let travel = max(1, bounds.width - thumbSize)
-        value = Float((x - thumbSize / 2) / travel)
+        _ = setValue(Float((x - thumbSize / 2) / travel), emitsFeedback: true)
+        sendActions(for: .valueChanged)
+    }
+
+    private func emitFeedbackIfNeeded() {
         let feedbackStep = Int((value * 20).rounded())
         if feedbackStep != lastFeedbackStep {
             lastFeedbackStep = feedbackStep
             feedbackGenerator.selectionChanged()
             feedbackGenerator.prepare()
         }
-        sendActions(for: .valueChanged)
+    }
+}
+
+private final class IntensityBackingView: UIView {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        backgroundColor = .clear
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    override func draw(_ rect: CGRect) {
+        guard rect.width > 0, rect.height > 0 else { return }
+
+        let trackHeight = min(CGFloat(50), rect.height)
+        let trackRadius = trackHeight / 2
+        let tabWidth = min(CGFloat(136), rect.width * 0.48)
+        let tabLeft = rect.midX - tabWidth / 2
+        let tabRight = rect.midX + tabWidth / 2
+        let tabBottom = rect.height
+        let shoulder: CGFloat = 16
+        let bottomCorner: CGFloat = 24
+
+        let path = UIBezierPath()
+        path.move(to: CGPoint(x: trackRadius, y: 0))
+        path.addLine(to: CGPoint(x: rect.width - trackRadius, y: 0))
+        path.addArc(
+            withCenter: CGPoint(x: rect.width - trackRadius, y: trackRadius),
+            radius: trackRadius,
+            startAngle: -.pi / 2,
+            endAngle: .pi / 2,
+            clockwise: true
+        )
+        path.addLine(to: CGPoint(x: tabRight + shoulder, y: trackHeight))
+        path.addCurve(
+            to: CGPoint(x: tabRight, y: trackHeight + 12),
+            controlPoint1: CGPoint(x: tabRight + 8, y: trackHeight),
+            controlPoint2: CGPoint(x: tabRight + 7, y: trackHeight + 8)
+        )
+        path.addCurve(
+            to: CGPoint(x: tabRight - bottomCorner, y: tabBottom),
+            controlPoint1: CGPoint(x: tabRight - 2, y: tabBottom - 7),
+            controlPoint2: CGPoint(x: tabRight - 10, y: tabBottom)
+        )
+        path.addLine(to: CGPoint(x: tabLeft + bottomCorner, y: tabBottom))
+        path.addCurve(
+            to: CGPoint(x: tabLeft, y: trackHeight + 12),
+            controlPoint1: CGPoint(x: tabLeft + 10, y: tabBottom),
+            controlPoint2: CGPoint(x: tabLeft + 2, y: tabBottom - 7)
+        )
+        path.addCurve(
+            to: CGPoint(x: tabLeft - shoulder, y: trackHeight),
+            controlPoint1: CGPoint(x: tabLeft - 7, y: trackHeight + 8),
+            controlPoint2: CGPoint(x: tabLeft - 8, y: trackHeight)
+        )
+        path.addLine(to: CGPoint(x: trackRadius, y: trackHeight))
+        path.addArc(
+            withCenter: CGPoint(x: trackRadius, y: trackRadius),
+            radius: trackRadius,
+            startAngle: .pi / 2,
+            endAngle: .pi * 3 / 2,
+            clockwise: true
+        )
+        path.close()
+
+        MainViewController.Palette.darkSurface.setFill()
+        path.fill()
+        UIColor.white.withAlphaComponent(0.05).setStroke()
+        path.lineWidth = 1
+        path.stroke()
     }
 }
 
