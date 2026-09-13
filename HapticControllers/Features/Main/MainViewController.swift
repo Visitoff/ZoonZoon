@@ -22,7 +22,6 @@ final class MainViewController: UIViewController {
     private let playerCard = PlayerCardView()
     private let intensitySlider = IntensitySliderView()
 
-    private var isDiscoveringController = false
     private weak var triggerController: GCController?
     private var leftTriggerValue: Float = 0
     private var rightTriggerValue: Float = 0
@@ -36,7 +35,6 @@ final class MainViewController: UIViewController {
     deinit {
         stopTriggerControl()
         NotificationCenter.default.removeObserver(self)
-        GCController.stopWirelessControllerDiscovery()
         UIApplication.shared.isIdleTimerDisabled = false
         manager.delegate = nil
         manager.stopMonitoring()
@@ -232,60 +230,28 @@ final class MainViewController: UIViewController {
         guard presentedViewController == nil else { return }
 
         let instructionsViewController = PairingInstructionsViewController()
-        instructionsViewController.onClose = { [weak self, weak instructionsViewController] in
-            self?.stopControllerDiscovery()
-            instructionsViewController?.dismiss(animated: true)
-        }
 
         if let sheet = instructionsViewController.sheetPresentationController {
-            if #available(iOS 16.0, *) {
-                let identifier = UISheetPresentationController.Detent.Identifier("pairing")
-                let detent = UISheetPresentationController.Detent.custom(identifier: identifier) { context in
-                    min(context.maximumDetentValue, 540)
-                }
-                sheet.detents = [detent]
-                sheet.selectedDetentIdentifier = identifier
-            } else {
-                sheet.detents = [.large()]
-            }
+            sheet.detents = [.medium(), .large()]
+            sheet.selectedDetentIdentifier = .medium
             sheet.prefersGrabberVisible = true
             sheet.preferredCornerRadius = 30
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
         }
 
-        present(instructionsViewController, animated: true) { [weak self] in
-            guard let self else { return }
-            instructionsViewController.presentationController?.delegate = self
-            self.startControllerDiscovery()
-        }
+        present(instructionsViewController, animated: true)
     }
 
     @objc private func applicationWillLeaveForeground() {
         UIApplication.shared.isIdleTimerDisabled = false
         leftTriggerValue = 0
         rightTriggerValue = 0
-        stopControllerDiscovery()
         manager.stopHaptics()
     }
 
     @objc private func applicationDidBecomeActive() {
         manager.refreshConnectedController()
         updateInterface()
-    }
-
-    private func startControllerDiscovery() {
-        guard !isDiscoveringController else { return }
-        isDiscoveringController = true
-        GCController.startWirelessControllerDiscovery { [weak self] in
-            DispatchQueue.main.async {
-                self?.isDiscoveringController = false
-            }
-        }
-    }
-
-    private func stopControllerDiscovery() {
-        guard isDiscoveringController else { return }
-        GCController.stopWirelessControllerDiscovery()
-        isDiscoveringController = false
     }
 
     private func presentPlaybackError(_ message: String) {
@@ -385,7 +351,6 @@ final class MainViewController: UIViewController {
 
 extension MainViewController: HapticsManagerDelegate {
     func didConnect(controller: GCController) {
-        stopControllerDiscovery()
         if presentedViewController is PairingInstructionsViewController {
             dismiss(animated: true)
         }
@@ -398,12 +363,6 @@ extension MainViewController: HapticsManagerDelegate {
 
     func didUpdatePlaybackState(_ state: HapticsPlaybackState) {
         updateInterface()
-    }
-}
-
-extension MainViewController: UIAdaptivePresentationControllerDelegate {
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        stopControllerDiscovery()
     }
 }
 
@@ -1206,14 +1165,120 @@ private final class IntensityBarsView: UIView {
     }
 }
 
+private enum PairingControllerKind: CaseIterable {
+    case playStation5
+    case playStation4
+    case xbox
+    case other
+
+    var optionTitle: String {
+        switch self {
+        case .playStation5: "PS5"
+        case .playStation4: "PS4"
+        case .xbox: "Xbox"
+        case .other: "Other"
+        }
+    }
+
+    var detailTitle: String {
+        switch self {
+        case .playStation5: "DualSense controller"
+        case .playStation4: "DUALSHOCK 4 controller"
+        case .xbox: "Xbox Wireless Controller"
+        case .other: "Bluetooth controller"
+        }
+    }
+
+    var assetName: String {
+        switch self {
+        case .playStation5: "controller-dualsense"
+        case .playStation4: "controller-dualshock4"
+        case .xbox: "controller-xbox"
+        case .other: "controller-generic"
+        }
+    }
+
+    var pairingButtons: String {
+        switch self {
+        case .playStation5: "PS + Create"
+        case .playStation4: "PS + SHARE"
+        case .xbox: "Xbox + Pair"
+        case .other: "Pairing mode"
+        }
+    }
+
+    var firstInstruction: String {
+        switch self {
+        case .playStation5:
+            "Hold the PS and Create buttons until the light bar flashes blue."
+        case .playStation4:
+            "Hold the PS and SHARE buttons until the light bar starts flashing."
+        case .xbox:
+            "Press the Xbox button, then hold Pair until the Xbox button flashes quickly."
+        case .other:
+            "Put the controller into Bluetooth pairing mode. Check its manual for the correct button."
+        }
+    }
+
+    var secondInstruction: String {
+        switch self {
+        case .playStation5:
+            "Open Settings → Bluetooth and select “DualSense Wireless Controller”."
+        case .playStation4:
+            "Open Settings → Bluetooth and select “DUALSHOCK 4 Wireless Controller”."
+        case .xbox:
+            "Open Settings → Bluetooth and select “Xbox Wireless Controller”."
+        case .other:
+            "Open Settings → Bluetooth and select the controller when it appears."
+        }
+    }
+
+    var hotspotPositions: [CGPoint] {
+        switch self {
+        case .playStation5:
+            [CGPoint(x: 0.32, y: 0.25), CGPoint(x: 0.50, y: 0.61)]
+        case .playStation4:
+            [CGPoint(x: 0.31, y: 0.24), CGPoint(x: 0.50, y: 0.62)]
+        case .xbox:
+            [CGPoint(x: 0.50, y: 0.24), CGPoint(x: 0.78, y: 0.05)]
+        case .other:
+            []
+        }
+    }
+}
+
 private final class PairingInstructionsViewController: UIViewController {
-    var onClose: (() -> Void)?
+    private let backgroundGradient = CAGradientLayer()
+    private let contentStack = UIStackView()
+    private let detailView = ControllerPairingDetailView()
+    private let selectionFeedback = UISelectionFeedbackGenerator()
+    private var optionControls: [ControllerOptionControl] = []
+    private var selectedKind: PairingControllerKind?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         overrideUserInterfaceStyle = .dark
-        view.backgroundColor = UIColor(red: 0.045, green: 0.035, blue: 0.055, alpha: 1)
+        view.backgroundColor = UIColor(red: 0.035, green: 0.025, blue: 0.045, alpha: 1)
+        configureBackground()
         buildInterface()
+        selectionFeedback.prepare()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        backgroundGradient.frame = view.bounds
+    }
+
+    private func configureBackground() {
+        backgroundGradient.colors = [
+            UIColor(red: 0.10, green: 0.035, blue: 0.085, alpha: 1).cgColor,
+            UIColor(red: 0.035, green: 0.025, blue: 0.045, alpha: 1).cgColor,
+            UIColor.black.cgColor,
+        ]
+        backgroundGradient.locations = [0, 0.48, 1]
+        backgroundGradient.startPoint = CGPoint(x: 0.15, y: 0)
+        backgroundGradient.endPoint = CGPoint(x: 0.85, y: 1)
+        view.layer.insertSublayer(backgroundGradient, at: 0)
     }
 
     private func buildInterface() {
@@ -1221,76 +1286,504 @@ private final class PairingInstructionsViewController: UIViewController {
         titleLabel.text = "Connect a controller"
         titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
         titleLabel.textColor = .white
+        titleLabel.adjustsFontForContentSizeCategory = true
 
         let subtitleLabel = UILabel()
-        subtitleLabel.text = "Pair it in iPhone Settings, then return to ZOONZOON."
+        subtitleLabel.text = "Choose your controller to feel the full power of endless vibration."
         subtitleLabel.font = .systemFont(ofSize: 15, weight: .medium)
         subtitleLabel.textColor = MainViewController.Palette.secondaryText
         subtitleLabel.numberOfLines = 0
+        subtitleLabel.adjustsFontForContentSizeCategory = true
 
-        let steps = UIStackView(arrangedSubviews: [
-            makeStep(number: "1", text: "Turn on pairing mode on the controller."),
-            makeStep(number: "2", text: "Open Settings → Bluetooth and select it."),
-            makeStep(number: "3", text: "Return here. Connection updates automatically."),
-        ])
-        steps.axis = .vertical
-        steps.spacing = 18
+        let titleStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
+        titleStack.axis = .vertical
+        titleStack.spacing = 6
 
-        var configuration = UIButton.Configuration.filled()
-        configuration.title = "Got it"
-        configuration.baseBackgroundColor = MainViewController.Palette.pink
-        configuration.baseForegroundColor = .white
-        configuration.cornerStyle = .capsule
-        let closeButton = UIButton(configuration: configuration)
-        closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
+        optionControls = PairingControllerKind.allCases.map { kind in
+            let control = ControllerOptionControl(kind: kind)
+            control.addTarget(self, action: #selector(optionSelected(_:)), for: .touchUpInside)
+            return control
+        }
+        let options = UIStackView(arrangedSubviews: optionControls)
+        options.axis = .horizontal
+        options.alignment = .fill
+        options.distribution = .fillEqually
+        options.spacing = 8
 
-        let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel, steps, closeButton])
-        stack.axis = .vertical
-        stack.spacing = 18
-        stack.setCustomSpacing(10, after: titleLabel)
-        stack.setCustomSpacing(28, after: subtitleLabel)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(stack)
+        detailView.isHidden = true
+
+        contentStack.axis = .vertical
+        contentStack.spacing = 20
+        contentStack.addArrangedSubview(titleStack)
+        contentStack.addArrangedSubview(options)
+        contentStack.addArrangedSubview(detailView)
+        contentStack.setCustomSpacing(24, after: options)
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+
+        let scrollView = UIScrollView()
+        scrollView.alwaysBounceVertical = true
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentStack)
 
         NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 22),
-            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -14),
-            closeButton.heightAnchor.constraint(equalToConstant: 52),
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentStack.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor, constant: 12),
+            contentStack.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: 20),
+            contentStack.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: -20),
+            contentStack.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor, constant: -28),
+
+            options.heightAnchor.constraint(equalToConstant: 94),
         ])
     }
 
-    private func makeStep(number: String, text: String) -> UIView {
-        let badge = UILabel()
-        badge.text = number
-        badge.textAlignment = .center
-        badge.font = .systemFont(ofSize: 14, weight: .bold)
-        badge.textColor = .white
-        badge.backgroundColor = MainViewController.Palette.pink
-        badge.layer.cornerRadius = 15
-        badge.clipsToBounds = true
-        badge.translatesAutoresizingMaskIntoConstraints = false
+    @objc private func optionSelected(_ sender: ControllerOptionControl) {
+        guard selectedKind != sender.kind else { return }
+        selectedKind = sender.kind
+        optionControls.forEach { $0.isSelected = $0 === sender }
+        detailView.configure(for: sender.kind)
+        selectionFeedback.selectionChanged()
+        selectionFeedback.prepare()
 
-        let label = UILabel()
-        label.text = text
+        if detailView.isHidden {
+            detailView.alpha = 0
+            detailView.transform = CGAffineTransform(translationX: 0, y: 16)
+            detailView.isHidden = false
+            UIView.animate(withDuration: 0.28,
+                           delay: 0,
+                           usingSpringWithDamping: 0.84,
+                           initialSpringVelocity: 0.25) {
+                self.detailView.alpha = 1
+                self.detailView.transform = .identity
+                self.view.layoutIfNeeded()
+            }
+        }
+
+        sheetPresentationController?.animateChanges {
+            self.sheetPresentationController?.selectedDetentIdentifier = .large
+        }
+        UIAccessibility.post(notification: .layoutChanged, argument: detailView.accessibilityFocusView)
+    }
+}
+
+private final class ControllerOptionControl: UIControl {
+    let kind: PairingControllerKind
+
+    private let effectView = UIVisualEffectView()
+    private let imageView = UIImageView()
+    private let titleLabel = UILabel()
+
+    override var isSelected: Bool {
+        didSet { updateAppearance() }
+    }
+
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(withDuration: 0.12) {
+                self.transform = self.isHighlighted
+                    ? CGAffineTransform(scaleX: 0.96, y: 0.96)
+                    : .identity
+            }
+        }
+    }
+
+    init(kind: PairingControllerKind) {
+        self.kind = kind
+        super.init(frame: .zero)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        kind = .other
+        super.init(coder: coder)
+        setup()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.cornerRadius = 20
+        effectView.layer.cornerRadius = 20
+    }
+
+    private func setup() {
+        isAccessibilityElement = true
+        accessibilityLabel = kind.detailTitle
+        accessibilityHint = "Shows pairing instructions"
+        clipsToBounds = false
+        layer.borderWidth = 1
+
+        effectView.isUserInteractionEnabled = false
+        effectView.clipsToBounds = true
+        effectView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(effectView)
+
+        imageView.image = UIImage(named: kind.assetName)
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(imageView)
+
+        titleLabel.text = kind.optionTitle
+        titleLabel.textAlignment = .center
+        titleLabel.font = .systemFont(ofSize: 12, weight: .semibold)
+        titleLabel.textColor = .white
+        titleLabel.adjustsFontSizeToFitWidth = true
+        titleLabel.minimumScaleFactor = 0.78
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(titleLabel)
+
+        NSLayoutConstraint.activate([
+            effectView.topAnchor.constraint(equalTo: topAnchor),
+            effectView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            effectView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            effectView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            imageView.topAnchor.constraint(equalTo: topAnchor, constant: 13),
+            imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            imageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            imageView.heightAnchor.constraint(equalToConstant: 45),
+
+            titleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 7),
+            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
+            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
+            titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -8),
+        ])
+        updateAppearance()
+    }
+
+    private func updateAppearance() {
+        let tint = isSelected
+            ? MainViewController.Palette.pink.withAlphaComponent(0.24)
+            : UIColor.white.withAlphaComponent(0.04)
+        if #available(iOS 26.0, *) {
+            let effect = UIGlassEffect(style: .regular)
+            effect.isInteractive = true
+            effect.tintColor = tint
+            effectView.effect = effect
+            effectView.contentView.backgroundColor = .clear
+        } else {
+            effectView.effect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+            effectView.contentView.backgroundColor = tint
+        }
+        layer.borderColor = (isSelected
+            ? MainViewController.Palette.pink.withAlphaComponent(0.90)
+            : MainViewController.Palette.border).cgColor
+        layer.shadowColor = MainViewController.Palette.pink.cgColor
+        layer.shadowOpacity = isSelected ? 0.22 : 0
+        layer.shadowRadius = 14
+        layer.shadowOffset = .zero
+        accessibilityTraits = isSelected ? [.button, .selected] : .button
+    }
+}
+
+private final class ControllerPairingDetailView: UIView {
+    private let effectView = UIVisualEffectView()
+    private let titleLabel = UILabel()
+    private let illustrationView = ControllerPairingIllustrationView()
+    private let pairingButtonsLabel = UILabel()
+    private let firstStepLabel = UILabel()
+    private let secondStepLabel = UILabel()
+    private let settingsButton = UIButton(type: .system)
+
+    var accessibilityFocusView: UIView { titleLabel }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.cornerRadius = 28
+        effectView.layer.cornerRadius = 28
+    }
+
+    func configure(for kind: PairingControllerKind) {
+        titleLabel.text = "Put your \(kind.detailTitle) in pairing mode"
+        pairingButtonsLabel.text = kind.pairingButtons
+        firstStepLabel.text = kind.firstInstruction
+        secondStepLabel.text = kind.secondInstruction
+        illustrationView.configure(imageName: kind.assetName, hotspots: kind.hotspotPositions)
+        accessibilityLabel = [titleLabel.text, kind.pairingButtons,
+                              kind.firstInstruction, kind.secondInstruction]
+            .compactMap { $0 }
+            .joined(separator: ". ")
+    }
+
+    private func setup() {
+        isAccessibilityElement = false
+        clipsToBounds = true
+        layer.borderWidth = 1
+        layer.borderColor = MainViewController.Palette.border.cgColor
+
+        if #available(iOS 26.0, *) {
+            let effect = UIGlassEffect(style: .regular)
+            effect.tintColor = MainViewController.Palette.violet.withAlphaComponent(0.12)
+            effectView.effect = effect
+        } else {
+            effectView.effect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+            effectView.contentView.backgroundColor = UIColor.white.withAlphaComponent(0.035)
+        }
+        effectView.clipsToBounds = true
+        effectView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(effectView)
+
+        titleLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        titleLabel.textColor = .white
+        titleLabel.textAlignment = .center
+        titleLabel.numberOfLines = 0
+        titleLabel.adjustsFontForContentSizeCategory = true
+
+        illustrationView.translatesAutoresizingMaskIntoConstraints = false
+
+        pairingButtonsLabel.font = .monospacedSystemFont(ofSize: 15, weight: .bold)
+        pairingButtonsLabel.textColor = .white
+        pairingButtonsLabel.textAlignment = .center
+        pairingButtonsLabel.backgroundColor = MainViewController.Palette.pink.withAlphaComponent(0.20)
+        pairingButtonsLabel.layer.borderWidth = 1
+        pairingButtonsLabel.layer.borderColor = MainViewController.Palette.pink.withAlphaComponent(0.72).cgColor
+        pairingButtonsLabel.layer.cornerRadius = 17
+        pairingButtonsLabel.clipsToBounds = true
+        pairingButtonsLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let buttonsContainer = UIView()
+        buttonsContainer.addSubview(pairingButtonsLabel)
+
+        configureInstructionLabel(firstStepLabel)
+        configureInstructionLabel(secondStepLabel)
+        let steps = UIStackView(arrangedSubviews: [
+            makeStep(number: "1", label: firstStepLabel),
+            makeStep(number: "2", label: secondStepLabel),
+        ])
+        steps.axis = .vertical
+        steps.spacing = 14
+
+        let statusDot = UIView()
+        statusDot.backgroundColor = MainViewController.Palette.connected
+        statusDot.layer.cornerRadius = 4
+        statusDot.translatesAutoresizingMaskIntoConstraints = false
+
+        let statusLabel = UILabel()
+        statusLabel.text = "Connection is detected automatically when you return."
+        statusLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        statusLabel.textColor = MainViewController.Palette.secondaryText
+        statusLabel.numberOfLines = 0
+
+        let status = UIStackView(arrangedSubviews: [statusDot, statusLabel])
+        status.axis = .horizontal
+        status.alignment = .center
+        status.spacing = 10
+
+        var settingsConfiguration = UIButton.Configuration.filled()
+        settingsConfiguration.title = "Open Settings"
+        settingsConfiguration.image = UIImage(systemName: "gearshape.fill")
+        settingsConfiguration.imagePadding = 8
+        settingsConfiguration.baseBackgroundColor = MainViewController.Palette.pink
+        settingsConfiguration.baseForegroundColor = .white
+        settingsConfiguration.cornerStyle = .capsule
+        settingsButton.configuration = settingsConfiguration
+        settingsButton.addTarget(self, action: #selector(openSettings), for: .touchUpInside)
+
+        let stack = UIStackView(arrangedSubviews: [
+            titleLabel,
+            illustrationView,
+            buttonsContainer,
+            steps,
+            settingsButton,
+            status,
+        ])
+        stack.axis = .vertical
+        stack.spacing = 16
+        stack.setCustomSpacing(8, after: illustrationView)
+        stack.setCustomSpacing(22, after: buttonsContainer)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        effectView.contentView.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            effectView.topAnchor.constraint(equalTo: topAnchor),
+            effectView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            effectView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            effectView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            stack.topAnchor.constraint(equalTo: effectView.contentView.topAnchor, constant: 20),
+            stack.leadingAnchor.constraint(equalTo: effectView.contentView.leadingAnchor, constant: 18),
+            stack.trailingAnchor.constraint(equalTo: effectView.contentView.trailingAnchor, constant: -18),
+            stack.bottomAnchor.constraint(equalTo: effectView.contentView.bottomAnchor, constant: -20),
+
+            illustrationView.heightAnchor.constraint(equalToConstant: 142),
+            buttonsContainer.heightAnchor.constraint(equalToConstant: 34),
+            pairingButtonsLabel.centerXAnchor.constraint(equalTo: buttonsContainer.centerXAnchor),
+            pairingButtonsLabel.topAnchor.constraint(equalTo: buttonsContainer.topAnchor),
+            pairingButtonsLabel.bottomAnchor.constraint(equalTo: buttonsContainer.bottomAnchor),
+            pairingButtonsLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 132),
+
+            statusDot.widthAnchor.constraint(equalToConstant: 8),
+            statusDot.heightAnchor.constraint(equalTo: statusDot.widthAnchor),
+            settingsButton.heightAnchor.constraint(equalToConstant: 48),
+        ])
+    }
+
+    @objc private func openSettings() {
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(settingsURL)
+    }
+
+    private func configureInstructionLabel(_ label: UILabel) {
         label.font = .systemFont(ofSize: 15, weight: .medium)
         label.textColor = .white
         label.numberOfLines = 0
+        label.adjustsFontForContentSizeCategory = true
+    }
+
+    private func makeStep(number: String, label: UILabel) -> UIView {
+        let badge = UILabel()
+        badge.text = number
+        badge.textAlignment = .center
+        badge.font = .systemFont(ofSize: 13, weight: .bold)
+        badge.textColor = .white
+        badge.backgroundColor = MainViewController.Palette.pink
+        badge.layer.cornerRadius = 14
+        badge.clipsToBounds = true
+        badge.translatesAutoresizingMaskIntoConstraints = false
 
         let row = UIStackView(arrangedSubviews: [badge, label])
         row.axis = .horizontal
         row.alignment = .center
-        row.spacing = 14
+        row.spacing = 12
 
         NSLayoutConstraint.activate([
-            badge.widthAnchor.constraint(equalToConstant: 30),
+            badge.widthAnchor.constraint(equalToConstant: 28),
             badge.heightAnchor.constraint(equalTo: badge.widthAnchor),
         ])
         return row
     }
+}
 
-    @objc private func close() {
-        onClose?()
+private final class ControllerPairingIllustrationView: UIView {
+    private let imageView = UIImageView()
+    private var hotspotViews: [PairingHotspotView] = []
+    private var hotspotPositions: [CGPoint] = []
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard let image = imageView.image, image.size.width > 0, image.size.height > 0 else { return }
+
+        let availableBounds = bounds.insetBy(dx: 22, dy: 5)
+        let scale = min(availableBounds.width / image.size.width,
+                        availableBounds.height / image.size.height)
+        let imageSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let imageFrame = CGRect(
+            x: bounds.midX - imageSize.width / 2,
+            y: bounds.midY - imageSize.height / 2,
+            width: imageSize.width,
+            height: imageSize.height
+        )
+        imageView.frame = imageFrame
+
+        for (index, hotspot) in hotspotViews.enumerated() where index < hotspotPositions.count {
+            let position = hotspotPositions[index]
+            hotspot.bounds = CGRect(x: 0, y: 0, width: 34, height: 34)
+            hotspot.center = CGPoint(
+                x: imageFrame.minX + imageFrame.width * position.x,
+                y: imageFrame.minY + imageFrame.height * position.y
+            )
+        }
+    }
+
+    func configure(imageName: String, hotspots: [CGPoint]) {
+        imageView.image = UIImage(named: imageName)
+        hotspotViews.forEach { $0.removeFromSuperview() }
+        hotspotPositions = hotspots
+        hotspotViews = hotspots.map { _ in
+            let hotspot = PairingHotspotView()
+            addSubview(hotspot)
+            return hotspot
+        }
+        setNeedsLayout()
+    }
+
+    private func setup() {
+        isAccessibilityElement = false
+        imageView.contentMode = .scaleAspectFit
+        imageView.layer.shadowColor = MainViewController.Palette.pink.cgColor
+        imageView.layer.shadowOpacity = 0.25
+        imageView.layer.shadowRadius = 18
+        imageView.layer.shadowOffset = .zero
+        addSubview(imageView)
+    }
+}
+
+private final class PairingHotspotView: UIView {
+    private let ring = UIView()
+    private let dot = UIView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isUserInteractionEnabled = false
+        ring.layer.borderWidth = 2
+        ring.layer.borderColor = MainViewController.Palette.coral.cgColor
+        ring.backgroundColor = MainViewController.Palette.pink.withAlphaComponent(0.14)
+        addSubview(ring)
+
+        dot.backgroundColor = MainViewController.Palette.pink
+        dot.layer.shadowColor = MainViewController.Palette.pink.cgColor
+        dot.layer.shadowOpacity = 0.9
+        dot.layer.shadowRadius = 8
+        dot.layer.shadowOffset = .zero
+        addSubview(dot)
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        ring.frame = bounds.insetBy(dx: 2, dy: 2)
+        ring.layer.cornerRadius = ring.bounds.width / 2
+        dot.bounds = CGRect(x: 0, y: 0, width: 10, height: 10)
+        dot.center = CGPoint(x: bounds.midX, y: bounds.midY)
+        dot.layer.cornerRadius = 5
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        ring.layer.removeAllAnimations()
+        guard window != nil else { return }
+
+        let scale = CABasicAnimation(keyPath: "transform.scale")
+        scale.fromValue = 0.72
+        scale.toValue = 1.18
+
+        let opacity = CABasicAnimation(keyPath: "opacity")
+        opacity.fromValue = 1
+        opacity.toValue = 0.28
+
+        let animation = CAAnimationGroup()
+        animation.animations = [scale, opacity]
+        animation.duration = 1.05
+        animation.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        animation.autoreverses = true
+        animation.repeatCount = .infinity
+        ring.layer.add(animation, forKey: "pairingPulse")
     }
 }
