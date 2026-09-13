@@ -1236,11 +1236,11 @@ private enum PairingControllerKind: CaseIterable {
     var hotspotPositions: [CGPoint] {
         switch self {
         case .playStation5:
-            [CGPoint(x: 0.32, y: 0.25), CGPoint(x: 0.50, y: 0.61)]
+            [CGPoint(x: 0.276, y: 0.174), CGPoint(x: 0.50, y: 0.522)]
         case .playStation4:
-            [CGPoint(x: 0.31, y: 0.24), CGPoint(x: 0.50, y: 0.62)]
+            [CGPoint(x: 0.306, y: 0.163), CGPoint(x: 0.50, y: 0.553)]
         case .xbox:
-            [CGPoint(x: 0.50, y: 0.24), CGPoint(x: 0.78, y: 0.05)]
+            [CGPoint(x: 0.57, y: 0.085)]
         case .other:
             []
         }
@@ -1487,7 +1487,6 @@ private final class ControllerPairingDetailView: UIView {
     private let pairingButtonsLabel = UILabel()
     private let firstStepLabel = UILabel()
     private let secondStepLabel = UILabel()
-    private let settingsButton = UIButton(type: .system)
 
     var accessibilityFocusView: UIView { titleLabel }
 
@@ -1583,22 +1582,11 @@ private final class ControllerPairingDetailView: UIView {
         status.alignment = .center
         status.spacing = 10
 
-        var settingsConfiguration = UIButton.Configuration.filled()
-        settingsConfiguration.title = "Open Settings"
-        settingsConfiguration.image = UIImage(systemName: "gearshape.fill")
-        settingsConfiguration.imagePadding = 8
-        settingsConfiguration.baseBackgroundColor = MainViewController.Palette.pink
-        settingsConfiguration.baseForegroundColor = .white
-        settingsConfiguration.cornerStyle = .capsule
-        settingsButton.configuration = settingsConfiguration
-        settingsButton.addTarget(self, action: #selector(openSettings), for: .touchUpInside)
-
         let stack = UIStackView(arrangedSubviews: [
             titleLabel,
             illustrationView,
             buttonsContainer,
             steps,
-            settingsButton,
             status,
         ])
         stack.axis = .vertical
@@ -1628,13 +1616,7 @@ private final class ControllerPairingDetailView: UIView {
 
             statusDot.widthAnchor.constraint(equalToConstant: 8),
             statusDot.heightAnchor.constraint(equalTo: statusDot.widthAnchor),
-            settingsButton.heightAnchor.constraint(equalToConstant: 48),
         ])
-    }
-
-    @objc private func openSettings() {
-        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
-        UIApplication.shared.open(settingsURL)
     }
 
     private func configureInstructionLabel(_ label: UILabel) {
@@ -1718,7 +1700,24 @@ private final class ControllerPairingIllustrationView: UIView {
             addSubview(hotspot)
             return hotspot
         }
-        setNeedsLayout()
+
+        UIView.performWithoutAnimation {
+            setNeedsLayout()
+            layoutIfNeeded()
+        }
+
+        hotspotViews.forEach {
+            $0.alpha = 0
+            $0.transform = CGAffineTransform(scaleX: 0.78, y: 0.78)
+        }
+        UIView.animate(withDuration: 0.22,
+                       delay: 0,
+                       options: [.curveEaseOut, .beginFromCurrentState, .allowUserInteraction]) {
+            self.hotspotViews.forEach {
+                $0.alpha = 1
+                $0.transform = .identity
+            }
+        }
     }
 
     private func setup() {
