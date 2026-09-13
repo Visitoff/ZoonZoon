@@ -124,6 +124,13 @@ final class MainViewController: UIViewController {
         playerCard.onPowerTap = { [weak self] in
             self?.toggleHaptics()
         }
+        playerCard.onWaveTouch = { [weak self] point in
+            if let point {
+                self?.manager.updateTouchHaptics(normalizedY: Float(point.y))
+            } else {
+                self?.manager.stopTouchHaptics()
+            }
+        }
         intensitySlider.accessibilityIdentifier = "intensitySlider"
         intensitySlider.addTarget(self, action: #selector(intensityChanged), for: .valueChanged)
 
@@ -311,6 +318,7 @@ final class MainViewController: UIViewController {
 
         triggerController?.extendedGamepad?.leftTrigger.valueChangedHandler = nil
         triggerController?.extendedGamepad?.rightTrigger.valueChangedHandler = nil
+        triggerController?.extendedGamepad?.buttonA.valueChangedHandler = nil
         triggerController = controller
         leftTriggerValue = 0
         rightTriggerValue = 0
@@ -330,6 +338,10 @@ final class MainViewController: UIViewController {
         gamepad.rightTrigger.valueChangedHandler = { [weak self] _, value, _ in
             self?.rightTriggerValue = value
         }
+        gamepad.buttonA.valueChangedHandler = { [weak self] _, _, pressed in
+            guard pressed else { return }
+            self?.toggleHaptics()
+        }
         startTriggerDisplayLink()
     }
 
@@ -348,6 +360,7 @@ final class MainViewController: UIViewController {
     private func stopTriggerControl() {
         triggerController?.extendedGamepad?.leftTrigger.valueChangedHandler = nil
         triggerController?.extendedGamepad?.rightTrigger.valueChangedHandler = nil
+        triggerController?.extendedGamepad?.buttonA.valueChangedHandler = nil
         triggerController = nil
         leftTriggerValue = 0
         rightTriggerValue = 0
@@ -606,6 +619,7 @@ private final class WaveLogoView: UIView {
 
 private final class PlayerCardView: UIView {
     var onPowerTap: (() -> Void)?
+    var onWaveTouch: ((CGPoint?) -> Void)?
 
     private let waveformView = WaveformView()
     private let shadeLayer = CAGradientLayer()
@@ -648,7 +662,9 @@ private final class PlayerCardView: UIView {
         clipsToBounds = true
         backgroundColor = .black
 
-        waveformView.isUserInteractionEnabled = false
+        waveformView.onInteractionChanged = { [weak self] point in
+            self?.onWaveTouch?(point)
+        }
         addSubview(waveformView)
 
         shadeLayer.colors = [
@@ -720,6 +736,8 @@ private final class PlayerCardView: UIView {
 }
 
 private final class WaveformView: UIView {
+    var onInteractionChanged: ((CGPoint?) -> Void)?
+
     private final class DisplayLinkTarget: NSObject {
         weak var owner: WaveformView?
 
@@ -739,6 +757,9 @@ private final class WaveformView: UIView {
     private var activity: CGFloat = 0
     private var targetActivity: CGFloat = 0
     private var intensity: CGFloat = 0.55
+    private var interactionPoint = CGPoint(x: 0.5, y: 0.5)
+    private var interactionAmount: CGFloat = 0
+    private var isInteracting = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -776,6 +797,7 @@ private final class WaveformView: UIView {
     private func setup() {
         isOpaque = false
         contentMode = .redraw
+        isMultipleTouchEnabled = false
     }
 
     private func startAnimating() {
@@ -814,7 +836,46 @@ private final class WaveformView: UIView {
         elapsedTime += delta
         let smoothing = 1 - exp(-delta * 5.5)
         activity += (targetActivity - activity) * smoothing
+        let interactionTarget: CGFloat = isInteracting ? 1 : 0
+        let interactionSmoothing = 1 - exp(-delta * (isInteracting ? 14 : 3.8))
+        interactionAmount += (interactionTarget - interactionAmount) * interactionSmoothing
         setNeedsDisplay()
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        isInteracting = true
+        updateInteraction(with: touch)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        updateInteraction(with: touch)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        endInteraction()
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        endInteraction()
+    }
+
+    private func updateInteraction(with touch: UITouch) {
+        guard bounds.width > 0, bounds.height > 0 else { return }
+        let location = touch.location(in: self)
+        interactionPoint = CGPoint(
+            x: min(max(location.x / bounds.width, 0), 1),
+            y: min(max(location.y / bounds.height, 0), 1)
+        )
+        onInteractionChanged?(interactionPoint)
+        startAnimating()
+        setNeedsDisplay()
+    }
+
+    private func endInteraction() {
+        isInteracting = false
+        onInteractionChanged?(nil)
     }
 
     override func draw(_ rect: CGRect) {
@@ -831,6 +892,10 @@ private final class WaveformView: UIView {
         let displacement = 1.2 + responsiveAmount * (2.5 + intensity * 8.5)
         let thicknessResponse = responsiveAmount * (2.0 + intensity * 8.0)
         let twoPi = CGFloat.pi * 2
+        let touchX = interactionPoint.x * rect.width
+        let touchY = interactionPoint.y * rect.height
+        let horizontalReach = max(1, rect.width * 0.30)
+        let verticalReach = max(1, spacing * 2.8)
 
         for row in 0..<rowCount {
             let centerY = topInset + CGFloat(row) * spacing
@@ -849,13 +914,25 @@ private final class WaveformView: UIView {
                     progress * twoPi * 1.75 + elapsedTime * speed * 0.52 - rowPhase * 0.58
                 )
                 let sharedFlow = primaryWave * 0.72 + secondaryWave * 0.28
-                let wave = sharedFlow * displacement
+                var wave = sharedFlow * displacement
 
                 let widthPulse = 0.5 + 0.5 * sin(
                     progress * twoPi * 1.16 - elapsedTime * speed * 0.78 + rowPhase * 0.82
                 )
                 let softPulse = widthPulse * widthPulse * (3 - 2 * widthPulse)
-                let thickness = baseThickness + softPulse * thicknessResponse
+                var thickness = baseThickness + softPulse * thicknessResponse
+
+                let horizontalDistance = abs(x - touchX)
+                let verticalDistance = abs(centerY + wave - touchY)
+                let horizontalFalloff = exp(-pow(horizontalDistance / horizontalReach, 2) * 2.2)
+                let verticalFalloff = max(0, 1 - verticalDistance / verticalReach)
+                let stringInfluence = horizontalFalloff * verticalFalloff * interactionAmount
+                let fingerPull = (touchY - centerY - wave) * stringInfluence * 0.18
+                let travelingRipple = sin(
+                    horizontalDistance * 0.075 - elapsedTime * (8.5 + intensity * 4.5)
+                ) * exp(-horizontalDistance / horizontalReach)
+                wave += fingerPull + travelingRipple * stringInfluence * (3.0 + intensity * 4.0)
+                thickness += stringInfluence * (1.5 + intensity * 2.5)
 
                 upper.append(CGPoint(x: x, y: centerY + wave - thickness / 2))
                 lower.append(CGPoint(x: x, y: centerY + wave + thickness / 2))
@@ -1024,12 +1101,9 @@ private final class IntensityBackingView: UIView {
 
         let trackHeight = min(CGFloat(50), rect.height)
         let trackRadius = trackHeight / 2
-        let tabWidth = min(CGFloat(136), rect.width * 0.48)
-        let tabLeft = rect.midX - tabWidth / 2
-        let tabRight = rect.midX + tabWidth / 2
         let tabBottom = rect.height
-        let shoulder: CGFloat = 16
-        let bottomCorner: CGFloat = 24
+        let tabTopHalfWidth = min(CGFloat(68), rect.width * 0.19)
+        let tabBottomHalfWidth = min(CGFloat(40), rect.width * 0.12)
 
         let path = UIBezierPath()
         path.move(to: CGPoint(x: trackRadius, y: 0))
@@ -1041,27 +1115,17 @@ private final class IntensityBackingView: UIView {
             endAngle: .pi / 2,
             clockwise: true
         )
-        path.addLine(to: CGPoint(x: tabRight + shoulder, y: trackHeight))
+        path.addLine(to: CGPoint(x: rect.midX + tabTopHalfWidth, y: trackHeight))
         path.addCurve(
-            to: CGPoint(x: tabRight, y: trackHeight + 12),
-            controlPoint1: CGPoint(x: tabRight + 8, y: trackHeight),
-            controlPoint2: CGPoint(x: tabRight + 7, y: trackHeight + 8)
+            to: CGPoint(x: rect.midX + tabBottomHalfWidth, y: tabBottom),
+            controlPoint1: CGPoint(x: rect.midX + tabTopHalfWidth - 12, y: trackHeight),
+            controlPoint2: CGPoint(x: rect.midX + tabBottomHalfWidth + 16, y: tabBottom)
         )
+        path.addLine(to: CGPoint(x: rect.midX - tabBottomHalfWidth, y: tabBottom))
         path.addCurve(
-            to: CGPoint(x: tabRight - bottomCorner, y: tabBottom),
-            controlPoint1: CGPoint(x: tabRight - 2, y: tabBottom - 7),
-            controlPoint2: CGPoint(x: tabRight - 10, y: tabBottom)
-        )
-        path.addLine(to: CGPoint(x: tabLeft + bottomCorner, y: tabBottom))
-        path.addCurve(
-            to: CGPoint(x: tabLeft, y: trackHeight + 12),
-            controlPoint1: CGPoint(x: tabLeft + 10, y: tabBottom),
-            controlPoint2: CGPoint(x: tabLeft + 2, y: tabBottom - 7)
-        )
-        path.addCurve(
-            to: CGPoint(x: tabLeft - shoulder, y: trackHeight),
-            controlPoint1: CGPoint(x: tabLeft - 7, y: trackHeight + 8),
-            controlPoint2: CGPoint(x: tabLeft - 8, y: trackHeight)
+            to: CGPoint(x: rect.midX - tabTopHalfWidth, y: trackHeight),
+            controlPoint1: CGPoint(x: rect.midX - tabBottomHalfWidth - 16, y: tabBottom),
+            controlPoint2: CGPoint(x: rect.midX - tabTopHalfWidth + 12, y: trackHeight)
         )
         path.addLine(to: CGPoint(x: trackRadius, y: trackHeight))
         path.addArc(
