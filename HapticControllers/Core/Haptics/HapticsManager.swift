@@ -46,6 +46,7 @@ final class HapticsManager {
     private var engine: CHHapticEngine?
     private var player: CHHapticPatternPlayer?
     private var engineIdentifier: UUID?
+    private(set) var intensity: Float = 0.55
 
     var isControllerConnected: Bool {
         connectedController != nil
@@ -96,6 +97,22 @@ final class HapticsManager {
         updateConnectedController(detectedController)
     }
 
+    func setIntensity(_ value: Float) {
+        intensity = min(max(value, 0), 1)
+        guard let player else { return }
+
+        let parameter = CHHapticDynamicParameter(
+            parameterID: .hapticIntensityControl,
+            value: intensity,
+            relativeTime: 0
+        )
+        do {
+            try player.sendParameters([parameter], atTime: CHHapticTimeImmediate)
+        } catch {
+            logger.error("Unable to update haptic intensity: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     @discardableResult
     func startDefaultHaptics() -> Result<Void, HapticsManagerError> {
         guard playbackState != .playing else {
@@ -141,6 +158,7 @@ final class HapticsManager {
 
             stage = "starting the player"
             try newPlayer.start(atTime: CHHapticTimeImmediate)
+            setIntensity(intensity)
 
             updatePlaybackState(.playing)
             return .success(())

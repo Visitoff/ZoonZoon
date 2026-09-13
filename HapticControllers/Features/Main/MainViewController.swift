@@ -3,26 +3,24 @@ import UIKit
 
 final class MainViewController: UIViewController {
     fileprivate enum Palette {
-        static let backgroundTop = UIColor(red: 0.16, green: 0.09, blue: 0.29, alpha: 1.00)
-        static let backgroundBottom = UIColor(red: 0.035, green: 0.025, blue: 0.10, alpha: 1.00)
-        static let surface = UIColor(red: 0.10, green: 0.07, blue: 0.23, alpha: 1.00)
-        static let accent = UIColor(red: 0.79, green: 0.29, blue: 1.00, alpha: 1.00)
-        static let accentBlue = UIColor(red: 0.43, green: 0.36, blue: 1.00, alpha: 1.00)
-        static let connected = UIColor(red: 0.27, green: 0.91, blue: 0.64, alpha: 1.00)
+        static let background = UIColor.black
+        static let coral = UIColor(red: 1.00, green: 0.34, blue: 0.36, alpha: 1.00)
+        static let pink = UIColor(red: 0.93, green: 0.25, blue: 0.96, alpha: 1.00)
+        static let violet = UIColor(red: 0.54, green: 0.18, blue: 0.78, alpha: 1.00)
+        static let connected = UIColor(red: 0.35, green: 0.93, blue: 0.68, alpha: 1.00)
         static let primaryText = UIColor.white
-        static let secondaryText = UIColor.white.withAlphaComponent(0.58)
-        static let border = UIColor.white.withAlphaComponent(0.20)
+        static let secondaryText = UIColor.white.withAlphaComponent(0.54)
+        static let border = UIColor.white.withAlphaComponent(0.22)
+        static let darkSurface = UIColor(red: 0.055, green: 0.052, blue: 0.060, alpha: 0.96)
     }
 
     private let manager: HapticsManager
     private let backgroundGradient = CAGradientLayer()
     private let topGlowGradient = CAGradientLayer()
     private let bottomGlowGradient = CAGradientLayer()
-    private let contentView = UIView()
-    private let connectionStatusView = ConnectionStatusView()
-    private let hapticControl = HapticControlView()
-    private let helperLabel = UILabel()
-    private let instructionsCard = InstructionsCardView()
+    private let connectionButton = GlassCircleControl(symbolName: "gamecontroller", diameter: 48)
+    private let playerCard = PlayerCardView()
+    private let intensitySlider = IntensitySliderView()
 
     private var isDiscoveringController = false
 
@@ -51,6 +49,7 @@ final class MainViewController: UIViewController {
 
         manager.delegate = self
         manager.startMonitoring()
+        intensitySlider.value = manager.intensity
         updateInterface()
     }
 
@@ -63,126 +62,108 @@ final class MainViewController: UIViewController {
 
     private func configureAppearance() {
         overrideUserInterfaceStyle = .dark
-        view.backgroundColor = Palette.backgroundBottom
+        view.backgroundColor = Palette.background
 
         backgroundGradient.colors = [
-            Palette.backgroundTop.cgColor,
-            UIColor(red: 0.07, green: 0.045, blue: 0.17, alpha: 1.00).cgColor,
-            Palette.backgroundBottom.cgColor,
+            UIColor.black.cgColor,
+            UIColor(red: 0.08, green: 0.025, blue: 0.065, alpha: 1).cgColor,
+            UIColor(red: 0.035, green: 0.025, blue: 0.045, alpha: 1).cgColor,
+            UIColor.black.cgColor,
         ]
-        backgroundGradient.locations = [0.0, 0.48, 1.0]
-        backgroundGradient.startPoint = CGPoint(x: 0.18, y: 0.0)
-        backgroundGradient.endPoint = CGPoint(x: 0.82, y: 1.0)
+        backgroundGradient.locations = [0.0, 0.18, 0.66, 1.0]
+        backgroundGradient.startPoint = CGPoint(x: 0.18, y: 0)
+        backgroundGradient.endPoint = CGPoint(x: 0.82, y: 1)
         view.layer.insertSublayer(backgroundGradient, at: 0)
 
         topGlowGradient.type = .radial
         topGlowGradient.colors = [
-            Palette.accent.withAlphaComponent(0.22).cgColor,
+            Palette.coral.withAlphaComponent(0.20).cgColor,
+            Palette.pink.withAlphaComponent(0.08).cgColor,
             UIColor.clear.cgColor,
         ]
-        topGlowGradient.locations = [0.0, 1.0]
-        topGlowGradient.startPoint = CGPoint(x: 0.86, y: 0.09)
-        topGlowGradient.endPoint = CGPoint(x: 0.20, y: 0.65)
+        topGlowGradient.locations = [0.0, 0.35, 1.0]
+        topGlowGradient.startPoint = CGPoint(x: 0.22, y: 0.08)
+        topGlowGradient.endPoint = CGPoint(x: 0.86, y: 0.58)
         view.layer.insertSublayer(topGlowGradient, above: backgroundGradient)
 
         bottomGlowGradient.type = .radial
         bottomGlowGradient.colors = [
-            Palette.accentBlue.withAlphaComponent(0.18).cgColor,
+            Palette.violet.withAlphaComponent(0.18).cgColor,
             UIColor.clear.cgColor,
         ]
         bottomGlowGradient.locations = [0.0, 1.0]
-        bottomGlowGradient.startPoint = CGPoint(x: 0.82, y: 0.96)
-        bottomGlowGradient.endPoint = CGPoint(x: 0.18, y: 0.43)
+        bottomGlowGradient.startPoint = CGPoint(x: 0.50, y: 0.84)
+        bottomGlowGradient.endPoint = CGPoint(x: 0.05, y: 0.35)
         view.layer.insertSublayer(bottomGlowGradient, above: topGlowGradient)
     }
 
     private func buildInterface() {
-        contentView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(contentView)
+        let topBar = UIView()
+        let logo = WaveLogoView()
+        let trademarkLabel = UILabel()
 
-        let brandLabel = UILabel()
-        brandLabel.text = "ZOONZOON"
-        brandLabel.font = .systemFont(ofSize: 35, weight: .bold)
-        brandLabel.textColor = Palette.primaryText
-        brandLabel.adjustsFontSizeToFitWidth = true
-        brandLabel.minimumScaleFactor = 0.55
-        brandLabel.numberOfLines = 1
-        brandLabel.lineBreakMode = .byClipping
-        brandLabel.translatesAutoresizingMaskIntoConstraints = false
+        topBar.translatesAutoresizingMaskIntoConstraints = false
+        logo.translatesAutoresizingMaskIntoConstraints = false
+        trademarkLabel.translatesAutoresizingMaskIntoConstraints = false
+        connectionButton.translatesAutoresizingMaskIntoConstraints = false
+        playerCard.translatesAutoresizingMaskIntoConstraints = false
+        intensitySlider.translatesAutoresizingMaskIntoConstraints = false
 
-        connectionStatusView.translatesAutoresizingMaskIntoConstraints = false
-        connectionStatusView.accessibilityIdentifier = "connectionStatusCard"
-        connectionStatusView.addTarget(self,
-                                       action: #selector(connectionStatusTapped),
-                                       for: .touchUpInside)
+        trademarkLabel.text = "™"
+        trademarkLabel.textColor = .white
+        trademarkLabel.font = .systemFont(ofSize: 9, weight: .medium)
 
-        hapticControl.translatesAutoresizingMaskIntoConstraints = false
-        hapticControl.accessibilityIdentifier = "hapticControlButton"
-        hapticControl.addTarget(self,
-                                action: #selector(hapticControlTapped),
-                                for: .touchUpInside)
+        connectionButton.accessibilityIdentifier = "connectionButton"
+        connectionButton.addTarget(self, action: #selector(connectionButtonTapped), for: .touchUpInside)
+        playerCard.accessibilityIdentifier = "heartbeatPlayer"
+        playerCard.onPowerTap = { [weak self] in
+            self?.toggleHaptics()
+        }
+        intensitySlider.accessibilityIdentifier = "intensitySlider"
+        intensitySlider.addTarget(self, action: #selector(intensityChanged), for: .valueChanged)
 
-        helperLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        helperLabel.textColor = Palette.secondaryText
-        helperLabel.textAlignment = .center
-        helperLabel.numberOfLines = 0
-        helperLabel.isHidden = true
-        helperLabel.accessibilityIdentifier = "activeVibrationNotice"
-        helperLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(topBar)
+        topBar.addSubview(connectionButton)
+        topBar.addSubview(logo)
+        topBar.addSubview(trademarkLabel)
+        view.addSubview(playerCard)
+        view.addSubview(intensitySlider)
 
-        instructionsCard.translatesAutoresizingMaskIntoConstraints = false
-        instructionsCard.accessibilityIdentifier = "pairingInstructionsButton"
-        instructionsCard.addTarget(self,
-                                   action: #selector(showPairingInstructions),
-                                   for: .touchUpInside)
-
-        contentView.addSubview(connectionStatusView)
-        contentView.addSubview(brandLabel)
-        contentView.addSubview(hapticControl)
-        contentView.addSubview(helperLabel)
-        contentView.addSubview(instructionsCard)
-
-        let safeArea = view.safeAreaLayoutGuide
-        let hapticVerticalPosition = NSLayoutConstraint(
-            item: hapticControl,
-            attribute: .centerY,
-            relatedBy: .equal,
-            toItem: contentView,
-            attribute: .bottom,
-            multiplier: 0.25,
-            constant: 140
+        let playerAspect = playerCard.heightAnchor.constraint(
+            equalTo: playerCard.widthAnchor,
+            multiplier: 445.0 / 345.0
         )
+        playerAspect.priority = .defaultHigh
 
         NSLayoutConstraint.activate([
-            contentView.topAnchor.constraint(equalTo: safeArea.topAnchor),
-            contentView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            contentView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            topBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 2),
+            topBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            topBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            topBar.heightAnchor.constraint(equalToConstant: 52),
 
-            connectionStatusView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
-            connectionStatusView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            connectionStatusView.widthAnchor.constraint(equalToConstant: 144),
-            connectionStatusView.heightAnchor.constraint(equalToConstant: 44),
+            connectionButton.trailingAnchor.constraint(equalTo: topBar.trailingAnchor),
+            connectionButton.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
+            connectionButton.widthAnchor.constraint(equalToConstant: 48),
+            connectionButton.heightAnchor.constraint(equalTo: connectionButton.widthAnchor),
 
-            brandLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 22),
-            brandLabel.trailingAnchor.constraint(lessThanOrEqualTo: connectionStatusView.leadingAnchor, constant: -12),
-            brandLabel.centerYAnchor.constraint(equalTo: connectionStatusView.centerYAnchor),
+            logo.centerXAnchor.constraint(equalTo: topBar.centerXAnchor),
+            logo.centerYAnchor.constraint(equalTo: topBar.centerYAnchor),
+            logo.widthAnchor.constraint(equalToConstant: 50),
+            logo.heightAnchor.constraint(equalTo: logo.widthAnchor),
 
-            hapticControl.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            hapticVerticalPosition,
-            hapticControl.widthAnchor.constraint(equalToConstant: 258),
-            hapticControl.widthAnchor.constraint(lessThanOrEqualTo: contentView.widthAnchor, constant: -56),
-            hapticControl.heightAnchor.constraint(equalTo: hapticControl.widthAnchor),
+            trademarkLabel.leadingAnchor.constraint(equalTo: logo.trailingAnchor, constant: 2),
+            trademarkLabel.topAnchor.constraint(equalTo: logo.topAnchor, constant: -1),
 
-            helperLabel.topAnchor.constraint(equalTo: hapticControl.bottomAnchor, constant: 24),
-            helperLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 34),
-            helperLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -34),
+            playerCard.topAnchor.constraint(equalTo: topBar.bottomAnchor, constant: 24),
+            playerCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
+            playerCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -15),
+            playerAspect,
 
-            instructionsCard.topAnchor.constraint(greaterThanOrEqualTo: helperLabel.bottomAnchor, constant: 28),
-            instructionsCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            instructionsCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            instructionsCard.heightAnchor.constraint(equalToConstant: 76),
-            instructionsCard.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -22),
+            intensitySlider.topAnchor.constraint(equalTo: playerCard.bottomAnchor, constant: 18),
+            intensitySlider.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 15),
+            intensitySlider.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -15),
+            intensitySlider.heightAnchor.constraint(equalToConstant: 83),
+            intensitySlider.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8),
         ])
     }
 
@@ -206,7 +187,16 @@ final class MainViewController: UIViewController {
                                        object: nil)
     }
 
-    @objc private func hapticControlTapped() {
+    @objc private func connectionButtonTapped() {
+        guard !manager.isControllerConnected else { return }
+        showPairingInstructions()
+    }
+
+    @objc private func intensityChanged() {
+        manager.setIntensity(intensitySlider.value)
+    }
+
+    private func toggleHaptics() {
         guard manager.isControllerConnected else {
             showPairingInstructions()
             return
@@ -225,12 +215,7 @@ final class MainViewController: UIViewController {
         }
     }
 
-    @objc private func connectionStatusTapped() {
-        guard !manager.isControllerConnected else { return }
-        showPairingInstructions()
-    }
-
-    @objc private func showPairingInstructions() {
+    private func showPairingInstructions() {
         guard presentedViewController == nil else { return }
 
         let instructionsViewController = PairingInstructionsViewController()
@@ -241,17 +226,14 @@ final class MainViewController: UIViewController {
 
         if let sheet = instructionsViewController.sheetPresentationController {
             if #available(iOS 16.0, *) {
-                let pairingDetentIdentifier = UISheetPresentationController.Detent.Identifier("pairing")
-                let pairingDetent = UISheetPresentationController.Detent.custom(
-                    identifier: pairingDetentIdentifier
-                ) { context in
+                let identifier = UISheetPresentationController.Detent.Identifier("pairing")
+                let detent = UISheetPresentationController.Detent.custom(identifier: identifier) { context in
                     min(context.maximumDetentValue, 540)
                 }
-                sheet.detents = [pairingDetent]
-                sheet.selectedDetentIdentifier = pairingDetentIdentifier
+                sheet.detents = [detent]
+                sheet.selectedDetentIdentifier = identifier
             } else {
                 sheet.detents = [.large()]
-                sheet.selectedDetentIdentifier = .large
             }
             sheet.prefersGrabberVisible = true
             sheet.preferredCornerRadius = 30
@@ -302,16 +284,12 @@ final class MainViewController: UIViewController {
 
     private func updateInterface() {
         let isConnected = manager.isControllerConnected
-        let controllerName = manager.connectedController?.productCategory
-        let isPlaying = manager.playbackState == .playing
-
-        connectionStatusView.update(isConnected: isConnected, controllerName: controllerName)
-        hapticControl.update(playbackState: manager.playbackState)
-        helperLabel.text = isPlaying
-            ? "Keep the app open. Vibration stops when locked or minimized."
-            : nil
-        helperLabel.isHidden = !isPlaying
-        UIApplication.shared.isIdleTimerDisabled = isPlaying
+        connectionButton.setControllerState(
+            connected: isConnected,
+            controllerName: manager.connectedController?.productCategory
+        )
+        playerCard.update(playbackState: manager.playbackState)
+        UIApplication.shared.isIdleTimerDisabled = manager.playbackState == .playing
     }
 }
 
@@ -339,17 +317,27 @@ extension MainViewController: UIAdaptivePresentationControllerDelegate {
     }
 }
 
-private final class ConnectionStatusView: UIControl {
-    private let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
+private final class GlassCircleControl: UIControl {
+    private let diameter: CGFloat
+    private let effectView = UIVisualEffectView()
+    private let imageView = UIImageView()
     private let statusDot = UIView()
-    private let titleLabel = UILabel()
+    private let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+    private var symbolName: String
+    private var glassTint = UIColor.white.withAlphaComponent(0.05)
+    private var iconWidthConstraint: NSLayoutConstraint?
+    private var iconHeightConstraint: NSLayoutConstraint?
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    init(symbolName: String, diameter: CGFloat) {
+        self.symbolName = symbolName
+        self.diameter = diameter
+        super.init(frame: .zero)
         setup()
     }
 
     required init?(coder: NSCoder) {
+        diameter = 48
+        symbolName = "circle"
         super.init(coder: coder)
         setup()
     }
@@ -357,283 +345,222 @@ private final class ConnectionStatusView: UIControl {
     override func layoutSubviews() {
         super.layoutSubviews()
         layer.cornerRadius = bounds.height / 2
-        blurView.frame = bounds
-        blurView.layer.cornerRadius = bounds.height / 2
-        statusDot.layer.cornerRadius = 5
+        effectView.frame = bounds
+        effectView.layer.cornerRadius = bounds.height / 2
+        statusDot.layer.cornerRadius = statusDot.bounds.width / 2
     }
 
-    func update(isConnected: Bool, controllerName: String?) {
-        statusDot.backgroundColor = isConnected ? MainViewController.Palette.connected : MainViewController.Palette.accent
-        titleLabel.text = isConnected ? "Connected" : "Connect"
-        titleLabel.textColor = isConnected ? MainViewController.Palette.connected : MainViewController.Palette.accent
-
-        isAccessibilityElement = true
-        accessibilityTraits = isConnected ? .staticText : .button
-        accessibilityLabel = isConnected ? "Controller connected" : "Connect controller"
-        accessibilityValue = isConnected ? controllerName : nil
-        accessibilityHint = isConnected ? nil : "Opens controller connection instructions"
+    func setControllerState(connected: Bool, controllerName: String?) {
+        imageView.image = controllerGlyphImage(connected: connected)
+        imageView.tintColor = nil
+        iconWidthConstraint?.constant = 28
+        iconHeightConstraint?.constant = 19
+        statusDot.isHidden = false
+        statusDot.backgroundColor = connected
+            ? MainViewController.Palette.connected
+            : UIColor.white.withAlphaComponent(0.24)
+        applyGlass(tint: connected
+            ? MainViewController.Palette.connected.withAlphaComponent(0.16)
+            : UIColor.white.withAlphaComponent(0.05))
+        accessibilityLabel = connected ? "Controller connected" : "Connect controller"
+        accessibilityValue = connected ? "Connected" : "Disconnected"
+        accessibilityHint = connected ? nil : "Opens controller connection instructions"
     }
 
-    private func setup() {
-        clipsToBounds = true
-        backgroundColor = UIColor.white.withAlphaComponent(0.035)
-        layer.borderWidth = 1
-        layer.borderColor = MainViewController.Palette.border.cgColor
-
-        blurView.alpha = 0.30
-        blurView.isUserInteractionEnabled = false
-        addSubview(blurView)
-
-        statusDot.translatesAutoresizingMaskIntoConstraints = false
-
-        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        addSubview(statusDot)
-        addSubview(titleLabel)
-
-        NSLayoutConstraint.activate([
-            statusDot.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            statusDot.centerYAnchor.constraint(equalTo: centerYAnchor),
-            statusDot.widthAnchor.constraint(equalToConstant: 10),
-            statusDot.heightAnchor.constraint(equalTo: statusDot.widthAnchor),
-
-            titleLabel.leadingAnchor.constraint(equalTo: statusDot.trailingAnchor, constant: 11),
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
-        ])
-
-        addTarget(self, action: #selector(pressed), for: .touchDown)
-        addTarget(self, action: #selector(released), for: [.touchUpInside, .touchCancel, .touchDragExit])
-        update(isConnected: false, controllerName: nil)
-    }
-
-    @objc private func pressed() {
-        UIView.animate(withDuration: 0.12) {
-            self.alpha = 0.72
-            self.transform = CGAffineTransform(scaleX: 0.97, y: 0.97)
-        }
-    }
-
-    @objc private func released() {
-        UIView.animate(withDuration: 0.18) {
-            self.alpha = 1
-            self.transform = .identity
-        }
-    }
-}
-
-private final class HapticControlView: UIControl {
-    private let pulseLayer = CAShapeLayer()
-    private let surfaceGradient = CAGradientLayer()
-    private let highlightGradient = CAGradientLayer()
-    private let borderGradient = CAGradientLayer()
-    private let borderMask = CAShapeLayer()
-    private let innerRingLayer = CAShapeLayer()
-    private let titleLabel = UILabel()
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setup()
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setup()
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        let circlePath = UIBezierPath(ovalIn: bounds.insetBy(dx: 2, dy: 2)).cgPath
-        let innerPath = UIBezierPath(ovalIn: bounds.insetBy(dx: 8, dy: 8)).cgPath
-
-        layer.cornerRadius = bounds.width / 2
-        layer.shadowPath = UIBezierPath(ovalIn: bounds).cgPath
-
-        surfaceGradient.frame = bounds
-        surfaceGradient.cornerRadius = bounds.width / 2
-
-        highlightGradient.frame = bounds
-        highlightGradient.cornerRadius = bounds.width / 2
-
-        borderGradient.frame = bounds
-        borderMask.frame = bounds
-        borderMask.path = circlePath
-
-        innerRingLayer.frame = bounds
-        innerRingLayer.path = innerPath
-
-        pulseLayer.frame = bounds
-        pulseLayer.path = circlePath
-    }
-
-    func update(playbackState: HapticsPlaybackState) {
-        let isActive = playbackState == .playing || playbackState == .starting
-
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        if isActive {
-            surfaceGradient.colors = [
-                MainViewController.Palette.accent.withAlphaComponent(0.58).cgColor,
-                MainViewController.Palette.accentBlue.withAlphaComponent(0.42).cgColor,
-                MainViewController.Palette.surface.cgColor,
-            ]
-            layer.shadowColor = MainViewController.Palette.accent.cgColor
-            layer.shadowOpacity = 0.55
-        } else {
-            surfaceGradient.colors = [
-                UIColor.white.withAlphaComponent(0.38).cgColor,
-                UIColor(red: 0.18, green: 0.12, blue: 0.31, alpha: 0.88).cgColor,
-                MainViewController.Palette.surface.withAlphaComponent(0.96).cgColor,
-            ]
-            layer.shadowColor = MainViewController.Palette.accentBlue.cgColor
-            layer.shadowOpacity = 0.20
-        }
-        CATransaction.commit()
-
-        switch playbackState {
-        case .idle:
-            setTitle("VIBRATE", color: MainViewController.Palette.accent)
-            stopPulseAnimation()
-            accessibilityLabel = "Start vibration"
-            accessibilityValue = "Off"
-        case .starting:
-            setTitle("STARTING", color: .white)
-            startPulseAnimation()
-            accessibilityLabel = "Stop vibration"
-            accessibilityValue = "Starting"
-        case .playing:
-            setTitle("STOP", color: .white)
-            startPulseAnimation()
-            accessibilityLabel = "Stop vibration"
-            accessibilityValue = "On"
-        case .stopping:
-            setTitle("STOPPING", color: UIColor.white.withAlphaComponent(0.74))
-            stopPulseAnimation()
-            accessibilityLabel = "Vibration stopping"
-            accessibilityValue = "Stopping"
-        }
+    func setActive(_ active: Bool) {
+        imageView.tintColor = .white
+        applyGlass(tint: active
+            ? MainViewController.Palette.pink.withAlphaComponent(0.30)
+            : UIColor.white.withAlphaComponent(0.08))
+        accessibilityLabel = active ? "Stop vibration" : "Start vibration"
+        accessibilityValue = active ? "On" : "Off"
     }
 
     private func setup() {
         isAccessibilityElement = true
         accessibilityTraits = .button
-        layer.masksToBounds = false
-        layer.shadowRadius = 34
-        layer.shadowOffset = .zero
+        clipsToBounds = true
+        layer.borderWidth = 1
+        layer.borderColor = MainViewController.Palette.border.cgColor
 
-        pulseLayer.fillColor = UIColor.clear.cgColor
-        pulseLayer.strokeColor = MainViewController.Palette.accent.withAlphaComponent(0.62).cgColor
-        pulseLayer.lineWidth = 2
-        pulseLayer.opacity = 0
-        layer.addSublayer(pulseLayer)
+        effectView.isUserInteractionEnabled = false
+        addSubview(effectView)
 
-        surfaceGradient.locations = [0.0, 0.42, 1.0]
-        surfaceGradient.startPoint = CGPoint(x: 0.16, y: 0.10)
-        surfaceGradient.endPoint = CGPoint(x: 0.82, y: 0.90)
-        layer.addSublayer(surfaceGradient)
+        imageView.image = symbolImage(named: symbolName)
+        imageView.tintColor = .white
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(imageView)
 
-        highlightGradient.type = .radial
-        highlightGradient.colors = [
-            UIColor.white.withAlphaComponent(0.34).cgColor,
-            UIColor.white.withAlphaComponent(0.05).cgColor,
-            UIColor.clear.cgColor,
-        ]
-        highlightGradient.locations = [0.0, 0.35, 1.0]
-        highlightGradient.startPoint = CGPoint(x: 0.30, y: 0.28)
-        highlightGradient.endPoint = CGPoint(x: 0.84, y: 0.84)
-        layer.addSublayer(highlightGradient)
+        statusDot.isHidden = true
+        statusDot.layer.borderWidth = 2
+        statusDot.layer.borderColor = UIColor.black.withAlphaComponent(0.72).cgColor
+        statusDot.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(statusDot)
 
-        borderGradient.colors = [
-            MainViewController.Palette.accent.cgColor,
-            MainViewController.Palette.accentBlue.cgColor,
-            MainViewController.Palette.accent.cgColor,
-        ]
-        borderGradient.locations = [0.0, 0.55, 1.0]
-        borderGradient.startPoint = CGPoint(x: 0.1, y: 0.0)
-        borderGradient.endPoint = CGPoint(x: 0.9, y: 1.0)
-        borderMask.fillColor = UIColor.clear.cgColor
-        borderMask.strokeColor = UIColor.white.cgColor
-        borderMask.lineWidth = 3
-        borderGradient.mask = borderMask
-        layer.addSublayer(borderGradient)
-
-        innerRingLayer.fillColor = UIColor.clear.cgColor
-        innerRingLayer.strokeColor = UIColor.white.withAlphaComponent(0.06).cgColor
-        innerRingLayer.lineWidth = 1
-        layer.addSublayer(innerRingLayer)
-
-        titleLabel.textAlignment = .center
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(titleLabel)
-
+        let iconSize = min(19, diameter * 0.38)
+        iconWidthConstraint = imageView.widthAnchor.constraint(equalToConstant: iconSize)
+        iconHeightConstraint = imageView.heightAnchor.constraint(equalToConstant: iconSize)
         NSLayoutConstraint.activate([
-            titleLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-            titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 28),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -28),
+            imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            iconWidthConstraint!,
+            iconHeightConstraint!,
+
+            statusDot.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
+            statusDot.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -4),
+            statusDot.widthAnchor.constraint(equalToConstant: 11),
+            statusDot.heightAnchor.constraint(equalTo: statusDot.widthAnchor),
         ])
 
+        applyGlass(tint: glassTint)
         addTarget(self, action: #selector(pressed), for: .touchDown)
         addTarget(self, action: #selector(released), for: [.touchUpInside, .touchCancel, .touchDragExit])
-        update(playbackState: .idle)
+        addTarget(self, action: #selector(activated), for: .touchUpInside)
     }
 
-    private func setTitle(_ title: String, color: UIColor) {
-        titleLabel.attributedText = NSAttributedString(
-            string: title,
-            attributes: [
-                .font: UIFont.systemFont(ofSize: 22, weight: .bold),
-                .foregroundColor: color,
-                .kern: 3.2,
-            ]
-        )
+    private func applyGlass(tint: UIColor) {
+        glassTint = tint
+        if #available(iOS 26.0, *) {
+            let effect = UIGlassEffect(style: .regular)
+            effect.isInteractive = true
+            effect.tintColor = tint
+            effectView.effect = effect
+            backgroundColor = .clear
+        } else {
+            effectView.effect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+            backgroundColor = tint
+        }
     }
 
-    private func startPulseAnimation() {
-        guard pulseLayer.animation(forKey: "pulse") == nil else { return }
-
-        let scale = CABasicAnimation(keyPath: "transform.scale")
-        scale.fromValue = 1.0
-        scale.toValue = 1.10
-
-        let opacity = CABasicAnimation(keyPath: "opacity")
-        opacity.fromValue = 0.48
-        opacity.toValue = 0.0
-
-        let group = CAAnimationGroup()
-        group.animations = [scale, opacity]
-        group.duration = 1.45
-        group.repeatCount = .infinity
-        group.timingFunction = CAMediaTimingFunction(name: .easeOut)
-        pulseLayer.add(group, forKey: "pulse")
+    private func symbolImage(named name: String) -> UIImage? {
+        let configuration = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        return UIImage(systemName: name, withConfiguration: configuration)
     }
 
-    private func stopPulseAnimation() {
-        pulseLayer.removeAnimation(forKey: "pulse")
-        pulseLayer.opacity = 0
+    private func controllerGlyphImage(connected: Bool) -> UIImage {
+        let size = CGSize(width: 56, height: 38)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            let path = UIBezierPath()
+            path.move(to: CGPoint(x: 11, y: 6))
+            path.addCurve(to: CGPoint(x: 21, y: 3),
+                          controlPoint1: CGPoint(x: 13, y: 3),
+                          controlPoint2: CGPoint(x: 17, y: 3))
+            path.addLine(to: CGPoint(x: 35, y: 3))
+            path.addCurve(to: CGPoint(x: 45, y: 6),
+                          controlPoint1: CGPoint(x: 39, y: 3),
+                          controlPoint2: CGPoint(x: 43, y: 3))
+            path.addCurve(to: CGPoint(x: 54, y: 29),
+                          controlPoint1: CGPoint(x: 51, y: 11),
+                          controlPoint2: CGPoint(x: 56, y: 23))
+            path.addCurve(to: CGPoint(x: 46, y: 34),
+                          controlPoint1: CGPoint(x: 52, y: 34),
+                          controlPoint2: CGPoint(x: 49, y: 35))
+            path.addLine(to: CGPoint(x: 37, y: 25))
+            path.addCurve(to: CGPoint(x: 19, y: 25),
+                          controlPoint1: CGPoint(x: 32, y: 27),
+                          controlPoint2: CGPoint(x: 24, y: 27))
+            path.addLine(to: CGPoint(x: 10, y: 34))
+            path.addCurve(to: CGPoint(x: 2, y: 29),
+                          controlPoint1: CGPoint(x: 7, y: 35),
+                          controlPoint2: CGPoint(x: 4, y: 34))
+            path.addCurve(to: CGPoint(x: 11, y: 6),
+                          controlPoint1: CGPoint(x: 0, y: 23),
+                          controlPoint2: CGPoint(x: 5, y: 11))
+            path.close()
+
+            UIColor.white.withAlphaComponent(connected ? 1 : 0.58).setFill()
+            path.fill()
+
+            let detailsColor = UIColor.black.withAlphaComponent(0.80)
+            detailsColor.setFill()
+            UIBezierPath(ovalIn: CGRect(x: 17, y: 20, width: 7, height: 7)).fill()
+            UIBezierPath(ovalIn: CGRect(x: 32, y: 20, width: 7, height: 7)).fill()
+
+            let dPad = UIBezierPath()
+            dPad.append(UIBezierPath(roundedRect: CGRect(x: 11, y: 10, width: 11, height: 4), cornerRadius: 1.5))
+            dPad.append(UIBezierPath(roundedRect: CGRect(x: 14.5, y: 6.5, width: 4, height: 11), cornerRadius: 1.5))
+            dPad.fill()
+
+            for point in [CGPoint(x: 43, y: 8), CGPoint(x: 48, y: 12), CGPoint(x: 38, y: 12), CGPoint(x: 43, y: 16)] {
+                UIBezierPath(ovalIn: CGRect(x: point.x - 2, y: point.y - 2, width: 4, height: 4)).fill()
+            }
+
+            context.cgContext.setStrokeColor(detailsColor.cgColor)
+            context.cgContext.setLineWidth(2)
+            context.cgContext.move(to: CGPoint(x: 25, y: 10))
+            context.cgContext.addLine(to: CGPoint(x: 31, y: 10))
+            context.cgContext.strokePath()
+        }
     }
 
     @objc private func pressed() {
-        UIView.animate(withDuration: 0.12) {
-            self.transform = CGAffineTransform(scaleX: 0.97, y: 0.97)
+        UIView.animate(withDuration: 0.10) {
+            self.alpha = 0.76
+            self.transform = CGAffineTransform(scaleX: 0.94, y: 0.94)
         }
     }
 
     @objc private func released() {
-        UIView.animate(withDuration: 0.22,
+        UIView.animate(withDuration: 0.18,
                        delay: 0,
-                       usingSpringWithDamping: 0.70,
-                       initialSpringVelocity: 0.5) {
+                       usingSpringWithDamping: 0.72,
+                       initialSpringVelocity: 0.4) {
+            self.alpha = 1
             self.transform = .identity
+        }
+    }
+
+    @objc private func activated() {
+        feedbackGenerator.impactOccurred(intensity: 0.72)
+        feedbackGenerator.prepare()
+    }
+}
+
+private final class WaveLogoView: UIView {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        configureTransparency()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        configureTransparency()
+    }
+
+    private func configureTransparency() {
+        backgroundColor = .clear
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    override func draw(_ rect: CGRect) {
+        UIColor.white.setFill()
+        let heights: [CGFloat] = [20, 34, 44, 50, 44, 34, 20]
+        let width: CGFloat = 5
+        let gap: CGFloat = 2
+        let totalWidth = CGFloat(heights.count) * width + CGFloat(heights.count - 1) * gap
+        var x = (rect.width - totalWidth) / 2
+
+        for height in heights {
+            let barRect = CGRect(x: x, y: (rect.height - height) / 2, width: width, height: height)
+            UIBezierPath(roundedRect: barRect, cornerRadius: width / 2).fill()
+            x += width + gap
         }
     }
 }
 
-private final class InstructionsCardView: UIControl {
-    private let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterialDark))
-    private let iconContainer = UIView()
-    private let iconView = UIImageView(image: UIImage(systemName: "gamecontroller.fill"))
+private final class PlayerCardView: UIView {
+    var onPowerTap: (() -> Void)?
+
+    private let waveformView = WaveformView()
+    private let shadeLayer = CAGradientLayer()
+    private let heartBadge = UIView()
+    private let heartImage = UIImageView(image: UIImage(systemName: "waveform.path"))
+    private let titleLabel = UILabel()
+    private let detailLabel = UILabel()
+    private let powerButton = GlassCircleControl(symbolName: "power", diameter: 60)
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -647,135 +574,344 @@ private final class InstructionsCardView: UIControl {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        layer.cornerRadius = 24
-        blurView.frame = bounds
-        blurView.layer.cornerRadius = 24
-        iconContainer.layer.cornerRadius = 18
+        layer.cornerRadius = 42
+        waveformView.frame = bounds
+        shadeLayer.frame = CGRect(x: 0, y: max(0, bounds.height - 165), width: bounds.width, height: 165)
+        heartBadge.layer.cornerRadius = heartBadge.bounds.width / 2
+    }
+
+    func update(playbackState: HapticsPlaybackState) {
+        let active = playbackState == .playing || playbackState == .starting
+        powerButton.setActive(active)
+        powerButton.isEnabled = playbackState != .stopping
     }
 
     private func setup() {
         clipsToBounds = true
-        backgroundColor = UIColor.white.withAlphaComponent(0.035)
-        layer.borderWidth = 1
-        layer.borderColor = MainViewController.Palette.border.cgColor
+        backgroundColor = .black
 
-        blurView.alpha = 0.28
-        blurView.isUserInteractionEnabled = false
-        addSubview(blurView)
+        waveformView.isUserInteractionEnabled = false
+        addSubview(waveformView)
 
-        iconContainer.backgroundColor = MainViewController.Palette.accent.withAlphaComponent(0.14)
-        iconContainer.isUserInteractionEnabled = false
-        iconContainer.translatesAutoresizingMaskIntoConstraints = false
+        shadeLayer.colors = [
+            UIColor.clear.cgColor,
+            UIColor.black.withAlphaComponent(0.40).cgColor,
+            UIColor.black.withAlphaComponent(0.92).cgColor,
+        ]
+        shadeLayer.locations = [0.0, 0.40, 1.0]
+        layer.addSublayer(shadeLayer)
 
-        iconView.tintColor = MainViewController.Palette.accent
-        iconView.contentMode = .scaleAspectFit
-        iconView.translatesAutoresizingMaskIntoConstraints = false
+        heartBadge.translatesAutoresizingMaskIntoConstraints = false
+        heartBadge.backgroundColor = UIColor.black.withAlphaComponent(0.26)
+        heartBadge.layer.borderWidth = 1
+        heartBadge.layer.borderColor = MainViewController.Palette.coral.cgColor
 
-        let titleLabel = UILabel()
-        titleLabel.text = "How to connect"
+        heartImage.translatesAutoresizingMaskIntoConstraints = false
+        heartImage.tintColor = MainViewController.Palette.pink
+        heartImage.contentMode = .scaleAspectFit
+
+        titleLabel.text = "Steady"
         titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
         titleLabel.textColor = MainViewController.Palette.primaryText
 
-        let detailLabel = UILabel()
-        detailLabel.text = "PlayStation, Xbox or MFi controller"
-        detailLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        detailLabel.text = "Continuous vibration"
+        detailLabel.font = .systemFont(ofSize: 14, weight: .regular)
         detailLabel.textColor = MainViewController.Palette.secondaryText
 
         let labels = UIStackView(arrangedSubviews: [titleLabel, detailLabel])
         labels.axis = .vertical
-        labels.spacing = 3
-        labels.isUserInteractionEnabled = false
+        labels.spacing = 5
         labels.translatesAutoresizingMaskIntoConstraints = false
 
-        let chevron = UIImageView(image: UIImage(systemName: "chevron.right"))
-        chevron.tintColor = MainViewController.Palette.accent
-        chevron.contentMode = .scaleAspectFit
-        chevron.isUserInteractionEnabled = false
-        chevron.translatesAutoresizingMaskIntoConstraints = false
+        powerButton.translatesAutoresizingMaskIntoConstraints = false
+        powerButton.addTarget(self, action: #selector(powerTapped), for: .touchUpInside)
 
-        addSubview(iconContainer)
-        iconContainer.addSubview(iconView)
+        addSubview(heartBadge)
+        heartBadge.addSubview(heartImage)
         addSubview(labels)
-        addSubview(chevron)
+        addSubview(powerButton)
 
         NSLayoutConstraint.activate([
-            iconContainer.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            iconContainer.centerYAnchor.constraint(equalTo: centerYAnchor),
-            iconContainer.widthAnchor.constraint(equalToConstant: 44),
-            iconContainer.heightAnchor.constraint(equalTo: iconContainer.widthAnchor),
+            heartBadge.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
+            heartBadge.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -28),
+            heartBadge.widthAnchor.constraint(equalToConstant: 60),
+            heartBadge.heightAnchor.constraint(equalTo: heartBadge.widthAnchor),
 
-            iconView.centerXAnchor.constraint(equalTo: iconContainer.centerXAnchor),
-            iconView.centerYAnchor.constraint(equalTo: iconContainer.centerYAnchor),
-            iconView.widthAnchor.constraint(equalToConstant: 23),
-            iconView.heightAnchor.constraint(equalTo: iconView.widthAnchor),
+            heartImage.centerXAnchor.constraint(equalTo: heartBadge.centerXAnchor),
+            heartImage.centerYAnchor.constraint(equalTo: heartBadge.centerYAnchor),
+            heartImage.widthAnchor.constraint(equalToConstant: 25),
+            heartImage.heightAnchor.constraint(equalTo: heartImage.widthAnchor),
 
-            labels.leadingAnchor.constraint(equalTo: iconContainer.trailingAnchor, constant: 14),
-            labels.centerYAnchor.constraint(equalTo: centerYAnchor),
-            labels.trailingAnchor.constraint(lessThanOrEqualTo: chevron.leadingAnchor, constant: -12),
+            labels.leadingAnchor.constraint(equalTo: heartBadge.trailingAnchor, constant: 10),
+            labels.centerYAnchor.constraint(equalTo: heartBadge.centerYAnchor),
+            labels.trailingAnchor.constraint(lessThanOrEqualTo: powerButton.leadingAnchor, constant: -8),
 
-            chevron.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -18),
-            chevron.centerYAnchor.constraint(equalTo: centerYAnchor),
-            chevron.widthAnchor.constraint(equalToConstant: 16),
-            chevron.heightAnchor.constraint(equalTo: chevron.widthAnchor),
+            powerButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            powerButton.centerYAnchor.constraint(equalTo: heartBadge.centerYAnchor),
+            powerButton.widthAnchor.constraint(equalToConstant: 60),
+            powerButton.heightAnchor.constraint(equalTo: powerButton.widthAnchor),
         ])
 
+        accessibilityLabel = "Steady. Continuous vibration."
+        update(playbackState: .idle)
+    }
+
+    @objc private func powerTapped() {
+        onPowerTap?()
+    }
+}
+
+private final class WaveformView: UIView {
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    override func draw(_ rect: CGRect) {
+        guard let context = UIGraphicsGetCurrentContext() else { return }
+
+        let combinedPath = CGMutablePath()
+        let rowCount = 20
+        let topInset: CGFloat = 10
+        let bottomInset: CGFloat = 38
+        let spacing = (rect.height - topInset - bottomInset) / CGFloat(rowCount - 1)
+        let segments = 28
+
+        for row in 0..<rowCount {
+            let centerY = topInset + CGFloat(row) * spacing
+            let amplitude = 3.0 + CGFloat((row * 7) % 12)
+            let thickness = 5.0 + CGFloat((row * 5) % 6)
+            let frequency = 1.05 + CGFloat(row % 4) * 0.18
+            let phase = CGFloat(row) * 0.72
+            var upper: [CGPoint] = []
+            var lower: [CGPoint] = []
+
+            for index in 0...segments {
+                let progress = CGFloat(index) / CGFloat(segments)
+                let x = progress * rect.width
+                let angle = Double(progress * .pi * 2 * frequency + phase)
+                let secondary = Double(progress * .pi * 4 + phase * 0.37)
+                let wave = CGFloat(sin(angle)) * amplitude + CGFloat(sin(secondary)) * amplitude * 0.34
+                upper.append(CGPoint(x: x, y: centerY + wave - thickness / 2))
+                lower.append(CGPoint(x: x, y: centerY + wave + thickness / 2))
+            }
+
+            let path = CGMutablePath()
+            if let first = upper.first {
+                path.move(to: first)
+            }
+            upper.dropFirst().forEach { path.addLine(to: $0) }
+            lower.reversed().forEach { path.addLine(to: $0) }
+            path.closeSubpath()
+            combinedPath.addPath(path)
+        }
+
+        context.saveGState()
+        context.addPath(combinedPath)
+        context.clip()
+        let colors = [
+            MainViewController.Palette.coral.cgColor,
+            MainViewController.Palette.pink.cgColor,
+            MainViewController.Palette.violet.cgColor,
+        ] as CFArray
+        if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                     colors: colors,
+                                     locations: [0, 0.62, 1]) {
+            context.drawLinearGradient(
+                gradient,
+                start: CGPoint(x: 0, y: rect.midY),
+                end: CGPoint(x: rect.width, y: rect.midY),
+                options: []
+            )
+        }
+        context.restoreGState()
+    }
+}
+
+private final class IntensitySliderView: UIControl {
+    var value: Float = 0.55 {
+        didSet {
+            value = min(max(value, 0), 1)
+            barsView.fraction = CGFloat(value)
+            accessibilityValue = "\(Int((value * 100).rounded())) percent"
+            setNeedsLayout()
+        }
+    }
+
+    private let trackView = UIView()
+    private let barsView = IntensityBarsView()
+    private let thumb = GlassCircleControl(symbolName: "arrow.left.and.right", diameter: 50)
+    private let label = UILabel()
+    private let feedbackGenerator = UISelectionFeedbackGenerator()
+    private var lastFeedbackStep = 11
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setup()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let trackHeight: CGFloat = 50
+        trackView.frame = CGRect(x: 0, y: 0, width: bounds.width, height: trackHeight)
+        trackView.layer.cornerRadius = trackHeight / 2
+        barsView.frame = trackView.bounds.insetBy(dx: 4, dy: 4)
+
+        let thumbSize: CGFloat = 50
+        let travel = max(0, bounds.width - thumbSize)
+        thumb.frame = CGRect(x: CGFloat(value) * travel, y: 0, width: thumbSize, height: thumbSize)
+        label.frame = CGRect(x: 0, y: 57, width: bounds.width, height: 20)
+    }
+
+    override func beginTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        feedbackGenerator.prepare()
+        updateValue(for: touch.location(in: self).x)
+        return true
+    }
+
+    override func continueTracking(_ touch: UITouch, with event: UIEvent?) -> Bool {
+        updateValue(for: touch.location(in: self).x)
+        return true
+    }
+
+    override func accessibilityIncrement() {
+        value += 0.05
+        sendActions(for: .valueChanged)
+    }
+
+    override func accessibilityDecrement() {
+        value -= 0.05
+        sendActions(for: .valueChanged)
+    }
+
+    private func setup() {
         isAccessibilityElement = true
-        accessibilityTraits = .button
-        accessibilityLabel = "How to connect a controller"
-        accessibilityHint = "Opens controller connection instructions"
+        accessibilityTraits = .adjustable
+        accessibilityLabel = "Intensity"
 
-        addTarget(self, action: #selector(pressed), for: .touchDown)
-        addTarget(self, action: #selector(released), for: [.touchUpInside, .touchCancel, .touchDragExit])
+        trackView.backgroundColor = MainViewController.Palette.darkSurface
+        trackView.clipsToBounds = true
+        trackView.layer.borderWidth = 1
+        trackView.layer.borderColor = UIColor.white.withAlphaComponent(0.05).cgColor
+        trackView.isUserInteractionEnabled = false
+
+        barsView.isUserInteractionEnabled = false
+        thumb.isUserInteractionEnabled = false
+
+        label.text = "Intensity"
+        label.textAlignment = .center
+        label.textColor = UIColor.white.withAlphaComponent(0.22)
+        label.font = .systemFont(ofSize: 14, weight: .regular)
+
+        addSubview(trackView)
+        trackView.addSubview(barsView)
+        addSubview(thumb)
+        addSubview(label)
+        value = 0.55
     }
 
-    @objc private func pressed() {
-        UIView.animate(withDuration: 0.12) {
-            self.alpha = 0.72
-            self.transform = CGAffineTransform(scaleX: 0.985, y: 0.985)
+    private func updateValue(for x: CGFloat) {
+        let thumbSize: CGFloat = 50
+        let travel = max(1, bounds.width - thumbSize)
+        value = Float((x - thumbSize / 2) / travel)
+        let feedbackStep = Int((value * 20).rounded())
+        if feedbackStep != lastFeedbackStep {
+            lastFeedbackStep = feedbackStep
+            feedbackGenerator.selectionChanged()
+            feedbackGenerator.prepare()
+        }
+        sendActions(for: .valueChanged)
+    }
+}
+
+private final class IntensityBarsView: UIView {
+    var fraction: CGFloat = 0.55 {
+        didSet {
+            setNeedsDisplay()
         }
     }
 
-    @objc private func released() {
-        UIView.animate(withDuration: 0.18) {
-            self.alpha = 1
-            self.transform = .identity
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        isOpaque = false
+        contentMode = .redraw
+    }
+
+    override func draw(_ rect: CGRect) {
+        guard let context = UIGraphicsGetCurrentContext() else { return }
+        let barCount = 49
+        let gap: CGFloat = 2.4
+        let barWidth = max(2.5, (rect.width - CGFloat(barCount - 1) * gap) / CGFloat(barCount))
+        let path = CGMutablePath()
+
+        for index in 0..<barCount {
+            let edgeDistance = min(index, barCount - 1 - index)
+            let scale = min(1, 0.50 + CGFloat(edgeDistance) * 0.16)
+            let height = rect.height * scale
+            let x = CGFloat(index) * (barWidth + gap)
+            let barRect = CGRect(x: x, y: (rect.height - height) / 2, width: barWidth, height: height)
+            path.addPath(UIBezierPath(roundedRect: barRect, cornerRadius: barWidth / 2).cgPath)
         }
+
+        context.addPath(path)
+        context.setFillColor(UIColor.white.withAlphaComponent(0.09).cgColor)
+        context.fillPath()
+
+        context.saveGState()
+        context.clip(to: CGRect(x: 0, y: 0, width: rect.width * fraction, height: rect.height))
+        context.addPath(path)
+        context.clip()
+        let colors = [
+            MainViewController.Palette.coral.cgColor,
+            MainViewController.Palette.pink.cgColor,
+        ] as CFArray
+        if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                     colors: colors,
+                                     locations: [0, 1]) {
+            context.drawLinearGradient(
+                gradient,
+                start: CGPoint(x: 0, y: rect.midY),
+                end: CGPoint(x: rect.width, y: rect.midY),
+                options: []
+            )
+        }
+        context.restoreGState()
     }
 }
 
 private final class PairingInstructionsViewController: UIViewController {
-    private let backgroundGradient = CAGradientLayer()
     var onClose: (() -> Void)?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         overrideUserInterfaceStyle = .dark
-        view.backgroundColor = MainViewController.Palette.backgroundBottom
-        configureBackground()
+        view.backgroundColor = UIColor(red: 0.045, green: 0.035, blue: 0.055, alpha: 1)
         buildInterface()
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        backgroundGradient.frame = view.bounds
-    }
-
-    private func configureBackground() {
-        backgroundGradient.colors = [
-            MainViewController.Palette.backgroundTop.cgColor,
-            MainViewController.Palette.backgroundBottom.cgColor,
-        ]
-        backgroundGradient.startPoint = CGPoint(x: 0.2, y: 0.0)
-        backgroundGradient.endPoint = CGPoint(x: 0.8, y: 1.0)
-        view.layer.insertSublayer(backgroundGradient, at: 0)
     }
 
     private func buildInterface() {
         let titleLabel = UILabel()
         titleLabel.text = "Connect a controller"
         titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
-        titleLabel.textColor = MainViewController.Palette.primaryText
-        titleLabel.numberOfLines = 0
+        titleLabel.textColor = .white
 
         let subtitleLabel = UILabel()
         subtitleLabel.text = "Pair it in iPhone Settings, then return to ZOONZOON."
@@ -783,140 +919,66 @@ private final class PairingInstructionsViewController: UIViewController {
         subtitleLabel.textColor = MainViewController.Palette.secondaryText
         subtitleLabel.numberOfLines = 0
 
-        let firstStep = makeStep(
-            number: "1",
-            title: "Turn on pairing mode",
-            detail: "PlayStation: hold PS + Share/Create. Xbox: hold the Pair button."
-        )
-        let secondStep = makeStep(
-            number: "2",
-            title: "Open Bluetooth settings",
-            detail: "On your iPhone, go to Settings → Bluetooth and select the controller."
-        )
-        let thirdStep = makeStep(
-            number: "3",
-            title: "Return to ZOONZOON",
-            detail: "The connection status updates automatically when pairing is complete."
-        )
+        let steps = UIStackView(arrangedSubviews: [
+            makeStep(number: "1", text: "Turn on pairing mode on the controller."),
+            makeStep(number: "2", text: "Open Settings → Bluetooth and select it."),
+            makeStep(number: "3", text: "Return here. Connection updates automatically."),
+        ])
+        steps.axis = .vertical
+        steps.spacing = 18
 
-        let compatibilityLabel = UILabel()
-        compatibilityLabel.text = "Compatible with PlayStation, Xbox and MFi controllers supported by iOS."
-        compatibilityLabel.font = .systemFont(ofSize: 12, weight: .medium)
-        compatibilityLabel.textColor = MainViewController.Palette.secondaryText
-        compatibilityLabel.numberOfLines = 0
-        compatibilityLabel.textAlignment = .center
-
-        var closeConfiguration = UIButton.Configuration.filled()
-        closeConfiguration.title = "Got it"
-        closeConfiguration.baseBackgroundColor = MainViewController.Palette.accent
-        closeConfiguration.baseForegroundColor = .white
-        closeConfiguration.cornerStyle = .large
-        closeConfiguration.contentInsets = NSDirectionalEdgeInsets(
-            top: 14,
-            leading: 18,
-            bottom: 14,
-            trailing: 18
-        )
-        let closeButton = UIButton(configuration: closeConfiguration)
+        var configuration = UIButton.Configuration.filled()
+        configuration.title = "Got it"
+        configuration.baseBackgroundColor = MainViewController.Palette.pink
+        configuration.baseForegroundColor = .white
+        configuration.cornerStyle = .capsule
+        let closeButton = UIButton(configuration: configuration)
         closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
-        let headerStack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel])
-        headerStack.axis = .vertical
-        headerStack.alignment = .fill
-        headerStack.spacing = 8
-        headerStack.translatesAutoresizingMaskIntoConstraints = false
-
-        let stepsStack = UIStackView(arrangedSubviews: [firstStep, secondStep, thirdStep])
-        stepsStack.axis = .vertical
-        stepsStack.alignment = .fill
-        stepsStack.spacing = 12
-        stepsStack.translatesAutoresizingMaskIntoConstraints = false
-
-        let footerStack = UIStackView(arrangedSubviews: [compatibilityLabel, closeButton])
-        footerStack.axis = .vertical
-        footerStack.alignment = .fill
-        footerStack.spacing = 14
-        footerStack.translatesAutoresizingMaskIntoConstraints = false
-
-        let stepsArea = UIView()
-        stepsArea.translatesAutoresizingMaskIntoConstraints = false
-
-        view.addSubview(headerStack)
-        view.addSubview(stepsArea)
-        stepsArea.addSubview(stepsStack)
-        view.addSubview(footerStack)
+        let stack = UIStackView(arrangedSubviews: [titleLabel, subtitleLabel, steps, closeButton])
+        stack.axis = .vertical
+        stack.spacing = 18
+        stack.setCustomSpacing(10, after: titleLabel)
+        stack.setCustomSpacing(28, after: subtitleLabel)
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stack)
 
         NSLayoutConstraint.activate([
-            headerStack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 22),
-            headerStack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            headerStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
-
-            stepsArea.topAnchor.constraint(equalTo: headerStack.bottomAnchor, constant: 14),
-            stepsArea.leadingAnchor.constraint(equalTo: headerStack.leadingAnchor),
-            stepsArea.trailingAnchor.constraint(equalTo: headerStack.trailingAnchor),
-            stepsArea.bottomAnchor.constraint(equalTo: footerStack.topAnchor, constant: -14),
-
-            stepsStack.leadingAnchor.constraint(equalTo: stepsArea.leadingAnchor),
-            stepsStack.trailingAnchor.constraint(equalTo: stepsArea.trailingAnchor),
-            stepsStack.centerYAnchor.constraint(equalTo: stepsArea.centerYAnchor),
-            stepsStack.topAnchor.constraint(greaterThanOrEqualTo: stepsArea.topAnchor),
-            stepsStack.bottomAnchor.constraint(lessThanOrEqualTo: stepsArea.bottomAnchor),
-
-            footerStack.leadingAnchor.constraint(equalTo: headerStack.leadingAnchor),
-            footerStack.trailingAnchor.constraint(equalTo: headerStack.trailingAnchor),
-            footerStack.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
+            stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 22),
+            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -14),
             closeButton.heightAnchor.constraint(equalToConstant: 52),
         ])
     }
 
-    private func makeStep(number: String, title: String, detail: String) -> UIView {
+    private func makeStep(number: String, text: String) -> UIView {
         let badge = UILabel()
         badge.text = number
+        badge.textAlignment = .center
         badge.font = .systemFont(ofSize: 14, weight: .bold)
         badge.textColor = .white
-        badge.textAlignment = .center
-        badge.backgroundColor = MainViewController.Palette.accent
+        badge.backgroundColor = MainViewController.Palette.pink
         badge.layer.cornerRadius = 15
         badge.clipsToBounds = true
         badge.translatesAutoresizingMaskIntoConstraints = false
 
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = .systemFont(ofSize: 15, weight: .bold)
-        titleLabel.textColor = MainViewController.Palette.primaryText
+        let label = UILabel()
+        label.text = text
+        label.font = .systemFont(ofSize: 15, weight: .medium)
+        label.textColor = .white
+        label.numberOfLines = 0
 
-        let detailLabel = UILabel()
-        detailLabel.text = detail
-        detailLabel.font = .systemFont(ofSize: 13, weight: .medium)
-        detailLabel.textColor = MainViewController.Palette.secondaryText
-        detailLabel.numberOfLines = 0
-
-        let labels = UIStackView(arrangedSubviews: [titleLabel, detailLabel])
-        labels.axis = .vertical
-        labels.spacing = 3
-
-        let row = UIStackView(arrangedSubviews: [badge, labels])
+        let row = UIStackView(arrangedSubviews: [badge, label])
         row.axis = .horizontal
         row.alignment = .center
-        row.spacing = 12
-        row.translatesAutoresizingMaskIntoConstraints = false
-
-        let card = UIView()
-        card.backgroundColor = UIColor.white.withAlphaComponent(0.045)
-        card.layer.cornerRadius = 18
-        card.layer.borderWidth = 1
-        card.layer.borderColor = MainViewController.Palette.border.withAlphaComponent(0.55).cgColor
-        card.addSubview(row)
+        row.spacing = 14
 
         NSLayoutConstraint.activate([
             badge.widthAnchor.constraint(equalToConstant: 30),
             badge.heightAnchor.constraint(equalTo: badge.widthAnchor),
-            row.topAnchor.constraint(equalTo: card.topAnchor, constant: 12),
-            row.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 14),
-            row.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -14),
-            row.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -12),
         ])
-        return card
+        return row
     }
 
     @objc private func close() {
