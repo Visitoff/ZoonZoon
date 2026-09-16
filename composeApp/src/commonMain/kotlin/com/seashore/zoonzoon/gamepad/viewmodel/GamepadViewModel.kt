@@ -149,6 +149,14 @@ class GamepadViewModel(
         setVibrationEnabled(!enabled)
     }
 
+    fun onWaveTouch(normalizedY: Float?) {
+        if (normalizedY == null) {
+            vibrationEngine.stopTouchHaptics()
+        } else {
+            vibrationEngine.updateTouchHaptics(normalizedY)
+        }
+    }
+
     fun openGamepadHelp() {
         _showGamepadHelp.value = true
     }

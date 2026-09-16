@@ -40,7 +40,10 @@ fun HomeScreen(
                 patternName = patternCopy.name,
                 patternDescription = patternCopy.description,
                 patternEmoji = patternCopy.emoji,
+                intensity = vibrationState.intensity,
+                vibrationEnabled = vibrationState.enabled,
                 onToggleVibration = viewModel::toggleVibration,
+                onWaveTouch = viewModel::onWaveTouch,
                 modifier = Modifier.offset(x = PlayerX, y = PlayerY)
             )
             IntensitySlider(

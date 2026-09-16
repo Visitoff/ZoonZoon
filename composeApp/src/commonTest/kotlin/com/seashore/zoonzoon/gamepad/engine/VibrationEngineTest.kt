@@ -403,5 +403,48 @@ class VibrationEngineTest {
         engine.disableVibration()
         advanceTimeBy(1)
     }
+
+    @Test
+    fun testTouchHapticsWorkWhilePlaybackIsOff() = runTest {
+        val controller = FakePlatformGamepadController()
+        val engine = VibrationEngine(controller, this)
+        engine.setIntensity(1f)
+
+        engine.updateTouchHaptics(0f)
+        advanceTimeBy(VibrationEngine.FRAME_INTERVAL_MS)
+
+        val last = controller.getLastCommand()
+        assertTrue(last != null, "Touch should send a command without enabling playback")
+        assertEquals(TouchHapticMaxScale, last!!.leftMotor, 0.001f)
+        assertEquals(0f, last.rightMotor, 0.001f)
+        assertFalse(engine.vibrationState.value.enabled)
+
+        engine.stopTouchHaptics()
+        advanceTimeBy(1)
+        val stop = controller.getLastCommand()
+        assertEquals(0f, stop!!.leftMotor)
+        assertEquals(0f, stop.rightMotor)
+    }
+
+    @Test
+    fun testTouchHapticsOverrideActivePattern() = runTest {
+        val controller = FakePlatformGamepadController()
+        val engine = VibrationEngine(controller, this)
+        engine.setPattern(VibrationPattern.Constant)
+        engine.setIntensity(1f)
+        engine.enableVibration()
+        advanceTimeBy(VibrationEngine.FRAME_INTERVAL_MS)
+
+        engine.updateTouchHaptics(1f)
+        advanceTimeBy(VibrationEngine.FRAME_INTERVAL_MS * 2)
+
+        val last = controller.commands.last { it.leftMotor != 0f || it.rightMotor != 0f }
+        assertEquals(0f, last.leftMotor, 0.001f)
+        assertEquals(TouchHapticMaxScale, last.rightMotor, 0.001f)
+
+        engine.stopTouchHaptics()
+        engine.disableVibration()
+        advanceTimeBy(1)
+    }
 }
 

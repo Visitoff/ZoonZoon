@@ -17,12 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.seashore.zoonzoon.generated.resources.Res
-import com.seashore.zoonzoon.generated.resources.home_eq_hi
-import com.seashore.zoonzoon.generated.resources.home_eq_lo
 import com.seashore.zoonzoon.generated.resources.ic_power
 import com.seashore.zoonzoon.ui.fig.FigAsset
 import com.seashore.zoonzoon.ui.fig.FigCircleButton
@@ -63,7 +60,10 @@ fun Player(
     patternName: String,
     patternDescription: String,
     patternEmoji: String,
+    intensity: Float,
+    vibrationEnabled: Boolean,
     onToggleVibration: () -> Unit,
+    onWaveTouch: (Float?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     ProvideGlassBackdrop {
@@ -80,17 +80,10 @@ fun Player(
                     .background(FigColor.black)
                     .glassSource()
             ) {
-                FigAsset(
-                    resource = Res.drawable.home_eq_lo,
-                    width = 473.907.dp,
-                    height = 433.038.dp,
-                    modifier = Modifier.offset(x = (-59.04).dp, y = 11.981.dp)
-                )
-                FigAsset(
-                    resource = Res.drawable.home_eq_hi,
-                    width = 510.dp,
-                    height = 433.dp,
-                    modifier = Modifier.offset(x = (-59).dp, y = (-382).dp)
+                InteractiveWaveform(
+                    intensity = intensity,
+                    active = vibrationEnabled,
+                    onTouchY = onWaveTouch
                 )
                 Box(
                     modifier = Modifier

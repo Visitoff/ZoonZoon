@@ -1,6 +1,7 @@
 package com.seashore.zoonzoon.gamepad.viewmodel
 
 import com.seashore.zoonzoon.gamepad.engine.FakePlatformGamepadController
+import com.seashore.zoonzoon.gamepad.engine.TouchHapticMaxScale
 import com.seashore.zoonzoon.gamepad.engine.VibrationEngine
 import com.seashore.zoonzoon.gamepad.model.ConnectionState
 import com.seashore.zoonzoon.gamepad.model.VibrationPattern
@@ -588,5 +589,26 @@ class GamepadViewModelTest {
         controller.setConnectionState(ConnectionState.Scanning)
         advanceTimeBy(1)
         assertEquals(ConnectionState.Scanning, viewModel.connectionState.value)
+    }
+
+    @Test
+    fun testWaveTouchDrivesMotorsWithoutEnablingPlayback() = runTest {
+        val controller = FakePlatformGamepadController()
+        val engine = VibrationEngine(controller, this)
+        val viewModel = GamepadViewModel(engine, this)
+        viewModel.setIntensity(1f)
+
+        viewModel.onWaveTouch(0f)
+        advanceTimeBy(VibrationEngine.FRAME_INTERVAL_MS)
+
+        val last = controller.getLastCommand()
+        assertTrue(last != null)
+        assertEquals(TouchHapticMaxScale, last!!.leftMotor, 0.001f)
+        assertFalse(viewModel.vibrationState.value.enabled)
+
+        viewModel.onWaveTouch(null)
+        advanceTimeBy(1)
+        assertEquals(0f, controller.getLastCommand()!!.leftMotor)
+        assertEquals(0f, controller.getLastCommand()!!.rightMotor)
     }
 }

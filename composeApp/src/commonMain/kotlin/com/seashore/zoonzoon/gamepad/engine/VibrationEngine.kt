@@ -63,6 +63,12 @@ class VibrationEngine(
     /** Job for the currently running pattern execution loop, if any. */
     private var executionJob: Job? = null
 
+    /** Vertical finger position on the Home waveform, or null when not touching. */
+    private val touchNormalizedY = MutableStateFlow<Float?>(null)
+
+    /** Dedicated loop used while dragging the waveform with playback off. */
+    private var touchJob: Job? = null
+
     // -------------------------------------------------------------------------
     // Public API
     // -------------------------------------------------------------------------
@@ -76,6 +82,7 @@ class VibrationEngine(
      * **Validates: Requirement 2.1, 2.4**
      */
     fun enableVibration() {
+        stopTouchLoop()
         _vibrationState.value = _vibrationState.value.copy(enabled = true)
         startExecutionLoop()
     }
@@ -91,6 +98,10 @@ class VibrationEngine(
     fun disableVibration() {
         stopExecutionLoop()
         _vibrationState.value = _vibrationState.value.copy(enabled = false)
+        if (touchNormalizedY.value != null) {
+            startTouchLoop()
+            return
+        }
         scope.launch {
             controller.sendVibrationCommand(leftMotor = 0f, rightMotor = 0f)
             phoneVibrator.stop()
@@ -140,6 +151,32 @@ class VibrationEngine(
         _vibrationState.value = _vibrationState.value.copy(sharpness = sharpness)
     }
 
+    /**
+     * Drive left/right motors from a finger position on the waveform.
+     *
+     * Works with playback off, matching the iOS revival client. While a pattern
+     * loop is already running the next frame uses this mapping instead.
+     */
+    fun updateTouchHaptics(normalizedY: Float) {
+        touchNormalizedY.value = normalizedY.coerceIn(0f, 1f)
+        if (executionJob?.isActive == true) return
+        startTouchLoop()
+    }
+
+    /**
+     * Stop waveform-touch haptics. If a pattern is still playing, the loop
+     * resumes regular frames; otherwise motors are zeroed.
+     */
+    fun stopTouchHaptics() {
+        touchNormalizedY.value = null
+        stopTouchLoop()
+        if (_vibrationState.value.enabled) return
+        scope.launch {
+            controller.sendVibrationCommand(leftMotor = 0f, rightMotor = 0f)
+            phoneVibrator.stop()
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------
@@ -170,41 +207,25 @@ class VibrationEngine(
                 val state = _vibrationState.value
                 if (!state.enabled) break
 
-                val connected = controller.connectionState.value is ConnectionState.Connected
-                val target = vibrationTarget?.value ?: VibrationTarget.GAMEPAD_ONLY
-                val usePhone = phoneVibrator.isAvailable && when (target) {
-                    VibrationTarget.PHONE_ONLY -> true
-                    VibrationTarget.GAMEPAD_AND_PHONE -> true
-                    VibrationTarget.GAMEPAD_ONLY -> !connected
+                val elapsed = currentTimeMillis() - startTime
+                val touchY = touchNormalizedY.value
+                val (left, right) = if (touchY != null) {
+                    touchHapticMotors(touchY, state.intensity)
+                } else {
+                    state.activePattern.calculateFrame(elapsed, state.intensity)
                 }
-                val useGamepad = connected && target != VibrationTarget.PHONE_ONLY
 
-                if (!usePhone && !useGamepad) {
+                val emitted = emitMotors(left, right, state.sharpness)
+                if (!emitted) {
                     _vibrationState.value = _vibrationState.value.copy(enabled = false)
                     break
                 }
 
-                val elapsed = currentTimeMillis() - startTime
-                val (left, right) = state.activePattern.calculateFrame(elapsed, state.intensity)
-                val motorLevel = maxOf(left, right)
-
-                // Drive phone first so gamepad Core Haptics work doesn't delay /
-                // starve phone updates in Gamepad+Phone mode.
-                if (usePhone) {
-                    phoneVibrator.vibrate(motorLevel, sharpness = state.sharpness)
-                }
-
-                if (useGamepad) {
-                    controller.sendVibrationCommand(
-                        leftMotor = left,
-                        rightMotor = right,
-                        sharpness = state.sharpness
-                    )
-                }
-
                 delay(FRAME_INTERVAL_MS)
             }
-            phoneVibrator.stop()
+            if (touchNormalizedY.value == null) {
+                phoneVibrator.stop()
+            }
         }
     }
 
@@ -214,6 +235,58 @@ class VibrationEngine(
     private fun stopExecutionLoop() {
         executionJob?.cancel()
         executionJob = null
+    }
+
+    private fun startTouchLoop() {
+        if (executionJob?.isActive == true) return
+        if (touchJob?.isActive == true) return
+
+        touchJob = scope.launch {
+            while (isActive) {
+                val y = touchNormalizedY.value ?: break
+                val state = _vibrationState.value
+                val (left, right) = touchHapticMotors(y, state.intensity)
+                emitMotors(left, right, state.sharpness)
+                delay(FRAME_INTERVAL_MS)
+            }
+        }
+    }
+
+    private fun stopTouchLoop() {
+        touchJob?.cancel()
+        touchJob = null
+    }
+
+    /**
+     * Sends a frame to phone and/or gamepad using the same target rules as
+     * pattern playback. Returns false when neither output is available.
+     */
+    private suspend fun emitMotors(left: Float, right: Float, sharpness: Float): Boolean {
+        val connected = controller.connectionState.value is ConnectionState.Connected
+        val target = vibrationTarget?.value ?: VibrationTarget.GAMEPAD_ONLY
+        val usePhone = phoneVibrator.isAvailable && when (target) {
+            VibrationTarget.PHONE_ONLY -> true
+            VibrationTarget.GAMEPAD_AND_PHONE -> true
+            VibrationTarget.GAMEPAD_ONLY -> !connected
+        }
+        val useGamepad = connected && target != VibrationTarget.PHONE_ONLY
+
+        if (!usePhone && !useGamepad) return false
+
+        val motorLevel = maxOf(left, right)
+        // Drive phone first so gamepad Core Haptics work doesn't delay /
+        // starve phone updates in Gamepad+Phone mode.
+        if (usePhone) {
+            phoneVibrator.vibrate(motorLevel, sharpness = sharpness)
+        }
+        if (useGamepad) {
+            controller.sendVibrationCommand(
+                leftMotor = left,
+                rightMotor = right,
+                sharpness = sharpness
+            )
+        }
+        return true
     }
 }
 
