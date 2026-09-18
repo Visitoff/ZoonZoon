@@ -32,11 +32,11 @@ import com.seashore.zoonzoon.ui.fig.FigAsset
 import com.seashore.zoonzoon.ui.fig.FigColor
 import com.seashore.zoonzoon.ui.fig.FigCoralStops
 import com.seashore.zoonzoon.ui.fig.figText
+import com.seashore.zoonzoon.ui.glass.GlassFill
 import com.seashore.zoonzoon.ui.glass.GlassTintLight
 import com.seashore.zoonzoon.ui.glass.ProvideGlassBackdrop
 import com.seashore.zoonzoon.ui.glass.glassSource
-import com.seashore.zoonzoon.ui.glass.isLiquidGlassEnabled
-import com.seashore.zoonzoon.ui.glass.liquidGlass
+import com.seashore.zoonzoon.ui.glass.isGlassEnabled
 
 /** Figma `Slider` (4028:2873): 345×82.6924 at (11, 599). */
 val SliderWidth = 345.dp
@@ -120,18 +120,24 @@ fun IntensitySlider(
                 Box(
                     modifier = Modifier
                         .offset(x = thumbX)
-                        .size(ThumbSize)
-                        .then(
-                            if (isLiquidGlassEnabled()) {
-                                Modifier.liquidGlass(CircleShape, GlassTintLight)
-                            } else {
-                                Modifier
-                                    .clip(CircleShape)
-                                    .background(FigColor.buttonSolid)
-                            }
-                        ),
+                        .size(ThumbSize),
                     contentAlignment = Alignment.Center
                 ) {
+                    if (isGlassEnabled()) {
+                        GlassFill(
+                            modifier = Modifier.fillMaxSize(),
+                            shape = CircleShape,
+                            tint = GlassTintLight,
+                            cornerRadius = ThumbSize / 2
+                        )
+                    } else {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(FigColor.buttonSolid)
+                        )
+                    }
                     FigAsset(
                         resource = Res.drawable.ic_arrows,
                         width = 17.5.dp,

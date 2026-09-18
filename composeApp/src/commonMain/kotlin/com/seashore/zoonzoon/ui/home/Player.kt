@@ -30,7 +30,7 @@ import com.seashore.zoonzoon.ui.fig.figText
 import com.seashore.zoonzoon.ui.glass.GlassTintLight
 import com.seashore.zoonzoon.ui.glass.ProvideGlassBackdrop
 import com.seashore.zoonzoon.ui.glass.glassSource
-import com.seashore.zoonzoon.ui.glass.isLiquidGlassEnabled
+import com.seashore.zoonzoon.ui.glass.isGlassEnabled
 
 /** Figma `-Player` (4028:2872): 345×445 at (15, 135). */
 val PlayerWidth = 345.dp
@@ -168,7 +168,7 @@ private fun Caption(
             FigCircleButton(
                 onClick = onToggleVibration,
                 diameter = 60.dp,
-                fill = if (isLiquidGlassEnabled()) GlassTintLight else FigColor.buttonSolid
+                fill = if (isGlassEnabled()) GlassTintLight else FigColor.buttonSolid
             ) {
                 FigAsset(
                     resource = Res.drawable.ic_power,

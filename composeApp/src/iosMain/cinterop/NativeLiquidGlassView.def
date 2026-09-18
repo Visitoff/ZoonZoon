@@ -1,0 +1,4 @@
+package = com.seashore.zoonzoon.nativeliquidglass
+language = Objective-C
+headers = NativeLiquidGlassView.h
+headerFilter = NativeLiquidGlassView.h

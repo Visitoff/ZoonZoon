@@ -31,6 +31,11 @@ kotlin {
                     // Include the iosApp source so ObjC implementation is found
                     includeDirs(project.file("../iosApp/iosApp"))
                 }
+                val NativeLiquidGlassView by creating {
+                    defFile(project.file("src/iosMain/cinterop/NativeLiquidGlassView.def"))
+                    includeDirs(project.file("src/iosMain/cinterop"))
+                    includeDirs(project.file("../iosApp/iosApp"))
+                }
             }
         }
         iosTarget.binaries.all {

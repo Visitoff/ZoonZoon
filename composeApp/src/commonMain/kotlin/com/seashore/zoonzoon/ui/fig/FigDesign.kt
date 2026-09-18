@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
@@ -24,9 +25,9 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.seashore.zoonzoon.ui.glass.GlassFill
 import com.seashore.zoonzoon.ui.glass.GlassTintButton
-import com.seashore.zoonzoon.ui.glass.isLiquidGlassEnabled
-import com.seashore.zoonzoon.ui.glass.liquidGlass
+import com.seashore.zoonzoon.ui.glass.isGlassEnabled
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
@@ -138,7 +139,7 @@ fun FigCircleButton(
     content: @Composable BoxScope.() -> Unit
 ) {
     val interaction = remember { MutableInteractionSource() }
-    val glass = isLiquidGlassEnabled()
+    val glass = isGlassEnabled()
     val glassTint = when {
         fill != null && fill.alpha > 0f && fill.alpha < 0.99f -> fill
         coral -> Color.White.copy(alpha = 0.08f)
@@ -148,16 +149,6 @@ fun FigCircleButton(
     Box(
         modifier = modifier
             .size(diameter)
-            .then(
-                when {
-                    glass -> Modifier
-                        .liquidGlass(CircleShape, glassTint)
-                        .then(if (coral) Modifier.figCoralRadial(alpha = 0.16f) else Modifier)
-                    coral -> Modifier.clip(CircleShape).figCoralRadial()
-                    fill != null -> Modifier.clip(CircleShape).background(fill)
-                    else -> Modifier.clip(CircleShape)
-                }
-            )
             .then(
                 if (borderColor != null) {
                     Modifier.border(1.dp, borderColor, CircleShape)
@@ -171,7 +162,23 @@ fun FigCircleButton(
                 onClick = onClick
             )
             .semantics { this.selected = selected },
-        contentAlignment = Alignment.Center,
-        content = content
-    )
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            glass -> {
+                GlassFill(
+                    modifier = Modifier.fillMaxSize(),
+                    shape = CircleShape,
+                    tint = glassTint,
+                    cornerRadius = diameter / 2
+                )
+                if (coral) {
+                    Box(Modifier.fillMaxSize().figCoralRadial(alpha = 0.16f))
+                }
+            }
+            coral -> Box(Modifier.fillMaxSize().clip(CircleShape).figCoralRadial())
+            fill != null -> Box(Modifier.fillMaxSize().clip(CircleShape).background(fill))
+        }
+        content()
+    }
 }

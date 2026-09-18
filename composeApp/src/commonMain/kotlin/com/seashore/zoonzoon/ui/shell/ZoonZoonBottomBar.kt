@@ -21,7 +21,7 @@ import com.seashore.zoonzoon.ui.fig.FigAsset
 import com.seashore.zoonzoon.ui.fig.FigCircleButton
 import com.seashore.zoonzoon.ui.fig.FigColor
 import com.seashore.zoonzoon.ui.glass.GlassTintLight
-import com.seashore.zoonzoon.ui.glass.isLiquidGlassEnabled
+import com.seashore.zoonzoon.ui.glass.isGlassEnabled
 import org.jetbrains.compose.resources.DrawableResource
 
 /** Figma `-bottom-bar` (4025:2853): 330×70 at (22, 701) — 41 above the frame's bottom edge. */
@@ -70,7 +70,7 @@ fun ZoonZoonBottomBar(
                 FigCircleButton(
                     onClick = { onSelect(tab) },
                     diameter = ButtonSize,
-                    fill = if (isLiquidGlassEnabled()) GlassTintLight else FigColor.buttonDark,
+                    fill = if (isGlassEnabled()) GlassTintLight else FigColor.buttonDark,
                     coral = tab == selected,
                     selected = tab == selected
                 ) {

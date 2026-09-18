@@ -50,9 +50,9 @@ import com.seashore.zoonzoon.ui.fig.FigFrameWidth
 import com.seashore.zoonzoon.ui.fig.figCoralRadial
 import com.seashore.zoonzoon.ui.fig.figEmoji
 import com.seashore.zoonzoon.ui.fig.figText
+import com.seashore.zoonzoon.ui.glass.GlassFill
 import com.seashore.zoonzoon.ui.glass.GlassTintButton
-import com.seashore.zoonzoon.ui.glass.isLiquidGlassEnabled
-import com.seashore.zoonzoon.ui.glass.liquidGlass
+import com.seashore.zoonzoon.ui.glass.isGlassEnabled
 
 /** Figma `Screen 25` (2097:12736), 375×1238. Glass fills → Home solids. */
 private val PatternsFrameHeight = 1238.dp
@@ -190,31 +190,36 @@ private fun ChipRow(
         PatternChip.entries.forEach { item ->
             val active = item == selected
             val chipShape = RoundedCornerShape(ChipRadius)
-            val glass = isLiquidGlassEnabled()
+            val glass = isGlassEnabled()
             Box(
                 modifier = Modifier
                     .height(45.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { onSelect(item) }
-                    .then(
-                        when {
-                            glass && active -> Modifier
-                                .liquidGlass(chipShape, Color.White.copy(alpha = 0.08f))
-                                .figCoralRadial(alpha = 0.45f)
-                            glass -> Modifier.liquidGlass(chipShape, GlassTintButton)
-                            active -> Modifier.clip(chipShape).figCoralRadial()
-                            else -> Modifier.clip(chipShape).background(ChipIdle)
-                        }
-                    )
-                    .padding(horizontal = 26.dp),
+                    ) { onSelect(item) },
                 contentAlignment = Alignment.Center
             ) {
+                when {
+                    glass -> {
+                        GlassFill(
+                            modifier = Modifier.matchParentSize(),
+                            shape = chipShape,
+                            tint = if (active) Color.White.copy(alpha = 0.08f) else GlassTintButton,
+                            cornerRadius = ChipRadius
+                        )
+                        if (active) {
+                            Box(Modifier.matchParentSize().figCoralRadial(alpha = 0.45f))
+                        }
+                    }
+                    active -> Box(Modifier.matchParentSize().clip(chipShape).figCoralRadial())
+                    else -> Box(Modifier.matchParentSize().clip(chipShape).background(ChipIdle))
+                }
                 Text(
                     text = item.label,
                     color = FigColor.white.copy(alpha = if (active) 1f else 0.50f),
-                    style = figText(size = 14)
+                    style = figText(size = 14),
+                    modifier = Modifier.padding(horizontal = 26.dp)
                 )
             }
         }
@@ -401,8 +406,8 @@ private fun CustomSection(
                 modifier = Modifier.width(174.dp)
             )
             val recordShape = RoundedCornerShape(ChipRadius)
-            val glass = isLiquidGlassEnabled()
-            Row(
+            val glass = isGlassEnabled()
+            Box(
                 modifier = Modifier
                     .size(153.dp, 45.dp)
                     .clickable(
@@ -410,29 +415,38 @@ private fun CustomSection(
                         indication = null,
                         onClick = onRecord
                     )
-                    .then(
-                        when {
-                            glass && recording -> Modifier
-                                .liquidGlass(recordShape, Color.White.copy(alpha = 0.08f))
-                                .figCoralRadial(alpha = 0.45f)
-                            glass -> Modifier.liquidGlass(recordShape, GlassTintButton)
-                            recording -> Modifier.clip(recordShape).figCoralRadial()
-                            else -> Modifier.clip(recordShape).background(ChipIdle)
-                        }
-                    ),
-                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
             ) {
-                FigAsset(
-                    resource = Res.drawable.patterns_ic_rec,
-                    width = 17.dp,
-                    height = 17.dp
-                )
-                Text(
-                    text = recordLabel,
-                    color = FigColor.white.copy(alpha = 0.50f),
-                    style = figText(size = 14)
-                )
+                when {
+                    glass -> {
+                        GlassFill(
+                            modifier = Modifier.matchParentSize(),
+                            shape = recordShape,
+                            tint = if (recording) Color.White.copy(alpha = 0.08f) else GlassTintButton,
+                            cornerRadius = ChipRadius
+                        )
+                        if (recording) {
+                            Box(Modifier.matchParentSize().figCoralRadial(alpha = 0.45f))
+                        }
+                    }
+                    recording -> Box(Modifier.matchParentSize().clip(recordShape).figCoralRadial())
+                    else -> Box(Modifier.matchParentSize().clip(recordShape).background(ChipIdle))
+                }
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FigAsset(
+                        resource = Res.drawable.patterns_ic_rec,
+                        width = 17.dp,
+                        height = 17.dp
+                    )
+                    Text(
+                        text = recordLabel,
+                        color = FigColor.white.copy(alpha = 0.50f),
+                        style = figText(size = 14)
+                    )
+                }
             }
         }
         Box(

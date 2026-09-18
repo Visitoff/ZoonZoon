@@ -20,9 +20,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.seashore.zoonzoon.ui.fig.figCoralRadial
+import com.seashore.zoonzoon.ui.glass.GlassFill
 import com.seashore.zoonzoon.ui.glass.GlassTintLight
 import com.seashore.zoonzoon.ui.glass.isLiquidGlassEnabled
-import com.seashore.zoonzoon.ui.glass.liquidGlass
 import dev.chrisbanes.haze.blur.blurEffect
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
 import dev.chrisbanes.haze.hazeEffect
@@ -113,10 +113,11 @@ private fun FigmaFillButton(
         FigmaFill.Coral -> Modifier.background(FigmaGradients.NavActiveCoral, shape)
         FigmaFill.Power -> Modifier.background(FigmaTokens.Color.powerButton, shape)
     }
+    val glass = liquidGlass || nativeGlass
 
     Box(
         modifier = modifier
-            .then(if (liquidGlass) Modifier else Modifier.clip(shape))
+            .then(if (glass) Modifier else Modifier.clip(shape))
             .then(
                 if (stroke == FigmaStroke.Heart) {
                     Modifier.border(1.dp, FigmaGradients.HeartStroke, shape)
@@ -133,24 +134,17 @@ private fun FigmaFillButton(
         contentAlignment = Alignment.Center
     ) {
         when {
-            liquidGlass -> {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .liquidGlass(shape, tint)
-                        .then(
-                            if (fill == FigmaFill.Coral) Modifier.figCoralRadial(alpha = 0.45f)
-                            else Modifier
-                        )
-                )
-            }
-            nativeGlass -> {
-                NativeLiquidGlass(
+            glass -> {
+                GlassFill(
                     modifier = Modifier.fillMaxSize(),
-                    cornerRadius = cornerRadius,
+                    shape = shape,
                     tint = tint,
+                    cornerRadius = cornerRadius,
                     interactive = enabled
                 )
+                if (fill == FigmaFill.Coral) {
+                    Box(Modifier.fillMaxSize().figCoralRadial(alpha = 0.45f))
+                }
             }
             hazeState != null && blurStyle != null -> {
                 Box(
