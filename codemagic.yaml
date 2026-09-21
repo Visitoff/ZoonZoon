@@ -1,0 +1,82 @@
+workflows:
+  ios-kmm-workflow:
+    name: iOS KMM Workflow
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+
+    integrations:
+      app_store_connect: zonozonoz
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: "feature/ios-revival-1.3"
+          include: true
+      cancel_previous_builds: true
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.ZoonZoon
+      vars:
+        XCODE_PROJECT: "HapticControllers.xcodeproj"
+        XCODE_SCHEME: "HapticControllers"
+        BUNDLE_ID: "com.ZoonZoon"
+        APP_ID: 1595186051
+        APP_STORE_CONNECT_ALTOOL_ADDITIONAL_ARGUMENTS: "--apple-id 1595186051 --use-old-altool"
+      xcode: latest
+
+    scripts:
+      - name: Set up code signing settings on Xcode project
+        script: |
+          cd $CM_BUILD_DIR
+          xcode-project --version
+          xcode-project use-profiles \
+            --project "$XCODE_PROJECT" \
+            --archive-method app-store \
+            --code-signing-setup-verbose-logging \
+            > codesign_raw.log 2>&1 || {
+              echo "❌ CODESIGN SETUP FAILED:"
+              tail -n 200 codesign_raw.log
+              exit 1
+            }
+
+      - name: Increment build number
+        script: |
+          #!/bin/sh
+          set -e
+          set -x
+          # Build number is hardcoded in Info.plist CFBundleVersion
+          # Update it manually before each release
+          echo "Build number: 50"
+
+      - name: Build IPA for distribution
+        script: |
+          cd $CM_BUILD_DIR
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --disable-xcpretty > xcode_raw.log 2>&1 || {
+              echo "❌ BUILD FAILED:"
+              grep -iE -A 2 -B 2 "error:|permission denied|no such file" xcode_raw.log | tail -n 50
+              exit 1
+            }
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $CM_BUILD_DIR/xcode_raw.log
+      - $CM_BUILD_DIR/codesign_raw.log
+
+    publishing:
+      email:
+        recipients:
+          - your@email.com
+        notify:
+          success: true
+          failure: true
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        submit_to_app_store: false
